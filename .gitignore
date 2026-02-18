@@ -1,0 +1,35 @@
+# Docker
+# Ignore the local development environment's container data or build artifacts if necessary.
+# Common build output directories or temporary files.
+# If you have specific build output folders, list them here.
+
+# VS Code
+# Ignore the .vscode folder to avoid committing user-specific settings,
+# but shared settings (like launch.json, settings.json, extensions.json)
+# might be useful to keep and should be specifically excluded if necessary.
+.vscode/
+
+# macOS
+# Ignore the macOS-specific file that stores custom attributes for folders.
+.DS_Store
+
+# Example of more comprehensive entries often found in standard templates:
+
+# VS Code specific files to ignore (common practice is to ignore the whole folder or just some files inside)
+.idea/
+.vscode/
+*.swp
+
+# .vscode/*.json # Uncomment if you want to ignore all JSON files inside .vscode
+
+# macOS specific files
+.DS_Store
+*.AppleDouble
+.LSOverride
+
+# Docker build output (example, adjust as needed)
+# For example, if you output a specific binary or temporary file
+src/main
+bin/
+tmp/
+.env

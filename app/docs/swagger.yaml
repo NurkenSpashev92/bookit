@@ -1,0 +1,1783 @@
+basePath: /api/v1
+definitions:
+  models.Category:
+    properties:
+      created_at:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.House:
+    properties:
+      address_en:
+        type: string
+      address_kz:
+        type: string
+      address_ru:
+        type: string
+      bath_qty:
+        type: integer
+      bedroom_qty:
+        type: integer
+      best_house:
+        type: boolean
+      city_id:
+        type: integer
+      comments_en:
+        type: string
+      comments_kz:
+        type: string
+      comments_ru:
+        type: string
+      country_id:
+        type: integer
+      created_at:
+        type: string
+      description_en:
+        type: string
+      description_kz:
+        type: string
+      description_ru:
+        type: string
+      district_en:
+        type: string
+      district_kz:
+        type: string
+      district_ru:
+        type: string
+      guest_qty:
+        type: integer
+      guests_with_pets:
+        type: boolean
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      lat:
+        type: string
+      like_count:
+        type: integer
+      lng:
+        type: string
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      owner_id:
+        type: integer
+      phone_number:
+        type: string
+      price:
+        type: integer
+      priority:
+        type: string
+      promotion:
+        type: boolean
+      rooms_qty:
+        type: integer
+      slug:
+        type: string
+      type_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  schemas.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/schemas.AuthUser'
+    type: object
+  schemas.AuthUser:
+    properties:
+      avatar:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      middle_name:
+        type: string
+    type: object
+  schemas.CategoryPaginate:
+    properties:
+      icon:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+    type: object
+  schemas.City:
+    properties:
+      country:
+        $ref: '#/definitions/schemas.Country'
+      id:
+        type: integer
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      postall_code:
+        type: string
+    type: object
+  schemas.CityCreateRequest:
+    properties:
+      country_id:
+        type: integer
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      postall_code:
+        type: string
+    type: object
+  schemas.CityUpdateRequest:
+    properties:
+      country_id:
+        type: integer
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      postall_code:
+        type: string
+    type: object
+  schemas.Country:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+    type: object
+  schemas.CountryCreateRequest:
+    properties:
+      code:
+        type: string
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+    type: object
+  schemas.CountryUpdateRequest:
+    properties:
+      code:
+        type: string
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+    type: object
+  schemas.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  schemas.FAQ:
+    properties:
+      answer_en:
+        type: string
+      answer_kz:
+        type: string
+      answer_ru:
+        type: string
+      id:
+        type: integer
+      question_en:
+        type: string
+      question_kz:
+        type: string
+      question_ru:
+        type: string
+    type: object
+  schemas.FAQCreateRequest:
+    properties:
+      answer_en:
+        type: string
+      answer_kz:
+        type: string
+      answer_ru:
+        type: string
+      question_en:
+        type: string
+      question_kz:
+        type: string
+      question_ru:
+        type: string
+    type: object
+  schemas.FAQUpdateRequest:
+    properties:
+      answer_en:
+        type: string
+      answer_kz:
+        type: string
+      answer_ru:
+        type: string
+      question_en:
+        type: string
+      question_kz:
+        type: string
+      question_ru:
+        type: string
+    type: object
+  schemas.HouseCreateRequest:
+    properties:
+      address_en:
+        type: string
+      address_kz:
+        type: string
+      address_ru:
+        type: string
+      bath_qty:
+        type: integer
+      bedroom_qty:
+        type: integer
+      best_house:
+        type: boolean
+      city_id:
+        type: integer
+      country_id:
+        type: integer
+      description_en:
+        type: string
+      description_kz:
+        type: string
+      description_ru:
+        type: string
+      district_en:
+        type: string
+      district_kz:
+        type: string
+      district_ru:
+        type: string
+      guest_qty:
+        type: integer
+      guests_with_pets:
+        type: boolean
+      is_active:
+        type: boolean
+      lat:
+        type: string
+      lng:
+        type: string
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      owner_id:
+        type: integer
+      phone_number:
+        type: string
+      price:
+        type: integer
+      priority:
+        type: string
+      promotion:
+        type: boolean
+      rooms_qty:
+        type: integer
+      slug:
+        type: string
+      type_id:
+        type: integer
+    required:
+    - name_en
+    - owner_id
+    - price
+    type: object
+  schemas.HouseListItem:
+    properties:
+      address_en:
+        type: string
+      address_kz:
+        type: string
+      address_ru:
+        type: string
+      best_house:
+        type: boolean
+      country_city_name_en:
+        type: string
+      country_city_name_kz:
+        type: string
+      country_city_name_ru:
+        type: string
+      guests_with_pets:
+        type: boolean
+      id:
+        type: integer
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      owner_full_name:
+        type: string
+      price:
+        type: integer
+      priority:
+        type: string
+      promotion:
+        type: boolean
+      slug:
+        type: string
+    type: object
+  schemas.HouseUpdateRequest:
+    properties:
+      address_en:
+        type: string
+      address_kz:
+        type: string
+      address_ru:
+        type: string
+      bath_qty:
+        type: integer
+      bedroom_qty:
+        type: integer
+      best_house:
+        type: boolean
+      city_id:
+        type: integer
+      country_id:
+        type: integer
+      description_en:
+        type: string
+      description_kz:
+        type: string
+      description_ru:
+        type: string
+      district_en:
+        type: string
+      district_kz:
+        type: string
+      district_ru:
+        type: string
+      guest_qty:
+        type: integer
+      guests_with_pets:
+        type: boolean
+      is_active:
+        type: boolean
+      lat:
+        type: string
+      lng:
+        type: string
+      name_en:
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      phone_number:
+        type: string
+      price:
+        type: integer
+      priority:
+        type: string
+      promotion:
+        type: boolean
+      rooms_qty:
+        type: integer
+      slug:
+        type: string
+      type_id:
+        type: integer
+    type: object
+  schemas.Inquiry:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      is_approved:
+        type: boolean
+      phone_number:
+        type: string
+      text:
+        type: string
+    type: object
+  schemas.InquiryCreateRequest:
+    properties:
+      email:
+        type: string
+      is_approved:
+        type: boolean
+      phone_number:
+        type: string
+      text:
+        type: string
+    type: object
+  schemas.InquiryUpdateRequest:
+    properties:
+      email:
+        type: string
+      is_approved:
+        type: boolean
+      phone_number:
+        type: string
+      text:
+        type: string
+    type: object
+  schemas.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  schemas.SlugCheckResponse:
+    properties:
+      available:
+        type: boolean
+      slug:
+        type: string
+    type: object
+  schemas.TypeResponse:
+    properties:
+      icon:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  schemas.UserCreateRequest:
+    properties:
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      password:
+        type: string
+      phone_number:
+        type: string
+    type: object
+  schemas.UserLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Bookit API Documentation
+  title: Bookit API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current authenticated user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Auth
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of active categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.CategoryPaginate'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all active categories
+      tags:
+      - Categories
+    post:
+      consumes:
+      - multipart/form-data
+      description: Creates a new category
+      parameters:
+      - description: Name KZ
+        in: formData
+        name: name_kz
+        required: true
+        type: string
+      - description: Name RU
+        in: formData
+        name: name_ru
+        required: true
+        type: string
+      - description: Name EN
+        in: formData
+        name: name_en
+        required: true
+        type: string
+      - description: Is active
+        in: formData
+        name: is_active
+        type: boolean
+      - description: Category icon
+        in: formData
+        name: icon
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create category
+      tags:
+      - Categories
+  /categories/{id}:
+    delete:
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete category
+      tags:
+      - Categories
+    get:
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get category
+      tags:
+      - Categories
+    patch:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Name KZ
+        in: formData
+        name: name_kz
+        type: string
+      - description: Name RU
+        in: formData
+        name: name_ru
+        type: string
+      - description: Name EN
+        in: formData
+        name: name_en
+        type: string
+      - description: Is active
+        in: formData
+        name: is_active
+        type: boolean
+      - description: Icon
+        in: formData
+        name: icon
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update category
+      tags:
+      - Categories
+  /cities:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.City'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all cities
+      tags:
+      - Cities
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: City data
+        in: body
+        name: city
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CityCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.City'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a city
+      tags:
+      - Cities
+  /cities/{id}:
+    delete:
+      parameters:
+      - description: City ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a city
+      tags:
+      - Cities
+    get:
+      parameters:
+      - description: City ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.City'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get city by ID
+      tags:
+      - Cities
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: City ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: City data
+        in: body
+        name: city
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CityUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.City'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a city
+      tags:
+      - Cities
+  /countries:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.Country'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all countries
+      tags:
+      - Countries
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Country data
+        in: body
+        name: country
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CountryCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.Country'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a country
+      tags:
+      - Countries
+  /countries/{id}:
+    delete:
+      parameters:
+      - description: Country ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a country
+      tags:
+      - Countries
+    get:
+      parameters:
+      - description: Country ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.Country'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get country by ID
+      tags:
+      - Countries
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Country ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Country data
+        in: body
+        name: country
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.CountryUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.Country'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a country
+      tags:
+      - Countries
+  /faqs:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.FAQ'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all FAQs
+      tags:
+      - FAQ
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: FAQ data
+        in: body
+        name: faq
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.FAQCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.FAQ'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a FAQ
+      tags:
+      - FAQ
+  /faqs/{id}:
+    delete:
+      parameters:
+      - description: FAQ ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a FAQ
+      tags:
+      - FAQ
+    get:
+      parameters:
+      - description: FAQ ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.FAQ'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get FAQ by ID
+      tags:
+      - FAQ
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: FAQ ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: FAQ data
+        in: body
+        name: faq
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.FAQUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.FAQ'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a FAQ
+      tags:
+      - FAQ
+  /healthcheck:
+    get:
+      consumes:
+      - application/json
+      description: Checks if the application and database are running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "503":
+          description: Service Unavailable
+          schema: {}
+      summary: Health Check
+      tags:
+      - HealthCheck
+  /houses:
+    get:
+      description: Returns a list of all houses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.HouseListItem'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all houses
+      tags:
+      - Houses
+    post:
+      consumes:
+      - application/json
+      description: Creates a new house. Auth required.
+      parameters:
+      - description: House data
+        in: body
+        name: house
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.HouseCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.House'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new house
+      tags:
+      - Houses
+  /houses/{id}:
+    delete:
+      description: Deletes a house by ID. Auth required.
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete house
+      tags:
+      - Houses
+    get:
+      description: Returns a single house by ID
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.House'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get house by ID
+      tags:
+      - Houses
+    patch:
+      consumes:
+      - application/json
+      description: Updates house data. Auth required.
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: House update data
+        in: body
+        name: house
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.HouseUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.House'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update house
+      tags:
+      - Houses
+  /houses/{id}/images:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload multiple images for a house (max 15 images per house)
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Images
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "400":
+          description: Invalid request or max images exceeded
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: House not found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Upload or database error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Upload house images
+      tags:
+      - Houses
+  /houses/check-slug:
+    get:
+      consumes:
+      - application/json
+      description: Checks if a house slug is available for use
+      parameters:
+      - description: Slug to check
+        in: query
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.SlugCheckResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Check house slug availability
+      tags:
+      - Houses
+  /houses/images/{image_id}:
+    delete:
+      description: Deletes image from database and AWS S3
+      parameters:
+      - description: Image ID
+        in: path
+        name: image_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Image not found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Delete error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete house image
+      tags:
+      - Houses
+  /inquiries:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.Inquiry'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all inquiries
+      tags:
+      - Inquiry
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inquiry data
+        in: body
+        name: inquiry
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.InquiryCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.Inquiry'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create an inquiry
+      tags:
+      - Inquiry
+  /inquiries/{id}:
+    delete:
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete an inquiry
+      tags:
+      - Inquiry
+    get:
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.Inquiry'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get inquiry by ID
+      tags:
+      - Inquiry
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Inquiry data
+        in: body
+        name: inquiry
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.InquiryUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.Inquiry'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an inquiry
+      tags:
+      - Inquiry
+  /types:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.TypeResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get all types
+      tags:
+      - Types
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Is Active
+        in: formData
+        name: is_active
+        type: boolean
+      - description: Icon
+        in: formData
+        name: icon
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.TypeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a type
+      tags:
+      - Types
+  /types/{id}:
+    delete:
+      parameters:
+      - description: Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a type
+      tags:
+      - Types
+    get:
+      parameters:
+      - description: Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.TypeResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Get type by ID
+      tags:
+      - Types
+    patch:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Type ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Name
+        in: formData
+        name: name
+        type: string
+      - description: Is Active
+        in: formData
+        name: is_active
+        type: boolean
+      - description: Icon
+        in: formData
+        name: icon
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.TypeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a type
+      tags:
+      - Types
+swagger: "2.0"
