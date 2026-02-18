@@ -40,7 +40,7 @@ func (j *JWTService) GenerateToken(user models.User) (string, error) {
 func (j *JWTService) ValidateToken(tokenStr string) (models.User, error) {
 	var user models.User
 
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
