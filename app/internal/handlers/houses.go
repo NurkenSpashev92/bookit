@@ -36,21 +36,24 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 	return c.JSON(houses)
 }
 
-// GetHouseByID godoc
-// @Summary      Get house by ID
-// @Description  Returns a single house by ID
+// GetHouseBySlug godoc
+// @Summary      Get house by slug
+// @Description  Returns a single house by slug
 // @Tags         Houses
 // @Produce      json
-// @Param        id   path      int  true  "House ID"
+// @Param        slug   path      string  true  "House slug"
 // @Success      200  {object} models.House
 // @Failure      404  {object} schemas.ErrorResponse
-// @Router       /houses/{id} [get]
-func (h *HouseHandler) GetByID(c fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+// @Router       /houses/{slug} [get]
+func (h *HouseHandler) GetBySlug(c fiber.Ctx) error {
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
+	}
 
-	house, err := h.houseService.GetByID(c.Context(), id)
+	house, err := h.houseService.GetBySlug(c.Context(), slug)
 	if err != nil {
-		return c.Status(404).JSON(schemas.ErrorResponse{Error: "house not found: " + err.Error()})
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: "house not found"})
 	}
 
 	return c.JSON(house)

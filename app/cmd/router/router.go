@@ -109,19 +109,21 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 		houses := apiV1.Group("/houses")
 		{
 			houses.Get("/", houseHandler.GetAll)
-			houses.Get("/:id", houseHandler.GetByID)
 			houses.Post("/", middleware.AuthRequired(svc.JWT), houseHandler.Create)
 			houses.Patch("/:id", middleware.AuthRequired(svc.JWT), houseHandler.Update)
 			houses.Delete("/:id", middleware.AuthRequired(svc.JWT), houseHandler.Delete)
 
+			houses.Get("/check-slug", houseHandler.CheckSlug)
 			houses.Get("/liked", middleware.AuthRequired(svc.JWT), houseLikeHandler.UserLikedHouses)
+			houses.Delete("/images/:image_id", middleware.AuthRequired(svc.JWT), imageHandler.Delete)
+
+			houses.Get("/:slug", houseHandler.GetBySlug)
 
 			houses.Post("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Like)
 			houses.Delete("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Unlike)
 			houses.Get("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Status)
 
 			houses.Post("/:id/images", middleware.AuthRequired(svc.JWT), imageHandler.Upload)
-			houses.Delete("/images/:image_id", middleware.AuthRequired(svc.JWT), imageHandler.Delete)
 		}
 	}
 

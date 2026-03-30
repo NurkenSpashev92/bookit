@@ -53,7 +53,7 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 		LEFT JOIN cities ct ON ct.id = h.city_id
 		LEFT JOIN users u ON u.id = h.owner_id
 		LEFT JOIN LATERAL (
-			SELECT json_agg(
+			SELECT COALESCE(json_agg(
 				json_build_object(
 					'id', i.id,
 					'original', $1 || i.original,
@@ -62,7 +62,7 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 					'size', i.size,
 					'house_id', i.house_id
 				)
-			) as images
+			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
 			FROM (
 				SELECT id, original, thumbnail, mimetype, size, house_id
 				FROM images
@@ -120,7 +120,7 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 	return houses, nil
 }
 
-func (r *HouseRepository) GetByID(ctx context.Context, id int) (models.House, error) {
+func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (models.House, error) {
 	var house models.House
 	var imagesJSON []byte
 	baseURL := r.awsCfg.BaseURL()
@@ -138,22 +138,23 @@ func (r *HouseRepository) GetByID(ctx context.Context, id int) (models.House, er
 			COALESCE(img.images, '[]') as images
 		FROM houses h
 		LEFT JOIN LATERAL (
-			SELECT json_agg(
+			SELECT COALESCE(json_agg(
 				json_build_object(
 					'id', i.id,
 					'original', $2 || i.original,
+					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $2 || i.thumbnail ELSE '' END,
 					'mime_type', i.mimetype,
 					'size', i.size,
 					'house_id', i.house_id
 				)
-			) as images
+			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
 			FROM images i
 			WHERE i.house_id = h.id
 		) img ON true
-		WHERE h.id=$1
+		WHERE h.slug=$1
 	`
 
-	err := r.db.QueryRow(ctx, query, id, baseURL).Scan(
+	err := r.db.QueryRow(ctx, query, slug, baseURL).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug,
 		&house.Price, &house.RoomsQty, &house.GuestQty, &house.BedroomQty, &house.BathQty,
 		&house.DescriptionEN, &house.DescriptionKZ, &house.DescriptionRU,

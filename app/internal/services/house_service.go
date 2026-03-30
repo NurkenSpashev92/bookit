@@ -28,8 +28,8 @@ func (s *HouseService) GetAll(ctx context.Context) ([]schemas.HouseListItem, err
 	return s.repository.GetAll(ctx)
 }
 
-func (s *HouseService) GetByID(ctx context.Context, id int) (models.House, error) {
-	return s.repository.GetByID(ctx, id)
+func (s *HouseService) GetBySlug(ctx context.Context, slug string) (models.House, error) {
+	return s.repository.GetBySlug(ctx, slug)
 }
 
 func (s *HouseService) Create(ctx context.Context, req schemas.HouseCreateRequest, ownerID int) (models.House, error) {
