@@ -19,11 +19,10 @@ type House struct {
 	AddressEN      string    `json:"address_en"`
 	AddressKZ      string    `json:"address_kz"`
 	AddressRU      string    `json:"address_ru"`
-	Lng            string    `json:"lng,omitempty"`
-	Lat            string    `json:"lat,omitempty"`
+	Lng            *float64  `json:"lng,omitempty"`
+	Lat            *float64  `json:"lat,omitempty"`
 	IsActive       bool      `json:"is_active"`
-	Priority       string    `json:"priority"`
-	LikeCount      int       `json:"like_count"`
+	Priority       int       `json:"priority"`
 	CommentsRU     *string   `json:"comments_ru,omitempty"`
 	CommentsEN     *string   `json:"comments_en,omitempty"`
 	CommentsKZ     *string   `json:"comments_kz,omitempty"`
@@ -38,6 +37,7 @@ type House struct {
 	DistrictKZ     string    `json:"district_kz,omitempty"`
 	DistrictRU     string    `json:"district_ru,omitempty"`
 	PhoneNumber    string    `json:"phone_number,omitempty"`
+	LikeCount      int       `json:"like_count"`
 	Images         []Image   `json:"images,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`

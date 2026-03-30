@@ -7,20 +7,25 @@ if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-export POSTGRES_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
+POSTGRES_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
 
-# Ожидаем, пока PostgreSQL будет доступен
-echo "⏳ Ожидание запуска PostgreSQL..."
-until nc -z -v -w30 $POSTGRES_HOST $POSTGRES_PORT; do
-  echo "⌛ PostgreSQL ещё не доступен, ждём..."
+echo "Waiting for PostgreSQL at ${POSTGRES_HOST}:${POSTGRES_PORT}..."
+
+retries=0
+max_retries=30
+until migrate -path /app/migrations -database "$POSTGRES_URL" version > /dev/null 2>&1; do
+  retries=$((retries + 1))
+  if [ "$retries" -ge "$max_retries" ]; then
+    echo "ERROR: PostgreSQL is not available after ${max_retries} attempts"
+    exit 1
+  fi
+
+  echo "PostgreSQL not ready, retrying ($retries/$max_retries)..."
   sleep 2
 done
 
-echo "✅ PostgreSQL доступен, запускаем миграции..."
+echo "PostgreSQL is available, running migrations..."
+migrate -path /app/migrations -database "$POSTGRES_URL" up || echo "Migrations already applied or none pending"
 
-# Запуск миграций
-echo "🚀 Запуск миграций базы данных..."
-migrate -path /app/migrations -database "$POSTGRES_URL" up || echo "⚠️ Миграции отсутствуют или уже применены"
-
-echo "🎉 Миграции успешно завершены, запускаем сервис..."
+echo "Starting application..."
 exec "$@"

@@ -33,3 +33,4 @@ src/main
 bin/
 tmp/
 .env
+.claude/

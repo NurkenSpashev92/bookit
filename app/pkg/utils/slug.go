@@ -22,10 +22,9 @@ func GenerateSlug(slug, nameEN, nameKZ, nameRU string) string {
 	return normalize(nameRU)
 }
 
+var reMultiDash = regexp.MustCompile(`-+`)
+
 func normalize(s string) string {
 	s = slug.Make(s)
-
-	// защита от двойных дефисов
-	re := regexp.MustCompile(`-+`)
-	return strings.Trim(re.ReplaceAllString(s, "-"), "-")
+	return strings.Trim(reMultiDash.ReplaceAllString(s, "-"), "-")
 }

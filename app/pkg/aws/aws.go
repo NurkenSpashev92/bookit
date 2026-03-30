@@ -83,11 +83,14 @@ func (s *AwsS3Client) Upload(ctx context.Context, bucket string, file *multipart
 }
 
 func (s *AwsS3Client) UploadCompressed(ctx context.Context, key string, body []byte, contentType string) (string, error) {
+	contentLen := int64(len(body))
 	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucket),
-		Key:         aws.String(key),
-		Body:        bytes.NewReader(body),
-		ContentType: aws.String(contentType),
+		Bucket:        aws.String(s.bucket),
+		Key:           aws.String(key),
+		Body:          bytes.NewReader(body),
+		ContentType:   aws.String(contentType),
+		ContentLength: &contentLen,
+		CacheControl:  aws.String("public, max-age=31536000, immutable"),
 	})
 
 	if err != nil {

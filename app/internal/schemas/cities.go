@@ -1,26 +1,53 @@
 package schemas
 
+// City response DTO
 type City struct {
-	ID          int     `json:"id"`
-	NameKZ      string  `json:"name_kz"`
-	NameEN      string  `json:"name_en"`
-	NameRU      string  `json:"name_ru"`
-	PostallCode string  `json:"postall_code,omitempty"`
+	ID          int     `json:"id" example:"1"`
+	NameKZ      string  `json:"name_kz" example:"Астана"`
+	NameEN      string  `json:"name_en" example:"Astana"`
+	NameRU      string  `json:"name_ru" example:"Астана"`
+	PostallCode string  `json:"postall_code,omitempty" example:"010000"`
 	Country     Country `json:"country"`
 }
 
+// CityCreateRequest create city request
+// @Description Request body for creating a city
 type CityCreateRequest struct {
-	NameKZ      string `json:"name_kz" form:"name_kz"`
-	NameEN      string `json:"name_en" form:"name_en"`
-	NameRU      string `json:"name_ru" form:"name_ru"`
-	PostallCode string `json:"postall_code" form:"postall_code"`
-	CountryID   int    `json:"country_id" form:"country_id"`
+	NameKZ      string `json:"name_kz" form:"name_kz" maxLength:"255" example:"Астана" validate:"required"`
+	NameEN      string `json:"name_en" form:"name_en" maxLength:"255" example:"Astana" validate:"required"`
+	NameRU      string `json:"name_ru" form:"name_ru" maxLength:"255" example:"Астана" validate:"required"`
+	PostallCode string `json:"postall_code" form:"postall_code" maxLength:"20" example:"010000"`
+	CountryID   int    `json:"country_id" form:"country_id" example:"1" validate:"required"`
 }
 
+func (r CityCreateRequest) Validate() error {
+	v := newValidator()
+	v.required("name_kz", r.NameKZ)
+	v.maxLen("name_kz", r.NameKZ, 255)
+	v.required("name_en", r.NameEN)
+	v.maxLen("name_en", r.NameEN, 255)
+	v.required("name_ru", r.NameRU)
+	v.maxLen("name_ru", r.NameRU, 255)
+	v.maxLen("postall_code", r.PostallCode, 20)
+	v.requiredInt("country_id", r.CountryID)
+	return v.result()
+}
+
+// CityUpdateRequest partial update city request
+// @Description Request body for updating a city (all fields optional)
 type CityUpdateRequest struct {
-	NameKZ      *string `json:"name_kz,omitempty" form:"name_kz"`
-	NameEN      *string `json:"name_en,omitempty" form:"name_en"`
-	NameRU      *string `json:"name_ru,omitempty" form:"name_ru"`
-	PostallCode *string `json:"postall_code,omitempty" form:"postall_code"`
-	CountryID   *int    `json:"country_id,omitempty" form:"country_id"`
+	NameKZ      *string `json:"name_kz,omitempty" form:"name_kz" maxLength:"255" example:"Астана"`
+	NameEN      *string `json:"name_en,omitempty" form:"name_en" maxLength:"255" example:"Astana"`
+	NameRU      *string `json:"name_ru,omitempty" form:"name_ru" maxLength:"255" example:"Астана"`
+	PostallCode *string `json:"postall_code,omitempty" form:"postall_code" maxLength:"20"`
+	CountryID   *int    `json:"country_id,omitempty" form:"country_id" example:"1"`
+}
+
+func (r CityUpdateRequest) Validate() error {
+	v := newValidator()
+	v.maxLenPtr("name_kz", r.NameKZ, 255)
+	v.maxLenPtr("name_en", r.NameEN, 255)
+	v.maxLenPtr("name_ru", r.NameRU, 255)
+	v.maxLenPtr("postall_code", r.PostallCode, 20)
+	return v.result()
 }

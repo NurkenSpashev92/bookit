@@ -5,11 +5,22 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
+	"github.com/nurkenspashev92/bookit/internal/services"
 )
+
+type FAQHandler struct {
+	faqService     *services.FAQService
+	inquiryService *services.InquiryService
+}
+
+func NewFAQHandler(faqService *services.FAQService, inquiryService *services.InquiryService) *FAQHandler {
+	return &FAQHandler{
+		faqService:     faqService,
+		inquiryService: inquiryService,
+	}
+}
 
 // GetFAQs godoc
 // @Summary Get all FAQs
@@ -18,15 +29,12 @@ import (
 // @Success 200 {array} schemas.FAQ
 // @Failure 500 {object} schemas.ErrorResponse
 // @Router /faqs [get]
-func GetFAQs(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		repo := repositories.NewFAQRepository(db)
-		faqs, err := repo.GetAll(c.Context())
-		if err != nil {
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-		return c.JSON(faqs)
+func (h *FAQHandler) GetAll(c fiber.Ctx) error {
+	faqs, err := h.faqService.GetAll(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	return c.JSON(faqs)
 }
 
 // GetFAQByID godoc
@@ -37,21 +45,18 @@ func GetFAQs(db *pgxpool.Pool) fiber.Handler {
 // @Success 200 {object} schemas.FAQ
 // @Failure 404 {object} schemas.ErrorResponse
 // @Router /faqs/{id} [get]
-func GetFAQByID(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
-		}
-
-		repo := repositories.NewFAQRepository(db)
-		faq, err := repo.GetByID(c.Context(), id)
-		if err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: "FAQ not found"})
-		}
-
-		return c.JSON(faq)
+func (h *FAQHandler) GetByID(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
 	}
+
+	faq, err := h.faqService.GetByID(c.Context(), id)
+	if err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: "FAQ not found"})
+	}
+
+	return c.JSON(faq)
 }
 
 // CreateFAQ godoc
@@ -63,24 +68,23 @@ func GetFAQByID(db *pgxpool.Pool) fiber.Handler {
 // @Success 201 {object} schemas.FAQ
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router /faqs [post]
-func CreateFAQ(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		var req schemas.FAQCreateRequest
-		if err := json.Unmarshal(c.Body(), &req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		repo := repositories.NewFAQRepository(db)
-		faq, err := repo.Create(c.Context(), req)
-		if err != nil {
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.Status(201).JSON(faq)
+func (h *FAQHandler) Create(c fiber.Ctx) error {
+	var req schemas.FAQCreateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	faq, err := h.faqService.Create(c.Context(), req)
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.Status(201).JSON(faq)
 }
 
 // UpdateFAQ godoc
@@ -93,29 +97,28 @@ func CreateFAQ(db *pgxpool.Pool) fiber.Handler {
 // @Success 200 {object} schemas.FAQ
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 404 {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router /faqs/{id} [patch]
-func UpdateFAQ(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
-		}
-
-		var req schemas.FAQUpdateRequest
-		if err := json.Unmarshal(c.Body(), &req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		repo := repositories.NewFAQRepository(db)
-		faq, err := repo.Update(c.Context(), id, req)
-		if err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.JSON(faq)
+func (h *FAQHandler) Update(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
 	}
+
+	var req schemas.FAQUpdateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	faq, err := h.faqService.Update(c.Context(), id, req)
+	if err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(faq)
 }
 
 // DeleteFAQ godoc
@@ -125,23 +128,19 @@ func UpdateFAQ(db *pgxpool.Pool) fiber.Handler {
 // @Param id path int true "FAQ ID"
 // @Success 200 {object} schemas.MessageResponse
 // @Failure 404 {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router /faqs/{id} [delete]
-func DeleteFAQ(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
-		}
-
-		repo := repositories.NewFAQRepository(db)
-		if err := repo.Delete(c.Context(), id); err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.JSON(schemas.MessageResponse{Message: "FAQ deleted"})
+func (h *FAQHandler) Delete(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
 	}
+
+	if err := h.faqService.Delete(c.Context(), id); err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(schemas.MessageResponse{Message: "FAQ deleted"})
 }
 
 // GetInquiries godoc
@@ -151,15 +150,12 @@ func DeleteFAQ(db *pgxpool.Pool) fiber.Handler {
 // @Success 200 {array} schemas.Inquiry
 // @Failure 500 {object} schemas.ErrorResponse
 // @Router /inquiries [get]
-func GetInquiries(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		repo := repositories.NewInquiryRepository(db)
-		list, err := repo.GetAll(c.Context())
-		if err != nil {
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-		return c.JSON(list)
+func (h *FAQHandler) GetInquiries(c fiber.Ctx) error {
+	list, err := h.inquiryService.GetAll(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	return c.JSON(list)
 }
 
 // GetInquiryByID godoc
@@ -170,21 +166,18 @@ func GetInquiries(db *pgxpool.Pool) fiber.Handler {
 // @Success 200 {object} schemas.Inquiry
 // @Failure 404 {object} schemas.ErrorResponse
 // @Router /inquiries/{id} [get]
-func GetInquiryByID(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
-		}
-
-		repo := repositories.NewInquiryRepository(db)
-		inquiry, err := repo.GetByID(c.Context(), id)
-		if err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: "Inquiry not found"})
-		}
-
-		return c.JSON(inquiry)
+func (h *FAQHandler) GetInquiryByID(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
 	}
+
+	inquiry, err := h.inquiryService.GetByID(c.Context(), id)
+	if err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: "Inquiry not found"})
+	}
+
+	return c.JSON(inquiry)
 }
 
 // CreateInquiry godoc
@@ -196,24 +189,23 @@ func GetInquiryByID(db *pgxpool.Pool) fiber.Handler {
 // @Success 201 {object} schemas.Inquiry
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router /inquiries [post]
-func CreateInquiry(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		var req schemas.InquiryCreateRequest
-		if err := json.Unmarshal(c.Body(), &req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		repo := repositories.NewInquiryRepository(db)
-		inquiry, err := repo.Create(c.Context(), req)
-		if err != nil {
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.Status(201).JSON(inquiry)
+func (h *FAQHandler) CreateInquiry(c fiber.Ctx) error {
+	var req schemas.InquiryCreateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	inquiry, err := h.inquiryService.Create(c.Context(), req)
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.Status(201).JSON(inquiry)
 }
 
 // UpdateInquiry godoc
@@ -226,29 +218,28 @@ func CreateInquiry(db *pgxpool.Pool) fiber.Handler {
 // @Success 200 {object} schemas.Inquiry
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 404 {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router /inquiries/{id} [patch]
-func UpdateInquiry(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
-		}
-
-		var req schemas.InquiryUpdateRequest
-		if err := json.Unmarshal(c.Body(), &req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		repo := repositories.NewInquiryRepository(db)
-		inquiry, err := repo.Update(c.Context(), id, req)
-		if err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.JSON(inquiry)
+func (h *FAQHandler) UpdateInquiry(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
 	}
+
+	var req schemas.InquiryUpdateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	inquiry, err := h.inquiryService.Update(c.Context(), id, req)
+	if err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(inquiry)
 }
 
 // DeleteInquiry godoc
@@ -258,21 +249,17 @@ func UpdateInquiry(db *pgxpool.Pool) fiber.Handler {
 // @Param id path int true "Inquiry ID"
 // @Success 200 {object} schemas.MessageResponse
 // @Failure 404 {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router /inquiries/{id} [delete]
-func DeleteInquiry(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
-		}
-
-		repo := repositories.NewInquiryRepository(db)
-		if err := repo.Delete(c.Context(), id); err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.JSON(schemas.MessageResponse{Message: "Inquiry deleted"})
+func (h *FAQHandler) DeleteInquiry(c fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid id"})
 	}
+
+	if err := h.inquiryService.Delete(c.Context(), id); err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(schemas.MessageResponse{Message: "Inquiry deleted"})
 }

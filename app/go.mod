@@ -1,6 +1,6 @@
 module github.com/nurkenspashev92/bookit
 
-go 1.25.7
+go 1.25.0
 
 require (
 	github.com/Flussen/swagger-fiber-v3 v1.0.1

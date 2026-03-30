@@ -5,103 +5,123 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/nurkenspashev92/bookit/configs"
 	_ "github.com/nurkenspashev92/bookit/docs"
 	"github.com/nurkenspashev92/bookit/internal/handlers"
 	"github.com/nurkenspashev92/bookit/internal/initializers"
 	"github.com/nurkenspashev92/bookit/internal/services"
-	"github.com/nurkenspashev92/bookit/pkg/aws"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, s3 *aws.AwsS3Client, cfg *configs.AwsConfig, jwtService *services.JWTService) *fiber.App {
+type Services struct {
+	User      *services.UserService
+	JWT       *services.JWTService
+	House     *services.HouseService
+	HouseLike *services.HouseLikeService
+	Image     *services.ImageService
+	Category  *services.CategoryService
+	Country   *services.CountryService
+	City      *services.CityService
+	Type      *services.TypeService
+	FAQ       *services.FAQService
+	Inquiry   *services.InquiryService
+}
+
+func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
 	app.Use(middleware.CorsHandler)
 	app.Use(initializers.NewLogger())
+
+	authHandler := handlers.NewAuthHandler(svc.User)
+	houseHandler := handlers.NewHouseHandler(svc.House)
+	houseLikeHandler := handlers.NewHouseLikeHandler(svc.HouseLike)
+	imageHandler := handlers.NewImageHandler(svc.Image)
+	categoryHandler := handlers.NewCategoryHandler(svc.Category)
+	countryHandler := handlers.NewCountryHandler(svc.Country)
+	cityHandler := handlers.NewCityHandler(svc.City)
+	typeHandler := handlers.NewTypeHandler(svc.Type)
+	faqHandler := handlers.NewFAQHandler(svc.FAQ, svc.Inquiry)
 
 	apiV1 := app.Group("/api/v1")
 	{
 		apiV1.Get("/healthcheck", handlers.HealthCheck(db))
 
-		// Authentication
 		auth := apiV1.Group("/auth")
 		{
-			auth.Post("/register", handlers.Register(db, jwtService))
-			auth.Post("/login", handlers.Login(db, jwtService))
-			auth.Post("/logout", middleware.AuthRequired(jwtService), handlers.Logout())
-			auth.Get("/me", middleware.AuthRequired(jwtService), handlers.Me(db, jwtService))
+			auth.Post("/register", authHandler.Register)
+			auth.Post("/login", authHandler.Login)
+			auth.Post("/logout", middleware.AuthRequired(svc.JWT), authHandler.Logout)
+			auth.Get("/me", middleware.AuthRequired(svc.JWT), authHandler.Me)
 		}
 
-		// Categories
 		category := apiV1.Group("/categories")
 		{
-			category.Get("/", handlers.GetCategories(db, cfg))
-			category.Get("/:id", handlers.GetCategory(db, cfg))
-			category.Post("", middleware.AuthRequired(jwtService), handlers.CreateCategory(db, s3, cfg))
-			category.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateCategory(db, s3, cfg))
-			category.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteCategory(db, s3))
+			category.Get("/", categoryHandler.GetAll)
+			category.Get("/:id", categoryHandler.GetByID)
+			category.Post("", middleware.AuthRequired(svc.JWT), categoryHandler.Create)
+			category.Patch("/:id", middleware.AuthRequired(svc.JWT), categoryHandler.Update)
+			category.Delete("/:id", middleware.AuthRequired(svc.JWT), categoryHandler.Delete)
 		}
 
-		// Country
 		country := apiV1.Group("/countries")
 		{
-			country.Get("/", handlers.GetCountries(db))
-			country.Get("/:id", handlers.GetCountry(db))
-			country.Post("/", middleware.AuthRequired(jwtService), handlers.CreateCountry(db))
-			country.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateCountry(db))
-			country.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteCountry(db))
+			country.Get("/", countryHandler.GetAll)
+			country.Get("/:id", countryHandler.GetByID)
+			country.Post("/", middleware.AuthRequired(svc.JWT), countryHandler.Create)
+			country.Patch("/:id", middleware.AuthRequired(svc.JWT), countryHandler.Update)
+			country.Delete("/:id", middleware.AuthRequired(svc.JWT), countryHandler.Delete)
 		}
 
-		// City
 		city := apiV1.Group("/cities")
 		{
-			city.Get("/", handlers.GetCities(db))
-			city.Get("/:id", handlers.GetCity(db))
-			city.Post("/", middleware.AuthRequired(jwtService), handlers.CreateCity(db))
-			city.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateCity(db))
-			city.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteCity(db))
+			city.Get("/", cityHandler.GetAll)
+			city.Get("/:id", cityHandler.GetByID)
+			city.Post("/", middleware.AuthRequired(svc.JWT), cityHandler.Create)
+			city.Patch("/:id", middleware.AuthRequired(svc.JWT), cityHandler.Update)
+			city.Delete("/:id", middleware.AuthRequired(svc.JWT), cityHandler.Delete)
 		}
 
-		// Types
 		types := apiV1.Group("/types")
 		{
-			types.Get("/", handlers.GetTypes(db, s3, cfg))
-			types.Get("/:id", handlers.GetTypeByID(db, s3, cfg))
-			types.Post("/", middleware.AuthRequired(jwtService), handlers.CreateType(db, s3, cfg))
-			types.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateType(db, s3, cfg))
-			types.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteType(db, s3))
+			types.Get("/", typeHandler.GetAll)
+			types.Get("/:id", typeHandler.GetByID)
+			types.Post("/", middleware.AuthRequired(svc.JWT), typeHandler.Create)
+			types.Patch("/:id", middleware.AuthRequired(svc.JWT), typeHandler.Update)
+			types.Delete("/:id", middleware.AuthRequired(svc.JWT), typeHandler.Delete)
 		}
 
-		// FAQ
 		faq := apiV1.Group("/faqs")
 		{
-			faq.Get("/", handlers.GetFAQs(db))
-			faq.Get("/:id", handlers.GetFAQByID(db))
-			faq.Post("/", middleware.AuthRequired(jwtService), handlers.CreateFAQ(db))
-			faq.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateFAQ(db))
-			faq.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteFAQ(db))
+			faq.Get("/", faqHandler.GetAll)
+			faq.Get("/:id", faqHandler.GetByID)
+			faq.Post("/", middleware.AuthRequired(svc.JWT), faqHandler.Create)
+			faq.Patch("/:id", middleware.AuthRequired(svc.JWT), faqHandler.Update)
+			faq.Delete("/:id", middleware.AuthRequired(svc.JWT), faqHandler.Delete)
 		}
 
-		// Inquiry
 		inquiry := apiV1.Group("/inquiry")
 		{
-			inquiry.Get("/", handlers.GetInquiries(db))
-			inquiry.Get("/:id", handlers.GetInquiryByID(db))
-			inquiry.Post("/", middleware.AuthRequired(jwtService), handlers.CreateInquiry(db))
-			inquiry.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateInquiry(db))
-			inquiry.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteInquiry(db))
+			inquiry.Get("/", faqHandler.GetInquiries)
+			inquiry.Get("/:id", faqHandler.GetInquiryByID)
+			inquiry.Post("/", middleware.AuthRequired(svc.JWT), faqHandler.CreateInquiry)
+			inquiry.Patch("/:id", middleware.AuthRequired(svc.JWT), faqHandler.UpdateInquiry)
+			inquiry.Delete("/:id", middleware.AuthRequired(svc.JWT), faqHandler.DeleteInquiry)
 		}
 
-		// Houses
 		houses := apiV1.Group("/houses")
 		{
-			houses.Get("/", handlers.GetHouses(db, cfg))
-			houses.Get("/:id", handlers.GetHouseByID(db, cfg))
-			houses.Post("/", middleware.AuthRequired(jwtService), handlers.CreateHouse(db))
-			houses.Patch("/:id", middleware.AuthRequired(jwtService), handlers.UpdateHouse(db))
-			houses.Delete("/:id", middleware.AuthRequired(jwtService), handlers.DeleteHouse(db))
+			houses.Get("/", houseHandler.GetAll)
+			houses.Get("/:id", houseHandler.GetByID)
+			houses.Post("/", middleware.AuthRequired(svc.JWT), houseHandler.Create)
+			houses.Patch("/:id", middleware.AuthRequired(svc.JWT), houseHandler.Update)
+			houses.Delete("/:id", middleware.AuthRequired(svc.JWT), houseHandler.Delete)
 
-			houses.Post("/:id/images", middleware.AuthRequired(jwtService), handlers.UploadHouseImages(db, s3, cfg))
-			houses.Delete("/images/:image_id", middleware.AuthRequired(jwtService), handlers.DeleteHouseImage(db, s3))
+			houses.Get("/liked", middleware.AuthRequired(svc.JWT), houseLikeHandler.UserLikedHouses)
+
+			houses.Post("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Like)
+			houses.Delete("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Unlike)
+			houses.Get("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Status)
+
+			houses.Post("/:id/images", middleware.AuthRequired(svc.JWT), imageHandler.Upload)
+			houses.Delete("/images/:image_id", middleware.AuthRequired(svc.JWT), imageHandler.Delete)
 		}
 	}
 

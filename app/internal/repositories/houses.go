@@ -9,20 +9,24 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/models"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 type HouseRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	awsCfg *configs.AwsConfig
 }
 
-func NewHouseRepository(db *pgxpool.Pool) *HouseRepository {
-	return &HouseRepository{db: db}
+func NewHouseRepository(db *pgxpool.Pool, awsCfg *configs.AwsConfig) *HouseRepository {
+	return &HouseRepository{db: db, awsCfg: awsCfg}
 }
 
 func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, error) {
+	baseURL := r.awsCfg.BaseURL()
+
 	query := `
 		SELECT
 			h.id,
@@ -42,6 +46,7 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 			CONCAT(c.name_ru, ', ', ct.name_ru) AS country_name_ru,
 			CONCAT(c.name_en, ', ', ct.name_en) AS country_name_en,
 			CONCAT(u.first_name, ' ', u.last_name) AS full_name,
+			h.like_count,
 			COALESCE(img.images, '[]') as images
 		FROM houses h
 		LEFT JOIN countries c ON c.id = h.country_id
@@ -51,15 +56,15 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 			SELECT json_agg(
 				json_build_object(
 					'id', i.id,
-					'original', i.original,
-					'thumbnail', i.thumbnail,
-					'mimetype', i.mimetype,
+					'original', $1 || i.original,
+					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $1 || i.thumbnail ELSE '' END,
+					'mime_type', i.mimetype,
 					'size', i.size,
 					'house_id', i.house_id
 				)
 			) as images
 			FROM (
-				SELECT *
+				SELECT id, original, thumbnail, mimetype, size, house_id
 				FROM images
 				WHERE house_id = h.id
 				ORDER BY id
@@ -69,7 +74,7 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 		ORDER BY h.id DESC
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +97,7 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 			&h.Promotion,
 			&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
 			&h.OwnerFullName,
+			&h.LikeCount,
 			&imagesJSON,
 		)
 
@@ -117,23 +123,26 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 func (r *HouseRepository) GetByID(ctx context.Context, id int) (models.House, error) {
 	var house models.House
 	var imagesJSON []byte
+	baseURL := r.awsCfg.BaseURL()
 
 	query := `
 		SELECT
 			h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price, h.rooms_qty, h.guest_qty, h.bedroom_qty, h.bath_qty,
 			h.description_en, h.description_kz, h.description_ru,
 			h.address_en, h.address_kz, h.address_ru,
-			h.lng, h.lat, h.is_active, h.priority, h.like_count, h.comments_ru, h.comments_en, h.comments_kz,
+			h.lng, h.lat, h.is_active, h.priority,
+			h.comments_ru, h.comments_en, h.comments_kz,
 			h.owner_id, h.type_id, h.city_id, h.country_id, h.guests_with_pets, h.best_house, h.promotion,
 			h.district_en, h.district_kz, h.district_ru, h.phone_number, h.created_at, h.updated_at,
+			h.like_count,
 			COALESCE(img.images, '[]') as images
 		FROM houses h
 		LEFT JOIN LATERAL (
 			SELECT json_agg(
 				json_build_object(
 					'id', i.id,
-					'original', i.original,
-					'mimetype', i.mimetype,
+					'original', $2 || i.original,
+					'mime_type', i.mimetype,
 					'size', i.size,
 					'house_id', i.house_id
 				)
@@ -144,17 +153,18 @@ func (r *HouseRepository) GetByID(ctx context.Context, id int) (models.House, er
 		WHERE h.id=$1
 	`
 
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	err := r.db.QueryRow(ctx, query, id, baseURL).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug,
 		&house.Price, &house.RoomsQty, &house.GuestQty, &house.BedroomQty, &house.BathQty,
 		&house.DescriptionEN, &house.DescriptionKZ, &house.DescriptionRU,
 		&house.AddressEN, &house.AddressKZ, &house.AddressRU,
 		&house.Lng, &house.Lat, &house.IsActive, &house.Priority,
-		&house.LikeCount, &house.CommentsRU, &house.CommentsEN, &house.CommentsKZ,
+		&house.CommentsRU, &house.CommentsEN, &house.CommentsKZ,
 		&house.OwnerID, &house.TypeID, &house.CityID, &house.CountryID,
 		&house.GuestsWithPets, &house.BestHouse, &house.Promotion,
 		&house.DistrictEN, &house.DistrictKZ, &house.DistrictRU,
 		&house.PhoneNumber, &house.CreatedAt, &house.UpdatedAt,
+		&house.LikeCount,
 		&imagesJSON,
 	)
 	if err != nil {
@@ -186,19 +196,19 @@ func (r *HouseRepository) Create(ctx context.Context, h schemas.HouseCreateReque
 			name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
 			description_en, description_kz, description_ru, address_en, address_kz, address_ru,
 			lng, lat, is_active, priority, owner_id, type_id, city_id, country_id,
-			guests_with_pets, best_house, promotion, district_en, district_kz, district_ru, phone_number, like_count
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30, 0)
+			guests_with_pets, best_house, promotion, district_en, district_kz, district_ru, phone_number
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
 		RETURNING id, name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
 			description_en, description_kz, description_ru, address_en, address_kz, address_ru,
 			lng, lat, is_active, priority, owner_id, type_id, city_id, country_id,
 			guests_with_pets, best_house, promotion, district_en, district_kz, district_ru, phone_number,
-			like_count, created_at, updated_at
+			created_at, updated_at
 	`
 	if err := r.db.QueryRow(ctx,
 		query,
-		h.NameEN, h.NameKZ, h.NameRU, slugValue, h.Price, h.RoomsQty, h.GuestQty, h.BedroomQty, h.BathQty,
+		h.NameEN, h.NameKZ, h.NameRU, slugValue, h.Price.Int(), h.RoomsQty.Int(), h.GuestQty.Int(), h.BedroomQty.Int(), h.BathQty.IntPtr(),
 		h.DescriptionEN, h.DescriptionKZ, h.DescriptionRU, h.AddressEN, h.AddressKZ, h.AddressRU,
-		h.Lng, h.Lat, h.IsActive, h.Priority, h.OwnerID, h.TypeID, h.CityID, h.CountryID,
+		h.Lng.Float64Ptr(), h.Lat.Float64Ptr(), h.IsActive, h.Priority.Int(), h.OwnerID, h.TypeID.Int(), h.CityID.IntPtr(), h.CountryID.IntPtr(),
 		h.GuestsWithPets, h.BestHouse, h.Promotion, h.DistrictEN, h.DistrictKZ, h.DistrictRU, h.PhoneNumber,
 	).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug, &house.Price, &house.RoomsQty, &house.GuestQty,
@@ -206,16 +216,16 @@ func (r *HouseRepository) Create(ctx context.Context, h schemas.HouseCreateReque
 		&house.AddressEN, &house.AddressKZ, &house.AddressRU, &house.Lng, &house.Lat,
 		&house.IsActive, &house.Priority, &house.OwnerID, &house.TypeID, &house.CityID, &house.CountryID,
 		&house.GuestsWithPets, &house.BestHouse, &house.Promotion, &house.DistrictEN, &house.DistrictKZ, &house.DistrictRU, &house.PhoneNumber,
-		&house.LikeCount, &house.CreatedAt, &house.UpdatedAt,
+		&house.CreatedAt, &house.UpdatedAt,
 	); err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			switch pgErr.ConstraintName {
 			case "houses_type_id_fkey":
-				return house, fmt.Errorf("type_id %d does not exist", h.TypeID)
+				return house, fmt.Errorf("type_id %d does not exist", h.TypeID.Int())
 			case "houses_city_id_fkey":
-				return house, fmt.Errorf("city_id %d does not exist", *h.CityID)
+				return house, fmt.Errorf("city_id does not exist")
 			case "houses_country_id_fkey":
-				return house, fmt.Errorf("country_id %d does not exist", *h.CountryID)
+				return house, fmt.Errorf("country_id does not exist")
 			case "houses_owner_id_fkey":
 				return house, fmt.Errorf("owner_id %d does not exist", h.OwnerID)
 			}
@@ -229,8 +239,35 @@ func (r *HouseRepository) Create(ctx context.Context, h schemas.HouseCreateReque
 	return house, err
 }
 
+func (r *HouseRepository) getForUpdate(ctx context.Context, id int) (models.House, error) {
+	var house models.House
+	query := `
+		SELECT id, name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
+			description_en, description_kz, description_ru,
+			address_en, address_kz, address_ru,
+			lng, lat, is_active, priority,
+			comments_ru, comments_en, comments_kz,
+			owner_id, type_id, city_id, country_id, guests_with_pets, best_house, promotion,
+			district_en, district_kz, district_ru, phone_number, created_at, updated_at
+		FROM houses WHERE id=$1
+	`
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug,
+		&house.Price, &house.RoomsQty, &house.GuestQty, &house.BedroomQty, &house.BathQty,
+		&house.DescriptionEN, &house.DescriptionKZ, &house.DescriptionRU,
+		&house.AddressEN, &house.AddressKZ, &house.AddressRU,
+		&house.Lng, &house.Lat, &house.IsActive, &house.Priority,
+		&house.CommentsRU, &house.CommentsEN, &house.CommentsKZ,
+		&house.OwnerID, &house.TypeID, &house.CityID, &house.CountryID,
+		&house.GuestsWithPets, &house.BestHouse, &house.Promotion,
+		&house.DistrictEN, &house.DistrictKZ, &house.DistrictRU,
+		&house.PhoneNumber, &house.CreatedAt, &house.UpdatedAt,
+	)
+	return house, err
+}
+
 func (r *HouseRepository) Update(ctx context.Context, id int, h schemas.HouseUpdateRequest) (models.House, error) {
-	house, err := r.GetByID(ctx, id)
+	house, err := r.getForUpdate(ctx, id)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return models.House{}, fmt.Errorf("house with id %d not found", id)
@@ -251,19 +288,19 @@ func (r *HouseRepository) Update(ctx context.Context, id int, h schemas.HouseUpd
 		house.Slug = *h.Slug
 	}
 	if h.Price != nil {
-		house.Price = *h.Price
+		house.Price = h.Price.Int()
 	}
 	if h.RoomsQty != nil {
-		house.RoomsQty = *h.RoomsQty
+		house.RoomsQty = h.RoomsQty.Int()
 	}
 	if h.GuestQty != nil {
-		house.GuestQty = *h.GuestQty
+		house.GuestQty = h.GuestQty.Int()
 	}
 	if h.BedroomQty != nil {
-		house.BedroomQty = *h.BedroomQty
+		house.BedroomQty = h.BedroomQty.Int()
 	}
 	if h.BathQty != nil {
-		house.BathQty = h.BathQty
+		house.BathQty = h.BathQty.IntPtr()
 	}
 	if h.DescriptionEN != nil {
 		house.DescriptionEN = *h.DescriptionEN
@@ -284,25 +321,25 @@ func (r *HouseRepository) Update(ctx context.Context, id int, h schemas.HouseUpd
 		house.AddressRU = *h.AddressRU
 	}
 	if h.Lng != nil {
-		house.Lng = *h.Lng
+		house.Lng = h.Lng.Float64Ptr()
 	}
 	if h.Lat != nil {
-		house.Lat = *h.Lat
+		house.Lat = h.Lat.Float64Ptr()
 	}
 	if h.IsActive != nil {
 		house.IsActive = *h.IsActive
 	}
 	if h.Priority != nil {
-		house.Priority = *h.Priority
+		house.Priority = h.Priority.Int()
 	}
 	if h.TypeID != nil {
-		house.TypeID = *h.TypeID
+		house.TypeID = h.TypeID.Int()
 	}
 	if h.CityID != nil {
-		house.CityID = h.CityID
+		house.CityID = h.CityID.IntPtr()
 	}
 	if h.CountryID != nil {
-		house.CountryID = h.CountryID
+		house.CountryID = h.CountryID.IntPtr()
 	}
 	if h.GuestsWithPets != nil {
 		house.GuestsWithPets = *h.GuestsWithPets
@@ -362,11 +399,11 @@ func (r *HouseRepository) Update(ctx context.Context, id int, h schemas.HouseUpd
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			switch pgErr.ConstraintName {
 			case "houses_type_id_fkey":
-				return house, fmt.Errorf("type_id %d does not exist", *h.TypeID)
+				return house, fmt.Errorf("type_id does not exist")
 			case "houses_city_id_fkey":
-				return house, fmt.Errorf("city_id %d does not exist", *h.CityID)
+				return house, fmt.Errorf("city_id does not exist")
 			case "houses_country_id_fkey":
-				return house, fmt.Errorf("country_id %d does not exist", *h.CountryID)
+				return house, fmt.Errorf("country_id does not exist")
 			}
 		}
 		return house, err

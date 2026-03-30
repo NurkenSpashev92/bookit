@@ -9,7 +9,6 @@ import (
 // @Summary      Health Check
 // @Description  Checks if the application and database are running
 // @Tags         HealthCheck
-// @Accept       json
 // @Produce      json
 // @Success      200  {object}  interface{}
 // @Failure      503  {object}  interface{}

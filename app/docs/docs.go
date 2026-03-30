@@ -168,9 +168,6 @@ const docTemplate = `{
         "/categories": {
             "get": {
                 "description": "Returns a list of active categories",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -261,12 +258,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -338,20 +329,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -418,12 +397,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Category"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
                     "404": {
@@ -508,12 +481,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -585,12 +552,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -642,12 +603,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -728,12 +683,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -805,12 +754,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -862,12 +805,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -948,12 +885,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1025,12 +956,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -1086,12 +1011,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -1104,9 +1023,6 @@ const docTemplate = `{
         "/healthcheck": {
             "get": {
                 "description": "Checks if the application and database are running",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1213,9 +1129,6 @@ const docTemplate = `{
         "/houses/check-slug": {
             "get": {
                 "description": "Checks if a house slug is available for use",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1237,12 +1150,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.SlugCheckResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
                     "500": {
@@ -1286,7 +1193,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1298,13 +1205,46 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Image not found",
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/houses/liked": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Houses"
+                ],
+                "summary": "Get houses liked by current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schemas.HouseLikeItem"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Delete error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1340,12 +1280,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1505,7 +1439,150 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request or max images exceeded",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/houses/{id}/like": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Houses"
+                ],
+                "summary": "Check if user liked a house",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "House ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.HouseLikeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Houses"
+                ],
+                "summary": "Like a house",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "House ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.HouseLikeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Houses"
+                ],
+                "summary": "Unlike a house",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "House ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.HouseLikeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1517,13 +1594,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "House not found",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Upload or database error",
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1594,12 +1665,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1675,12 +1740,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -1732,12 +1791,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1828,12 +1881,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1905,12 +1952,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -1967,18 +2008,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/schemas.TypeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
                         }
                     },
                     "404": {
@@ -2087,17 +2116,23 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Image"
+                    }
+                },
                 "is_active": {
                     "type": "boolean"
                 },
                 "lat": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "like_count": {
                     "type": "integer"
                 },
                 "lng": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "name_en": {
                     "type": "string"
@@ -2118,7 +2153,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "priority": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "promotion": {
                     "type": "boolean"
@@ -2137,11 +2172,50 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Image": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "house_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_label": {
+                    "type": "boolean"
+                },
+                "mimetype": {
+                    "type": "string"
+                },
+                "original": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
         "schemas.AuthResponse": {
             "type": "object",
             "properties": {
                 "token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIs..."
                 },
                 "user": {
                     "$ref": "#/definitions/schemas.AuthUser"
@@ -2155,19 +2229,24 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "user@example.com"
                 },
                 "first_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "last_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Doe"
                 },
                 "middle_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "M"
                 }
             }
         },
@@ -2178,19 +2257,24 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "integer",
+                    "example": 1
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Apartments"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Апартаменты"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Апартаменты"
                 }
             }
         },
@@ -2201,59 +2285,89 @@ const docTemplate = `{
                     "$ref": "#/definitions/schemas.Country"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Astana"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Астана"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Астана"
                 },
                 "postall_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "010000"
                 }
             }
         },
         "schemas.CityCreateRequest": {
+            "description": "Request body for creating a city",
             "type": "object",
+            "required": [
+                "country_id",
+                "name_en",
+                "name_kz",
+                "name_ru"
+            ],
             "properties": {
                 "country_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Astana"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Астана"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Астана"
                 },
                 "postall_code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "010000"
                 }
             }
         },
         "schemas.CityUpdateRequest": {
+            "description": "Request body for updating a city (all fields optional)",
             "type": "object",
             "properties": {
                 "country_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Astana"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Астана"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Астана"
                 },
                 "postall_code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20
                 }
             }
         },
@@ -2261,53 +2375,81 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "KZ"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Kazakhstan"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Қазақстан"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Казахстан"
                 }
             }
         },
         "schemas.CountryCreateRequest": {
+            "description": "Request body for creating a country",
             "type": "object",
+            "required": [
+                "name_en",
+                "name_kz",
+                "name_ru"
+            ],
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 10,
+                    "example": "KZ"
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Kazakhstan"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Қазақстан"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Казахстан"
                 }
             }
         },
         "schemas.CountryUpdateRequest": {
+            "description": "Request body for updating a country (all fields optional)",
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 10,
+                    "example": "KZ"
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Kazakhstan"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Қазақстан"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Казахстан"
                 }
             }
         },
@@ -2315,7 +2457,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "validation failed"
                 }
             }
         },
@@ -2323,52 +2466,78 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "answer_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Register on the website"
                 },
                 "answer_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Сайтта тіркеліңіз"
                 },
                 "answer_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Зарегистрируйтесь на сайте"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "question_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "How to book?"
                 },
                 "question_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Қалай брондау керек?"
                 },
                 "question_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Как забронировать?"
                 }
             }
         },
         "schemas.FAQCreateRequest": {
+            "description": "Request body for creating a FAQ entry",
             "type": "object",
+            "required": [
+                "answer_en",
+                "answer_kz",
+                "answer_ru",
+                "question_en",
+                "question_kz",
+                "question_ru"
+            ],
             "properties": {
                 "answer_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Register on the website"
                 },
                 "answer_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Сайтта тіркеліңіз"
                 },
                 "answer_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Зарегистрируйтесь на сайте"
                 },
                 "question_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "How to book?"
                 },
                 "question_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Қалай брондау керек?"
                 },
                 "question_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Как забронировать?"
                 }
             }
         },
         "schemas.FAQUpdateRequest": {
+            "description": "Request body for updating a FAQ entry (all fields optional)",
             "type": "object",
             "properties": {
                 "answer_en": {
@@ -2381,50 +2550,74 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "question_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500
                 },
                 "question_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500
                 },
                 "question_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500
                 }
             }
         },
         "schemas.HouseCreateRequest": {
+            "description": "Request body for creating a new house",
             "type": "object",
             "required": [
+                "address_en",
+                "address_kz",
+                "address_ru",
+                "description_en",
+                "description_kz",
+                "description_ru",
                 "name_en",
-                "owner_id",
-                "price"
+                "name_kz",
+                "name_ru",
+                "price",
+                "type_id"
             ],
             "properties": {
                 "address_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "123 Beach Rd"
                 },
                 "address_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "address_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "bath_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 1
                 },
                 "bedroom_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 2
                 },
                 "best_house": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "city_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "country_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "description_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "A beautiful beach house"
                 },
                 "description_kz": {
                     "type": "string"
@@ -2433,61 +2626,142 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "district_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "district_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "district_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "guest_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 6
                 },
                 "guests_with_pets": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "lat": {
-                    "type": "string"
+                    "type": "number",
+                    "example": 71.4491
                 },
                 "lng": {
-                    "type": "string"
+                    "type": "number",
+                    "example": 51.1694
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Beach House"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Жағажай үйі"
                 },
                 "name_ru": {
-                    "type": "string"
-                },
-                "owner_id": {
-                    "type": "integer"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Пляжный дом"
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "+77001234567"
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 50000
                 },
                 "priority": {
-                    "type": "string"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
                 },
                 "promotion": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "rooms_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3
                 },
                 "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "beach-house"
                 },
                 "type_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "schemas.HouseLikeItem": {
+            "type": "object",
+            "properties": {
+                "address_en": {
+                    "type": "string",
+                    "example": "123 Beach Rd"
+                },
+                "address_kz": {
+                    "type": "string"
+                },
+                "address_ru": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "liked_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-03-30T12:00:00Z"
+                },
+                "name_en": {
+                    "type": "string",
+                    "example": "Beach House"
+                },
+                "name_kz": {
+                    "type": "string",
+                    "example": "Жағажай үйі"
+                },
+                "name_ru": {
+                    "type": "string",
+                    "example": "Пляжный дом"
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 50000
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "beach-house"
+                }
+            }
+        },
+        "schemas.HouseLikeResponse": {
+            "type": "object",
+            "properties": {
+                "like_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "liked": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -2495,7 +2769,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123 Beach Rd"
                 },
                 "address_kz": {
                     "type": "string"
@@ -2504,69 +2779,100 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "best_house": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "country_city_name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Kazakhstan, Astana"
                 },
                 "country_city_name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Қазақстан, Астана"
                 },
                 "country_city_name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Казахстан, Астана"
                 },
                 "guests_with_pets": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.Image"
+                    }
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 5
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Beach House"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Жағажай үйі"
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Пляжный дом"
                 },
                 "owner_full_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 50000
                 },
                 "priority": {
-                    "type": "string"
+                    "type": "integer",
+                    "example": 0
                 },
                 "promotion": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "beach-house"
                 }
             }
         },
         "schemas.HouseUpdateRequest": {
+            "description": "Request body for updating a house (all fields optional)",
             "type": "object",
             "properties": {
                 "address_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "address_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "address_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "bath_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "bedroom_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "best_house": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "city_id": {
                     "type": "integer"
@@ -2584,58 +2890,107 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "district_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "district_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "district_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "guest_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "guests_with_pets": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "lat": {
-                    "type": "string"
+                    "type": "number",
+                    "example": 71.4491
                 },
                 "lng": {
-                    "type": "string"
+                    "type": "number",
+                    "example": 51.1694
                 },
                 "name_en": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Beach House"
                 },
                 "name_kz": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "name_ru": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 50000
                 },
                 "priority": {
-                    "type": "string"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "promotion": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "rooms_qty": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "type_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "schemas.Image": {
+            "type": "object",
+            "properties": {
+                "house_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "original": {
+                    "type": "string",
+                    "example": "https://bucket.s3.eu-central-1.amazonaws.com/houses/original/1_123.jpg"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 204800
+                },
+                "thumbnail": {
+                    "type": "string",
+                    "example": "https://bucket.s3.eu-central-1.amazonaws.com/houses/thumbnail/1_123.webp"
                 }
             }
         },
@@ -2643,50 +2998,74 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email",
+                    "example": "guest@example.com"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "is_approved": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+77001234567"
                 },
                 "text": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "I have a question about booking"
                 }
             }
         },
         "schemas.InquiryCreateRequest": {
+            "description": "Request body for creating an inquiry",
             "type": "object",
+            "required": [
+                "email",
+                "text"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 255,
+                    "example": "guest@example.com"
                 },
                 "is_approved": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "example": "+77001234567"
                 },
                 "text": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "I have a question about booking"
                 }
             }
         },
         "schemas.InquiryUpdateRequest": {
+            "description": "Request body for updating an inquiry (all fields optional)",
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 255,
+                    "example": "guest@example.com"
                 },
                 "is_approved": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20
                 },
                 "text": {
                     "type": "string"
@@ -2697,7 +3076,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "operation completed"
                 }
             }
         },
@@ -2705,10 +3085,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "available": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "beach-house"
                 }
             }
         },
@@ -2716,53 +3098,87 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "icon": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://s3.amazonaws.com/icon.png"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Квартира"
                 }
             }
         },
         "schemas.UserCreateRequest": {
+            "description": "Request body for user registration",
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "date_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "date",
+                    "example": "1990-01-15"
                 },
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 255,
+                    "example": "user@example.com"
                 },
                 "first_name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "John"
                 },
                 "last_name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Doe"
                 },
                 "middle_name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "M"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 6,
+                    "example": "secret123"
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "+77001234567"
                 }
             }
         },
         "schemas.UserLoginRequest": {
+            "description": "Request body for user login",
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "secret123"
                 }
             }
         }

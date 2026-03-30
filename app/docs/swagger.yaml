@@ -63,14 +63,18 @@ definitions:
         type: boolean
       id:
         type: integer
+      images:
+        items:
+          $ref: '#/definitions/models.Image'
+        type: array
       is_active:
         type: boolean
       lat:
-        type: string
+        type: number
       like_count:
         type: integer
       lng:
-        type: string
+        type: number
       name_en:
         type: string
       name_kz:
@@ -84,7 +88,7 @@ definitions:
       price:
         type: integer
       priority:
-        type: string
+        type: integer
       promotion:
         type: boolean
       rooms_qty:
@@ -96,9 +100,35 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.Image:
+    properties:
+      created_at:
+        type: string
+      height:
+        type: integer
+      house_id:
+        type: integer
+      id:
+        type: integer
+      is_label:
+        type: boolean
+      mimetype:
+        type: string
+      original:
+        type: string
+      size:
+        type: integer
+      thumbnail:
+        type: string
+      updated_at:
+        type: string
+      width:
+        type: integer
+    type: object
   schemas.AuthResponse:
     properties:
       token:
+        example: eyJhbGciOiJIUzI1NiIs...
         type: string
       user:
         $ref: '#/definitions/schemas.AuthUser'
@@ -108,14 +138,19 @@ definitions:
       avatar:
         type: string
       email:
+        example: user@example.com
         type: string
       first_name:
+        example: John
         type: string
       id:
+        example: 1
         type: integer
       last_name:
+        example: Doe
         type: string
       middle_name:
+        example: M
         type: string
     type: object
   schemas.CategoryPaginate:
@@ -123,14 +158,19 @@ definitions:
       icon:
         type: string
       id:
-        type: string
+        example: 1
+        type: integer
       is_active:
+        example: true
         type: boolean
       name_en:
+        example: Apartments
         type: string
       name_kz:
+        example: Апартаменты
         type: string
       name_ru:
+        example: Апартаменты
         type: string
     type: object
   schemas.City:
@@ -138,115 +178,197 @@ definitions:
       country:
         $ref: '#/definitions/schemas.Country'
       id:
+        example: 1
         type: integer
       name_en:
+        example: Astana
         type: string
       name_kz:
+        example: Астана
         type: string
       name_ru:
+        example: Астана
         type: string
       postall_code:
+        example: "010000"
         type: string
     type: object
   schemas.CityCreateRequest:
+    description: Request body for creating a city
     properties:
       country_id:
+        example: 1
         type: integer
       name_en:
+        example: Astana
+        maxLength: 255
         type: string
       name_kz:
+        example: Астана
+        maxLength: 255
         type: string
       name_ru:
+        example: Астана
+        maxLength: 255
         type: string
       postall_code:
+        example: "010000"
+        maxLength: 20
         type: string
+    required:
+    - country_id
+    - name_en
+    - name_kz
+    - name_ru
     type: object
   schemas.CityUpdateRequest:
+    description: Request body for updating a city (all fields optional)
     properties:
       country_id:
+        example: 1
         type: integer
       name_en:
+        example: Astana
+        maxLength: 255
         type: string
       name_kz:
+        example: Астана
+        maxLength: 255
         type: string
       name_ru:
+        example: Астана
+        maxLength: 255
         type: string
       postall_code:
+        maxLength: 20
         type: string
     type: object
   schemas.Country:
     properties:
       code:
+        example: KZ
         type: string
       id:
+        example: 1
         type: integer
       name_en:
+        example: Kazakhstan
         type: string
       name_kz:
+        example: Қазақстан
         type: string
       name_ru:
+        example: Казахстан
         type: string
     type: object
   schemas.CountryCreateRequest:
+    description: Request body for creating a country
     properties:
       code:
+        example: KZ
+        maxLength: 10
         type: string
       name_en:
+        example: Kazakhstan
+        maxLength: 255
         type: string
       name_kz:
+        example: Қазақстан
+        maxLength: 255
         type: string
       name_ru:
+        example: Казахстан
+        maxLength: 255
         type: string
+    required:
+    - name_en
+    - name_kz
+    - name_ru
     type: object
   schemas.CountryUpdateRequest:
+    description: Request body for updating a country (all fields optional)
     properties:
       code:
+        example: KZ
+        maxLength: 10
         type: string
       name_en:
+        example: Kazakhstan
+        maxLength: 255
         type: string
       name_kz:
+        example: Қазақстан
+        maxLength: 255
         type: string
       name_ru:
+        example: Казахстан
+        maxLength: 255
         type: string
     type: object
   schemas.ErrorResponse:
     properties:
       error:
+        example: validation failed
         type: string
     type: object
   schemas.FAQ:
     properties:
       answer_en:
+        example: Register on the website
         type: string
       answer_kz:
+        example: Сайтта тіркеліңіз
         type: string
       answer_ru:
+        example: Зарегистрируйтесь на сайте
         type: string
       id:
+        example: 1
         type: integer
       question_en:
+        example: How to book?
         type: string
       question_kz:
+        example: Қалай брондау керек?
         type: string
       question_ru:
+        example: Как забронировать?
         type: string
     type: object
   schemas.FAQCreateRequest:
+    description: Request body for creating a FAQ entry
     properties:
       answer_en:
+        example: Register on the website
         type: string
       answer_kz:
+        example: Сайтта тіркеліңіз
         type: string
       answer_ru:
+        example: Зарегистрируйтесь на сайте
         type: string
       question_en:
+        example: How to book?
+        maxLength: 500
         type: string
       question_kz:
+        example: Қалай брондау керек?
+        maxLength: 500
         type: string
       question_ru:
+        example: Как забронировать?
+        maxLength: 500
         type: string
+    required:
+    - answer_en
+    - answer_kz
+    - answer_ru
+    - question_en
+    - question_kz
+    - question_ru
     type: object
   schemas.FAQUpdateRequest:
+    description: Request body for updating a FAQ entry (all fields optional)
     properties:
       answer_en:
         type: string
@@ -255,129 +377,248 @@ definitions:
       answer_ru:
         type: string
       question_en:
+        maxLength: 500
         type: string
       question_kz:
+        maxLength: 500
         type: string
       question_ru:
+        maxLength: 500
         type: string
     type: object
   schemas.HouseCreateRequest:
+    description: Request body for creating a new house
     properties:
       address_en:
+        example: 123 Beach Rd
+        maxLength: 255
         type: string
       address_kz:
+        maxLength: 255
         type: string
       address_ru:
+        maxLength: 255
         type: string
       bath_qty:
+        example: 1
+        minimum: 0
         type: integer
       bedroom_qty:
+        example: 2
+        minimum: 0
         type: integer
       best_house:
+        example: false
         type: boolean
       city_id:
+        example: 1
         type: integer
       country_id:
+        example: 1
         type: integer
       description_en:
+        example: A beautiful beach house
         type: string
       description_kz:
         type: string
       description_ru:
         type: string
       district_en:
+        maxLength: 255
         type: string
       district_kz:
+        maxLength: 255
         type: string
       district_ru:
+        maxLength: 255
         type: string
       guest_qty:
+        example: 6
+        minimum: 0
         type: integer
       guests_with_pets:
+        example: false
         type: boolean
       is_active:
+        example: true
         type: boolean
       lat:
-        type: string
+        example: 71.4491
+        type: number
       lng:
-        type: string
+        example: 51.1694
+        type: number
       name_en:
+        example: Beach House
+        maxLength: 255
         type: string
       name_kz:
+        example: Жағажай үйі
+        maxLength: 255
         type: string
       name_ru:
+        example: Пляжный дом
+        maxLength: 255
         type: string
-      owner_id:
-        type: integer
       phone_number:
+        example: "+77001234567"
+        maxLength: 20
         type: string
       price:
+        example: 50000
+        minimum: 0
         type: integer
       priority:
-        type: string
+        example: 0
+        minimum: 0
+        type: integer
       promotion:
+        example: false
         type: boolean
       rooms_qty:
+        example: 3
+        minimum: 0
         type: integer
       slug:
+        example: beach-house
+        maxLength: 255
         type: string
       type_id:
+        example: 1
         type: integer
     required:
+    - address_en
+    - address_kz
+    - address_ru
+    - description_en
+    - description_kz
+    - description_ru
     - name_en
-    - owner_id
+    - name_kz
+    - name_ru
     - price
+    - type_id
+    type: object
+  schemas.HouseLikeItem:
+    properties:
+      address_en:
+        example: 123 Beach Rd
+        type: string
+      address_kz:
+        type: string
+      address_ru:
+        type: string
+      id:
+        example: 1
+        type: integer
+      liked_at:
+        example: "2026-03-30T12:00:00Z"
+        format: date-time
+        type: string
+      name_en:
+        example: Beach House
+        type: string
+      name_kz:
+        example: Жағажай үйі
+        type: string
+      name_ru:
+        example: Пляжный дом
+        type: string
+      price:
+        example: 50000
+        type: integer
+      slug:
+        example: beach-house
+        type: string
+    type: object
+  schemas.HouseLikeResponse:
+    properties:
+      like_count:
+        example: 5
+        type: integer
+      liked:
+        example: true
+        type: boolean
     type: object
   schemas.HouseListItem:
     properties:
       address_en:
+        example: 123 Beach Rd
         type: string
       address_kz:
         type: string
       address_ru:
         type: string
       best_house:
+        example: false
         type: boolean
       country_city_name_en:
+        example: Kazakhstan, Astana
         type: string
       country_city_name_kz:
+        example: Қазақстан, Астана
         type: string
       country_city_name_ru:
+        example: Казахстан, Астана
         type: string
       guests_with_pets:
+        example: false
         type: boolean
       id:
+        example: 1
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/schemas.Image'
+        type: array
+      like_count:
+        example: 5
         type: integer
       name_en:
+        example: Beach House
         type: string
       name_kz:
+        example: Жағажай үйі
         type: string
       name_ru:
+        example: Пляжный дом
         type: string
       owner_full_name:
+        example: John Doe
         type: string
       price:
+        example: 50000
         type: integer
       priority:
-        type: string
+        example: 0
+        type: integer
       promotion:
+        example: false
         type: boolean
       slug:
+        example: beach-house
         type: string
     type: object
   schemas.HouseUpdateRequest:
+    description: Request body for updating a house (all fields optional)
     properties:
       address_en:
+        maxLength: 255
         type: string
       address_kz:
+        maxLength: 255
         type: string
       address_ru:
+        maxLength: 255
         type: string
       bath_qty:
+        minimum: 0
         type: integer
       bedroom_qty:
+        minimum: 0
         type: integer
       best_house:
+        example: false
         type: boolean
       city_id:
         type: integer
@@ -390,73 +631,137 @@ definitions:
       description_ru:
         type: string
       district_en:
+        maxLength: 255
         type: string
       district_kz:
+        maxLength: 255
         type: string
       district_ru:
+        maxLength: 255
         type: string
       guest_qty:
+        minimum: 0
         type: integer
       guests_with_pets:
+        example: false
         type: boolean
       is_active:
+        example: true
         type: boolean
       lat:
-        type: string
+        example: 71.4491
+        type: number
       lng:
-        type: string
+        example: 51.1694
+        type: number
       name_en:
+        example: Beach House
+        maxLength: 255
         type: string
       name_kz:
+        maxLength: 255
         type: string
       name_ru:
+        maxLength: 255
         type: string
       phone_number:
+        maxLength: 20
         type: string
       price:
+        example: 50000
+        minimum: 0
         type: integer
       priority:
-        type: string
+        minimum: 0
+        type: integer
       promotion:
+        example: false
         type: boolean
       rooms_qty:
+        minimum: 0
         type: integer
       slug:
+        maxLength: 255
         type: string
       type_id:
+        example: 1
         type: integer
+    type: object
+  schemas.Image:
+    properties:
+      house_id:
+        example: 1
+        type: integer
+      id:
+        example: 1
+        type: integer
+      mime_type:
+        example: image/jpeg
+        type: string
+      original:
+        example: https://bucket.s3.eu-central-1.amazonaws.com/houses/original/1_123.jpg
+        type: string
+      size:
+        example: 204800
+        type: integer
+      thumbnail:
+        example: https://bucket.s3.eu-central-1.amazonaws.com/houses/thumbnail/1_123.webp
+        type: string
     type: object
   schemas.Inquiry:
     properties:
       email:
+        example: guest@example.com
+        format: email
         type: string
       id:
+        example: 1
         type: integer
       is_approved:
+        example: false
         type: boolean
       phone_number:
+        example: "+77001234567"
         type: string
       text:
+        example: I have a question about booking
         type: string
     type: object
   schemas.InquiryCreateRequest:
+    description: Request body for creating an inquiry
     properties:
       email:
+        example: guest@example.com
+        format: email
+        maxLength: 255
         type: string
       is_approved:
+        example: false
         type: boolean
       phone_number:
+        example: "+77001234567"
+        maxLength: 20
         type: string
       text:
+        example: I have a question about booking
         type: string
+    required:
+    - email
+    - text
     type: object
   schemas.InquiryUpdateRequest:
+    description: Request body for updating an inquiry (all fields optional)
     properties:
       email:
+        example: guest@example.com
+        format: email
+        maxLength: 255
         type: string
       is_approved:
+        example: true
         type: boolean
       phone_number:
+        maxLength: 20
         type: string
       text:
         type: string
@@ -464,49 +769,84 @@ definitions:
   schemas.MessageResponse:
     properties:
       message:
+        example: operation completed
         type: string
     type: object
   schemas.SlugCheckResponse:
     properties:
       available:
+        example: true
         type: boolean
       slug:
+        example: beach-house
         type: string
     type: object
   schemas.TypeResponse:
     properties:
       icon:
+        example: https://s3.amazonaws.com/icon.png
         type: string
       id:
+        example: 1
         type: integer
       is_active:
+        example: true
         type: boolean
       name:
+        example: Квартира
+        maxLength: 255
         type: string
     type: object
   schemas.UserCreateRequest:
+    description: Request body for user registration
     properties:
       date_of_birth:
+        example: "1990-01-15"
+        format: date
         type: string
       email:
+        example: user@example.com
+        format: email
+        maxLength: 255
         type: string
       first_name:
+        example: John
+        maxLength: 255
         type: string
       last_name:
+        example: Doe
+        maxLength: 255
         type: string
       middle_name:
+        example: M
+        maxLength: 255
         type: string
       password:
+        example: secret123
+        maxLength: 255
+        minLength: 6
         type: string
       phone_number:
+        example: "+77001234567"
+        maxLength: 128
         type: string
+    required:
+    - email
+    - password
     type: object
   schemas.UserLoginRequest:
+    description: Request body for user login
     properties:
       email:
+        example: user@example.com
+        format: email
         type: string
       password:
+        example: secret123
         type: string
+    required:
+    - email
+    - password
     type: object
 host: localhost:8080
 info:
@@ -611,8 +951,6 @@ paths:
       - Auth
   /categories:
     get:
-      consumes:
-      - application/json
       description: Returns a list of active categories
       produces:
       - application/json
@@ -669,10 +1007,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -697,16 +1031,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
-        "500":
-          description: Internal Server Error
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
       security:
@@ -771,10 +1097,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Category'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -827,10 +1149,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -855,10 +1173,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -915,10 +1229,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -967,10 +1277,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -995,10 +1301,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -1055,10 +1357,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -1107,10 +1405,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1135,10 +1429,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -1195,10 +1485,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -1210,8 +1496,6 @@ paths:
       - FAQ
   /healthcheck:
     get:
-      consumes:
-      - application/json
       description: Checks if the application and database are running
       produces:
       - application/json
@@ -1327,10 +1611,6 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
       summary: Get house by ID
       tags:
       - Houses
@@ -1401,19 +1681,15 @@ paths:
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
         "400":
-          description: Invalid request or max images exceeded
+          description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "404":
-          description: House not found
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
-          description: Upload or database error
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
       security:
@@ -1421,10 +1697,98 @@ paths:
       summary: Upload house images
       tags:
       - Houses
+  /houses/{id}/like:
+    delete:
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.HouseLikeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Unlike a house
+      tags:
+      - Houses
+    get:
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.HouseLikeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Check if user liked a house
+      tags:
+      - Houses
+    post:
+      parameters:
+      - description: House ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.HouseLikeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Like a house
+      tags:
+      - Houses
   /houses/check-slug:
     get:
-      consumes:
-      - application/json
       description: Checks if a house slug is available for use
       parameters:
       - description: Slug to check
@@ -1439,10 +1803,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.SlugCheckResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1467,7 +1827,7 @@ paths:
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
         "400":
-          description: Invalid ID
+          description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
         "401":
@@ -1475,16 +1835,36 @@ paths:
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
         "404":
-          description: Image not found
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
-        "500":
-          description: Delete error
+          description: Not Found
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete house image
+      tags:
+      - Houses
+  /houses/liked:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.HouseLikeItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get houses liked by current user
       tags:
       - Houses
   /inquiries:
@@ -1526,10 +1906,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1554,10 +1930,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -1612,10 +1984,6 @@ paths:
             $ref: '#/definitions/schemas.Inquiry'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
         "404":
@@ -1673,10 +2041,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1701,10 +2065,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -1763,14 +2123,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.TypeResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
         "404":
           description: Not Found
           schema:

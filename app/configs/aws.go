@@ -9,15 +9,22 @@ type AwsConfig struct {
 	S3AccessKey string
 	S3SecretKey string
 	S3Bucket    string
+	baseURL     string
 }
 
 func NewAwsConfig() *AwsConfig {
-	return &AwsConfig{
+	cfg := &AwsConfig{
 		S3Region:    getEnv("S3_REGION", "eu-central-1"),
 		S3AccessKey: getEnv("S3_ACCESS_KEY", "key"),
 		S3SecretKey: getEnv("S3_SECRET_KEY", "secret"),
 		S3Bucket:    getEnv("S3_BUCKET", "houses"),
 	}
+	cfg.baseURL = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/", cfg.S3Bucket, cfg.S3Region)
+	return cfg
+}
+
+func (c *AwsConfig) BaseURL() string {
+	return c.baseURL
 }
 
 func (c *AwsConfig) AwsS3URL(key string) string {
@@ -29,11 +36,9 @@ func (c *AwsConfig) AwsS3URL(key string) string {
 		return key
 	}
 
-	base := fmt.Sprintf("https://%s.s3.%s.amazonaws.com", c.S3Bucket, c.S3Region)
-
 	if key[0] == '/' {
 		key = key[1:]
 	}
 
-	return base + "/" + key
+	return c.baseURL + key
 }

@@ -1,0 +1,5 @@
+.git
+.env
+*.md
+app/test/
+app/tmp/

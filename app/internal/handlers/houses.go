@@ -2,19 +2,23 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
-	"strings"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/gosimple/slug"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
-	"github.com/nurkenspashev92/bookit/pkg/utils"
+	"github.com/nurkenspashev92/bookit/internal/services"
 )
+
+type HouseHandler struct {
+	houseService *services.HouseService
+}
+
+func NewHouseHandler(houseService *services.HouseService) *HouseHandler {
+	return &HouseHandler{houseService: houseService}
+}
 
 // GetHouses godoc
 // @Summary      Get all houses
@@ -24,19 +28,12 @@ import (
 // @Success      200  {array}  schemas.HouseListItem
 // @Failure      500  {object} schemas.ErrorResponse
 // @Router       /houses [get]
-func GetHouses(db *pgxpool.Pool, cfg *configs.AwsConfig) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		repo := repositories.NewHouseRepository(db)
-
-		houses, err := repo.GetAll(c.Context())
-		if err != nil {
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		utils.FillHouseListImagesURL(cfg, houses)
-
-		return c.JSON(houses)
+func (h *HouseHandler) GetAll(c fiber.Ctx) error {
+	houses, err := h.houseService.GetAll(c.Context())
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	return c.JSON(houses)
 }
 
 // GetHouseByID godoc
@@ -47,19 +44,16 @@ func GetHouses(db *pgxpool.Pool, cfg *configs.AwsConfig) fiber.Handler {
 // @Param        id   path      int  true  "House ID"
 // @Success      200  {object} models.House
 // @Failure      404  {object} schemas.ErrorResponse
-// @Failure      500  {object} schemas.ErrorResponse
 // @Router       /houses/{id} [get]
-func GetHouseByID(db *pgxpool.Pool, cfg *configs.AwsConfig) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, _ := strconv.Atoi(c.Params("id"))
-		repo := repositories.NewHouseRepository(db)
-		house, err := repo.GetByID(c.Context(), id)
-		if err != nil {
-			return c.Status(404).JSON(schemas.ErrorResponse{Error: "house not found: " + err.Error()})
-		}
-		utils.FillHouseImagesURL(cfg, house.Images)
-		return c.JSON(house)
+func (h *HouseHandler) GetByID(c fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+
+	house, err := h.houseService.GetByID(c.Context(), id)
+	if err != nil {
+		return c.Status(404).JSON(schemas.ErrorResponse{Error: "house not found: " + err.Error()})
 	}
+
+	return c.JSON(house)
 }
 
 // CreateHouse godoc
@@ -75,30 +69,26 @@ func GetHouseByID(db *pgxpool.Pool, cfg *configs.AwsConfig) fiber.Handler {
 // @Failure      500    {object} schemas.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /houses [post]
-func CreateHouse(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		user := c.Locals("user").(models.User)
+func (h *HouseHandler) Create(c fiber.Ctx) error {
+	user := c.Locals("user").(models.User)
 
-		var req schemas.HouseCreateRequest
-		if err := json.Unmarshal(c.Body(), &req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		req.OwnerID = user.ID
-		repo := repositories.NewHouseRepository(db)
-		house, err := repo.Create(c.Context(), req)
-		if err != nil {
-			if strings.Contains(err.Error(), "slug already exists") {
-				return c.Status(409).JSON(fiber.Map{
-					"error": "slug already exists",
-				})
-			}
-
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.Status(201).JSON(house)
+	var req schemas.HouseCreateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	house, err := h.houseService.Create(c.Context(), req, user.ID)
+	if err != nil {
+		if errors.Is(err, services.ErrSlugExists) {
+			return c.Status(409).JSON(schemas.ErrorResponse{Error: "slug already exists"})
+		}
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.Status(201).JSON(house)
 }
 
 // UpdateHouse godoc
@@ -113,29 +103,25 @@ func CreateHouse(db *pgxpool.Pool) fiber.Handler {
 // @Failure      400    {object} schemas.ErrorResponse
 // @Failure      401    {object} schemas.ErrorResponse
 // @Failure      500    {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router       /houses/{id} [patch]
-func UpdateHouse(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, _ := strconv.Atoi(c.Params("id"))
+func (h *HouseHandler) Update(c fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
 
-		var req schemas.HouseUpdateRequest
-		if err := json.Unmarshal(c.Body(), &req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		repo := repositories.NewHouseRepository(db)
-		house, err := repo.Update(c.Context(), id, req)
-		if err != nil {
-			if strings.Contains(err.Error(), "not found") {
-				return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
-			}
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.Status(200).JSON(house)
+	var req schemas.HouseUpdateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	house, err := h.houseService.Update(c.Context(), id, req)
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(house)
 }
 
 // DeleteHouse godoc
@@ -147,46 +133,35 @@ func UpdateHouse(db *pgxpool.Pool) fiber.Handler {
 // @Success      200  {object} schemas.MessageResponse
 // @Failure      401  {object} schemas.ErrorResponse
 // @Failure      500  {object} schemas.ErrorResponse
-// @Failure      401   {object}  schemas.ErrorResponse "Unauthorized"
 // @Security     ApiKeyAuth
 // @Router       /houses/{id} [delete]
-func DeleteHouse(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		id, _ := strconv.Atoi(c.Params("id"))
+func (h *HouseHandler) Delete(c fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
 
-		repo := repositories.NewHouseRepository(db)
-		if err := repo.Delete(c.Context(), id); err != nil {
-			return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
-		}
-
-		return c.JSON(fiber.Map{"message": "house deleted"})
+	if err := h.houseService.Delete(c.Context(), id); err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+
+	return c.JSON(schemas.MessageResponse{Message: "house deleted"})
 }
 
 // CheckSlug godoc
 // @Summary      Check house slug availability
 // @Description  Checks if a house slug is available for use
 // @Tags         Houses
-// @Accept       json
 // @Produce      json
 // @Param        slug   query     string  true  "Slug to check"
 // @Success      200    {object} schemas.SlugCheckResponse
-// @Failure      400    {object}  schemas.ErrorResponse
-// @Failure      500    {object}  schemas.ErrorResponse
+// @Failure      500    {object} schemas.ErrorResponse
 // @Router       /houses/check-slug [get]
-func CheckSlug(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		s := slug.Make(c.Query("slug"))
-
-		repo := repositories.NewHouseRepository(db)
-		exists, err := repo.SlugExists(c.Context(), s)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-		}
-
-		return c.JSON(fiber.Map{
-			"available": !exists,
-			"slug":      s,
-		})
+func (h *HouseHandler) CheckSlug(c fiber.Ctx) error {
+	available, normalized, err := h.houseService.CheckSlug(c.Context(), c.Query("slug"))
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+
+	return c.JSON(fiber.Map{
+		"available": available,
+		"slug":      normalized,
+	})
 }
