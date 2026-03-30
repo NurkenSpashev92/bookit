@@ -14,7 +14,7 @@ else
 	MODE=PROD
 endif
 
-.PHONY: help up down build restart logs ps app postgres clean prune install mode
+.PHONY: help up down build restart logs ps app postgres clean prune install mode test test-v test-cover
 
 help:
 	@echo ""
@@ -30,6 +30,9 @@ help:
 	@echo "  make ps               📦 Show containers"
 	@echo "  make app              🐹 Enter app container"
 	@echo "  make postgres         🐘 Enter postgres container"
+	@echo "  make test             🧪 Run tests"
+	@echo "  make test-v           🧪 Run tests (verbose)"
+	@echo "  make test-cover       🧪 Run tests with coverage"
 	@echo "  make clean            🧹 Remove containers + volumes"
 	@echo "  make prune            💣 Docker system prune"
 	@echo ""
@@ -63,6 +66,15 @@ app:
 
 postgres:
 	$(COMPOSE) $(COMPOSE_FILES) exec postgres_db psql -U $$POSTGRES_USER -d $$POSTGRES_DB
+
+test:
+	cd app && go test ./test/... -count=1
+
+test-v:
+	cd app && go test ./test/... -count=1 -v
+
+test-cover:
+	cd app && go test ./test/... -count=1 -coverprofile=coverage.out && go tool cover -func=coverage.out
 
 clean:
 	$(COMPOSE) $(COMPOSE_FILES) down -v --remove-orphans

@@ -3,15 +3,14 @@ package services
 import (
 	"context"
 
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type HouseLikeService struct {
-	repository *repositories.HouseLikeRepository
+	repository HouseLikeRepository
 }
 
-func NewHouseLikeService(repo *repositories.HouseLikeRepository) *HouseLikeService {
+func NewHouseLikeService(repo HouseLikeRepository) *HouseLikeService {
 	return &HouseLikeService{repository: repo}
 }
 

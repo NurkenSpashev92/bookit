@@ -48,8 +48,9 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 		{
 			auth.Post("/register", authHandler.Register)
 			auth.Post("/login", authHandler.Login)
-			auth.Post("/logout", middleware.AuthRequired(svc.JWT), authHandler.Logout)
-			auth.Get("/me", middleware.AuthRequired(svc.JWT), authHandler.Me)
+			auth.Post("/refresh", authHandler.Refresh)
+			auth.Post("/logout", authHandler.Logout)
+			auth.Get("/me", authHandler.Me)
 		}
 
 		category := apiV1.Group("/categories")

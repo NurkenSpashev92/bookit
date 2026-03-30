@@ -3,15 +3,14 @@ package services
 import (
 	"context"
 
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type FAQService struct {
-	repository *repositories.FAQRepository
+	repository FAQRepository
 }
 
-func NewFAQService(repo *repositories.FAQRepository) *FAQService {
+func NewFAQService(repo FAQRepository) *FAQService {
 	return &FAQService{repository: repo}
 }
 

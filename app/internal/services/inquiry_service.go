@@ -3,15 +3,14 @@ package services
 import (
 	"context"
 
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type InquiryService struct {
-	repository *repositories.InquiryRepository
+	repository InquiryRepository
 }
 
-func NewInquiryService(repo *repositories.InquiryRepository) *InquiryService {
+func NewInquiryService(repo InquiryRepository) *InquiryService {
 	return &InquiryService{repository: repo}
 }
 

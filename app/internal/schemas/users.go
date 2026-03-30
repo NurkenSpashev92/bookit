@@ -67,6 +67,12 @@ func (r UserLoginRequest) Validate() error {
 
 // AuthResponse auth success response
 type AuthResponse struct {
-	User  AuthUser `json:"user"`
-	Token string   `json:"token" example:"eyJhbGciOiJIUzI1NiIs..."`
+	User         AuthUser `json:"user"`
+	AccessToken  string   `json:"access_token,omitempty" example:"eyJhbGciOiJIUzI1NiIs..."`
+	RefreshToken string   `json:"refresh_token,omitempty" example:"eyJhbGciOiJIUzI1NiIs..."`
+}
+
+// RefreshRequest refresh token request
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }

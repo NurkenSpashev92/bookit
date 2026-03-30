@@ -8,7 +8,11 @@ import (
 
 func AuthRequired(jwtService *services.JWTService) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		token := c.Cookies("jwt")
+		token := c.Cookies("access_token")
+		if token == "" {
+			// Fallback: check old "jwt" cookie for backward compat
+			token = c.Cookies("jwt")
+		}
 		if token == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "unauthenticated",
@@ -18,7 +22,7 @@ func AuthRequired(jwtService *services.JWTService) fiber.Handler {
 		user, err := jwtService.ValidateToken(token)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "invalid token",
+				"error": "invalid or expired token",
 			})
 		}
 

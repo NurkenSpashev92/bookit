@@ -6,22 +6,16 @@ import (
 
 	"github.com/gosimple/slug"
 
-	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type HouseService struct {
-	repository *repositories.HouseRepository
-	awsCfg     *configs.AwsConfig
+	repository HouseRepository
 }
 
-func NewHouseService(repo *repositories.HouseRepository, awsCfg *configs.AwsConfig) *HouseService {
-	return &HouseService{
-		repository: repo,
-		awsCfg:     awsCfg,
-	}
+func NewHouseService(repo HouseRepository) *HouseService {
+	return &HouseService{repository: repo}
 }
 
 func (s *HouseService) GetAll(ctx context.Context) ([]schemas.HouseListItem, error) {

@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type CityService struct {
-	repository *repositories.CityRepository
+	repository CityRepository
 }
 
-func NewCityService(repo *repositories.CityRepository) *CityService {
+func NewCityService(repo CityRepository) *CityService {
 	return &CityService{repository: repo}
 }
 

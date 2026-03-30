@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -26,6 +27,7 @@ func NewAuthHandler(userService *services.UserService) *AuthHandler {
 // @Param user body schemas.UserCreateRequest true "User data"
 // @Success 201 {object} schemas.AuthResponse
 // @Failure 400 {object} schemas.ErrorResponse
+// @Failure 409 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c fiber.Ctx) error {
@@ -39,10 +41,14 @@ func (h *AuthHandler) Register(c fiber.Ctx) error {
 
 	resp, err := h.userService.Register(c.Context(), req)
 	if err != nil {
+		if errors.Is(err, services.ErrEmailAlreadyExists) {
+			return c.Status(409).JSON(schemas.ErrorResponse{Error: err.Error()})
+		}
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
 
-	setCookie(c, resp.Token)
+	setAccessCookie(c, resp.AccessToken)
+	setRefreshCookie(c, resp.RefreshToken)
 
 	return c.Status(201).JSON(resp)
 }
@@ -58,13 +64,6 @@ func (h *AuthHandler) Register(c fiber.Ctx) error {
 // @Failure 401 {object} schemas.ErrorResponse
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c fiber.Ctx) error {
-	if cookie := c.Cookies("jwt"); cookie != "" {
-		resp, err := h.userService.ValidateTokenAndGetUser(cookie)
-		if err == nil {
-			return c.JSON(resp)
-		}
-	}
-
 	var req schemas.UserLoginRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
 		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
@@ -75,10 +74,50 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 
 	resp, err := h.userService.Login(c.Context(), req)
 	if err != nil {
+		if errors.Is(err, services.ErrInvalidCredentials) || errors.Is(err, services.ErrAccountDisabled) {
+			return c.Status(401).JSON(schemas.ErrorResponse{Error: err.Error()})
+		}
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	setAccessCookie(c, resp.AccessToken)
+	setRefreshCookie(c, resp.RefreshToken)
+
+	return c.JSON(resp)
+}
+
+// Refresh godoc
+// @Summary Refresh access token
+// @Description Uses refresh token from cookie or body to issue new token pair
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body schemas.RefreshRequest false "Refresh token (optional, can use cookie)"
+// @Success 200 {object} schemas.AuthResponse
+// @Failure 401 {object} schemas.ErrorResponse
+// @Router /auth/refresh [post]
+func (h *AuthHandler) Refresh(c fiber.Ctx) error {
+	refreshToken := c.Cookies("refresh_token")
+
+	if refreshToken == "" {
+		var req schemas.RefreshRequest
+		if err := json.Unmarshal(c.Body(), &req); err == nil && req.RefreshToken != "" {
+			refreshToken = req.RefreshToken
+		}
+	}
+
+	if refreshToken == "" {
+		return c.Status(401).JSON(schemas.ErrorResponse{Error: "refresh token required"})
+	}
+
+	resp, err := h.userService.RefreshTokens(c.Context(), refreshToken)
+	if err != nil {
+		clearAuthCookies(c)
 		return c.Status(401).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
 
-	setCookie(c, resp.Token)
+	setAccessCookie(c, resp.AccessToken)
+	setRefreshCookie(c, resp.RefreshToken)
 
 	return c.JSON(resp)
 }
@@ -88,16 +127,10 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 // @Tags Auth
 // @Produce json
 // @Success 200 {object} schemas.MessageResponse
-// @Failure 401 {object} schemas.ErrorResponse "Unauthorized"
 // @Security ApiKeyAuth
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c fiber.Ctx) error {
-	c.Cookie(&fiber.Cookie{
-		Name:     "jwt",
-		Value:    "",
-		HTTPOnly: true,
-		Expires:  time.Now().Add(-time.Hour),
-	})
+	clearAuthCookies(c)
 	return c.JSON(schemas.MessageResponse{Message: "logged out"})
 }
 
@@ -110,12 +143,12 @@ func (h *AuthHandler) Logout(c fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Router /auth/me [get]
 func (h *AuthHandler) Me(c fiber.Ctx) error {
-	cookie := c.Cookies("jwt")
-	if cookie == "" {
+	token := c.Cookies("access_token")
+	if token == "" {
 		return c.Status(401).JSON(schemas.ErrorResponse{Error: "unauthenticated"})
 	}
 
-	resp, err := h.userService.Me(c.Context(), cookie)
+	resp, err := h.userService.Me(c.Context(), token)
 	if err != nil {
 		return c.Status(401).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
@@ -123,14 +156,46 @@ func (h *AuthHandler) Me(c fiber.Ctx) error {
 	return c.JSON(resp)
 }
 
-func setCookie(c fiber.Ctx, token string) {
+func setAccessCookie(c fiber.Ctx, token string) {
 	c.Cookie(&fiber.Cookie{
-		Name:     "jwt",
+		Name:     "access_token",
 		Value:    token,
 		HTTPOnly: true,
 		Secure:   true,
-		Expires:  time.Now().Add(24 * time.Hour),
 		SameSite: "Lax",
 		Path:     "/",
+		Expires:  time.Now().Add(15 * time.Minute),
+	})
+}
+
+func setRefreshCookie(c fiber.Ctx, token string) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    token,
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+		Path:     "/api/v1/auth",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+	})
+}
+
+func clearAuthCookies(c fiber.Ctx) {
+	expired := time.Now().Add(-time.Hour)
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		HTTPOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  expired,
+	})
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		HTTPOnly: true,
+		Secure:   true,
+		Path:     "/api/v1/auth",
+		Expires:  expired,
 	})
 }

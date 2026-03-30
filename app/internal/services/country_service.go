@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type CountryService struct {
-	repository *repositories.CountryRepository
+	repository CountryRepository
 }
 
-func NewCountryService(repo *repositories.CountryRepository) *CountryService {
+func NewCountryService(repo CountryRepository) *CountryService {
 	return &CountryService{repository: repo}
 }
 
