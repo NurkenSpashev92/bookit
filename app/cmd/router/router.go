@@ -28,6 +28,7 @@ type Services struct {
 	FAQ       *services.FAQService
 	Inquiry   *services.InquiryService
 	Stats     *services.StatsService
+	Booking   *services.BookingService
 }
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
@@ -44,6 +45,7 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 	typeHandler := handlers.NewTypeHandler(svc.Type)
 	avatarHandler := handlers.NewAvatarHandler(svc.Avatar)
 	statsHandler := handlers.NewStatsHandler(svc.Stats)
+	bookingHandler := handlers.NewBookingHandler(svc.Booking)
 	faqHandler := handlers.NewFAQHandler(svc.FAQ, svc.Inquiry)
 
 	apiV1 := app.Group("/api/v1")
@@ -122,6 +124,15 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 		}
 
 		apiV1.Get("/my-houses", middleware.AuthRequired(svc.JWT), houseHandler.MyHouses)
+
+		bookings := apiV1.Group("/bookings")
+		{
+			bookings.Post("/", middleware.AuthRequired(svc.JWT), bookingHandler.Create)
+			bookings.Get("/", middleware.AuthRequired(svc.JWT), bookingHandler.GetMyBookings)
+			bookings.Get("/owner", middleware.AuthRequired(svc.JWT), bookingHandler.GetOwnerBookings)
+			bookings.Get("/:id", middleware.AuthRequired(svc.JWT), bookingHandler.GetByID)
+			bookings.Patch("/:id/status", middleware.AuthRequired(svc.JWT), bookingHandler.UpdateStatus)
+		}
 
 		stats := apiV1.Group("/stats")
 		{

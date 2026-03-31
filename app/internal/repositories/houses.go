@@ -249,7 +249,7 @@ func (w *whereBuilder) build(argOffset int) (string, []interface{}) {
 			for j := range w.values {
 				placeholder := fmt.Sprintf("{%d}", j)
 				replacement := fmt.Sprintf("$%d", j+1+argOffset)
-				parts[i] = strings.Replace(parts[i], placeholder, replacement, 1)
+				parts[i] = strings.ReplaceAll(parts[i], placeholder, replacement)
 			}
 		}
 

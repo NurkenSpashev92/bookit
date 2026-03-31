@@ -233,10 +233,22 @@ type HouseDetailResponse struct {
 	CountryCityNameKZ string `json:"country_city_name_kz,omitempty"`
 	CountryCityNameRU string `json:"country_city_name_ru,omitempty"`
 	CountryCityNameEN string `json:"country_city_name_en,omitempty"`
-	OwnerFullName  string   `json:"owner_full_name,omitempty"`
-	Images         []Image  `json:"images"`
-	CreatedAt      string   `json:"created_at"`
-	UpdatedAt      string   `json:"updated_at"`
+	OwnerFullName  string          `json:"owner_full_name,omitempty"`
+	IsBooked       bool            `json:"is_booked" example:"false"`
+	MyBooking      *HouseBooking   `json:"my_booking,omitempty"`
+	Images         []Image         `json:"images"`
+	CreatedAt      string          `json:"created_at"`
+	UpdatedAt      string          `json:"updated_at"`
+}
+
+// HouseBooking current user's active booking for this house
+type HouseBooking struct {
+	ID         int    `json:"id" example:"1"`
+	StartDate  string `json:"start_date" example:"2026-04-10"`
+	EndDate    string `json:"end_date" example:"2026-04-15"`
+	Status     string `json:"status" example:"confirmed"`
+	GuestCount int    `json:"guest_count" example:"4"`
+	TotalPrice int    `json:"total_price" example:"250000"`
 }
 
 // SlugCheckResponse slug availability check response

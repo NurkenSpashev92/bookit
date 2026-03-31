@@ -410,6 +410,257 @@ const docTemplate = `{
                 }
             }
         },
+        "/bookings": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns bookings made by the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get my bookings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schemas.BookingResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Book a house for specific dates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Create a booking",
+                "parameters": [
+                    {
+                        "description": "Booking data",
+                        "name": "booking",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.BookingCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.BookingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/owner": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns all bookings for houses owned by the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get bookings for my houses",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schemas.BookingResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns a booking (visible to guest and house owner)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get booking by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Booking ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.BookingResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Owner can confirm/reject. Guest can cancel.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Update booking status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Booking ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New status",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.BookingUpdateStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/categories": {
             "get": {
                 "description": "Returns a list of active categories",
@@ -2821,6 +3072,40 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.BookingCreateRequest": {
+            "description": "Request body for creating a booking",
+            "type": "object",
+            "required": [
+                "end_date",
+                "house_slug",
+                "start_date"
+            ],
+            "properties": {
+                "end_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-04-15"
+                },
+                "guest_count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 4
+                },
+                "house_slug": {
+                    "type": "string",
+                    "example": "beach-house"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Looking forward to staying!"
+                },
+                "start_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-04-10"
+                }
+            }
+        },
         "schemas.BookingInfo": {
             "type": "object",
             "properties": {
@@ -2856,6 +3141,106 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "schemas.BookingResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string",
+                    "example": "2026-04-15"
+                },
+                "guest_count": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "guest_email": {
+                    "type": "string",
+                    "example": "guest@mail.com"
+                },
+                "guest_full_name": {
+                    "type": "string",
+                    "example": "Jane Smith"
+                },
+                "guest_id": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "guest_phone": {
+                    "type": "string"
+                },
+                "house_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "house_name_en": {
+                    "type": "string",
+                    "example": "Beach House"
+                },
+                "house_name_kz": {
+                    "type": "string"
+                },
+                "house_name_ru": {
+                    "type": "string"
+                },
+                "house_slug": {
+                    "type": "string",
+                    "example": "beach-house"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "message": {
+                    "type": "string"
+                },
+                "owner_email": {
+                    "type": "string",
+                    "example": "owner@mail.com"
+                },
+                "owner_full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "owner_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "owner_phone": {
+                    "type": "string",
+                    "example": "+77001234567"
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-04-10"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "total_price": {
+                    "type": "integer",
+                    "example": 250000
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.BookingUpdateStatusRequest": {
+            "description": "Request body for updating booking status",
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "confirmed"
                 }
             }
         },
@@ -3225,6 +3610,35 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.HouseBooking": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string",
+                    "example": "2026-04-15"
+                },
+                "guest_count": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "start_date": {
+                    "type": "string",
+                    "example": "2026-04-10"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "confirmed"
+                },
+                "total_price": {
+                    "type": "integer",
+                    "example": 250000
+                }
+            }
+        },
         "schemas.HouseCreateRequest": {
             "description": "Request body for creating a new house",
             "type": "object",
@@ -3464,6 +3878,10 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
+                "is_booked": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "is_liked": {
                     "type": "boolean",
                     "example": false
@@ -3479,6 +3897,9 @@ const docTemplate = `{
                 "lng": {
                     "type": "number",
                     "example": 51.1694
+                },
+                "my_booking": {
+                    "$ref": "#/definitions/schemas.HouseBooking"
                 },
                 "name_en": {
                     "type": "string",

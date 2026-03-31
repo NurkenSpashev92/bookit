@@ -11,4 +11,5 @@ var (
 	ErrInvalidToken       = errors.New("invalid or expired token")
 	ErrAccountDisabled    = errors.New("account is disabled")
 	ErrAvatarNotFound     = errors.New("avatar not found")
+	ErrBookingOverlap     = errors.New("these dates are already booked")
 )

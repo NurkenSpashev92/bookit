@@ -8,20 +8,23 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/nurkenspashev92/bookit/internal/models"
+	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 	"github.com/nurkenspashev92/bookit/pkg/cache"
 )
 
 type HouseService struct {
-	repository     HouseRepository
-	likeRepository HouseLikeRepository
-	cache          *cache.Cache
+	repository      HouseRepository
+	likeRepository  HouseLikeRepository
+	bookingRepo     *repositories.BookingRepository
+	cache           *cache.Cache
 }
 
-func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository, c *cache.Cache) *HouseService {
+func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository, bookingRepo *repositories.BookingRepository, c *cache.Cache) *HouseService {
 	return &HouseService{
 		repository:     repo,
 		likeRepository: likeRepo,
+		bookingRepo:    bookingRepo,
 		cache:          c,
 	}
 }
@@ -78,6 +81,13 @@ func (s *HouseService) GetAllPaginated(ctx context.Context, userID int, filter s
 	return houses, total, nil
 }
 
+func (s *HouseService) getActiveBooking(ctx context.Context, houseID, userID int) (*schemas.HouseBooking, error) {
+	if s.bookingRepo == nil {
+		return nil, nil
+	}
+	return s.bookingRepo.GetUserActiveBooking(ctx, houseID, userID)
+}
+
 func applyLiked(houses []schemas.HouseListItem, likedIDs []int) {
 	if len(likedIDs) == 0 {
 		return
@@ -117,6 +127,12 @@ func (s *HouseService) GetBySlug(ctx context.Context, slug string, userID int, i
 		liked, _, lErr := s.likeRepository.StatusWithCount(ctx, userID, slug)
 		if lErr == nil {
 			house.IsLiked = liked
+		}
+
+		myBooking, _ := s.getActiveBooking(ctx, house.ID, userID)
+		if myBooking != nil {
+			house.IsBooked = true
+			house.MyBooking = myBooking
 		}
 	}
 

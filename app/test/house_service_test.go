@@ -93,7 +93,7 @@ func (m *mockHouseRepo) SlugExists(_ context.Context, slug string) (bool, error)
 
 func TestHouseService_CheckSlug(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 	ctx := context.Background()
 
 	available, normalized, err := svc.CheckSlug(ctx, "Beach House")
@@ -118,7 +118,7 @@ func TestHouseService_CheckSlug(t *testing.T) {
 
 func TestHouseService_Create_SetsOwnerID(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 
 	house, err := svc.Create(context.Background(), schemas.HouseCreateRequest{
 		NameEN: "Test", Slug: "test-house",
@@ -133,7 +133,7 @@ func TestHouseService_Create_SetsOwnerID(t *testing.T) {
 
 func TestHouseService_Create_SlugExists(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 	ctx := context.Background()
 
 	svc.Create(ctx, schemas.HouseCreateRequest{NameEN: "A", Slug: "dup"}, 1)
@@ -149,7 +149,7 @@ func TestHouseService_Create_SlugExists(t *testing.T) {
 
 func TestHouseService_GetBySlug(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 
 	svc.Create(context.Background(), schemas.HouseCreateRequest{NameEN: "Beach", Slug: "beach"}, 1)
 
@@ -163,7 +163,7 @@ func TestHouseService_GetBySlug(t *testing.T) {
 }
 
 func TestHouseService_GetBySlug_NotFound(t *testing.T) {
-	svc := services.NewHouseService(newMockHouseRepo(), newMockHouseLikeRepo(), cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+	svc := services.NewHouseService(newMockHouseRepo(), newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 	_, err := svc.GetBySlug(context.Background(), "nope", 0, "")
 	if err == nil {
 		t.Error("expected error")
@@ -172,7 +172,7 @@ func TestHouseService_GetBySlug_NotFound(t *testing.T) {
 
 func TestHouseService_Delete(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 
 	svc.Create(context.Background(), schemas.HouseCreateRequest{NameEN: "Del", Slug: "del"}, 1)
 

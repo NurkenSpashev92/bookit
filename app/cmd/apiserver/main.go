@@ -76,10 +76,14 @@ func (app *ApiApp) Run() {
 
 	houseCache := cache.New(redisClient, 5*time.Minute)
 
+	// Additional Repositories
+	statsRepo := repositories.NewStatsRepository(db)
+	bookingRepo := repositories.NewBookingRepository(db)
+
 	// Services
 	jwtService := services.NewJWTService(cfgJwt)
 	userService := services.NewUserService(userRepo, jwtService, cfgAws)
-	houseService := services.NewHouseService(houseRepo, houseLikeRepo, houseCache)
+	houseService := services.NewHouseService(houseRepo, houseLikeRepo, bookingRepo, houseCache)
 	houseLikeService := services.NewHouseLikeService(houseLikeRepo)
 	imageService := services.NewImageService(imageRepo, s3client, houseCache)
 	avatarService := services.NewAvatarService(userRepo, s3client)
@@ -87,8 +91,8 @@ func (app *ApiApp) Run() {
 	countryService := services.NewCountryService(countryRepo)
 	cityService := services.NewCityService(cityRepo)
 	typeService := services.NewTypeService(typeRepo, s3client, cfgAws)
-	statsRepo := repositories.NewStatsRepository(db)
 	statsService := services.NewStatsService(statsRepo)
+	bookingService := services.NewBookingService(bookingRepo)
 	faqService := services.NewFAQService(faqRepo)
 	inquiryService := services.NewInquiryService(inquiryRepo)
 
@@ -106,6 +110,7 @@ func (app *ApiApp) Run() {
 		FAQ:       faqService,
 		Inquiry:   inquiryService,
 		Stats:     statsService,
+		Booking:   bookingService,
 	}
 
 	app.App = router.RegisterRoutes(app.App, db, svc)

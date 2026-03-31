@@ -162,6 +162,32 @@ definitions:
         example: "+77001234567"
         type: string
     type: object
+  schemas.BookingCreateRequest:
+    description: Request body for creating a booking
+    properties:
+      end_date:
+        example: "2026-04-15"
+        format: date
+        type: string
+      guest_count:
+        example: 4
+        minimum: 1
+        type: integer
+      house_slug:
+        example: beach-house
+        type: string
+      message:
+        example: Looking forward to staying!
+        type: string
+      start_date:
+        example: "2026-04-10"
+        format: date
+        type: string
+    required:
+    - end_date
+    - house_slug
+    - start_date
+    type: object
   schemas.BookingInfo:
     properties:
       created_at:
@@ -186,6 +212,78 @@ definitions:
         type: integer
       user_id:
         type: integer
+    type: object
+  schemas.BookingResponse:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        example: "2026-04-15"
+        type: string
+      guest_count:
+        example: 4
+        type: integer
+      guest_email:
+        example: guest@mail.com
+        type: string
+      guest_full_name:
+        example: Jane Smith
+        type: string
+      guest_id:
+        example: 3
+        type: integer
+      guest_phone:
+        type: string
+      house_id:
+        example: 1
+        type: integer
+      house_name_en:
+        example: Beach House
+        type: string
+      house_name_kz:
+        type: string
+      house_name_ru:
+        type: string
+      house_slug:
+        example: beach-house
+        type: string
+      id:
+        example: 1
+        type: integer
+      message:
+        type: string
+      owner_email:
+        example: owner@mail.com
+        type: string
+      owner_full_name:
+        example: John Doe
+        type: string
+      owner_id:
+        example: 1
+        type: integer
+      owner_phone:
+        example: "+77001234567"
+        type: string
+      start_date:
+        example: "2026-04-10"
+        type: string
+      status:
+        example: pending
+        type: string
+      total_price:
+        example: 250000
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  schemas.BookingUpdateStatusRequest:
+    description: Request body for updating booking status
+    properties:
+      status:
+        example: confirmed
+        type: string
+    required:
+    - status
     type: object
   schemas.CategoryPaginate:
     properties:
@@ -459,6 +557,27 @@ definitions:
         maxLength: 500
         type: string
     type: object
+  schemas.HouseBooking:
+    properties:
+      end_date:
+        example: "2026-04-15"
+        type: string
+      guest_count:
+        example: 4
+        type: integer
+      id:
+        example: 1
+        type: integer
+      start_date:
+        example: "2026-04-10"
+        type: string
+      status:
+        example: confirmed
+        type: string
+      total_price:
+        example: 250000
+        type: integer
+    type: object
   schemas.HouseCreateRequest:
     description: Request body for creating a new house
     properties:
@@ -638,6 +757,9 @@ definitions:
       is_active:
         example: true
         type: boolean
+      is_booked:
+        example: false
+        type: boolean
       is_liked:
         example: false
         type: boolean
@@ -650,6 +772,8 @@ definitions:
       lng:
         example: 51.1694
         type: number
+      my_booking:
+        $ref: '#/definitions/schemas.HouseBooking'
       name_en:
         example: Beach House
         type: string
@@ -1414,6 +1538,165 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /bookings:
+    get:
+      description: Returns bookings made by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.BookingResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get my bookings
+      tags:
+      - Bookings
+    post:
+      consumes:
+      - application/json
+      description: Book a house for specific dates
+      parameters:
+      - description: Booking data
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.BookingCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schemas.BookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a booking
+      tags:
+      - Bookings
+  /bookings/{id}:
+    get:
+      description: Returns a booking (visible to guest and house owner)
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.BookingResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get booking by ID
+      tags:
+      - Bookings
+  /bookings/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Owner can confirm/reject. Guest can cancel.
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.BookingUpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update booking status
+      tags:
+      - Bookings
+  /bookings/owner:
+    get:
+      description: Returns all bookings for houses owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.BookingResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get bookings for my houses
+      tags:
+      - Bookings
   /categories:
     get:
       description: Returns a list of active categories
