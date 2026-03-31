@@ -192,6 +192,53 @@ type HouseListItem struct {
 	Images         []Image `json:"images"`
 }
 
+// HouseDetailResponse full house detail for GET /houses/{slug}
+type HouseDetailResponse struct {
+	ID             int      `json:"id" example:"1"`
+	NameEN         string   `json:"name_en" example:"Beach House"`
+	NameKZ         string   `json:"name_kz"`
+	NameRU         string   `json:"name_ru"`
+	Slug           string   `json:"slug" example:"beach-house"`
+	Price          int      `json:"price" example:"50000"`
+	RoomsQty       int      `json:"rooms_qty" example:"3"`
+	GuestQty       int      `json:"guest_qty" example:"6"`
+	BedroomQty     int      `json:"bedroom_qty" example:"2"`
+	BathQty        *int     `json:"bath_qty,omitempty" example:"1"`
+	DescriptionEN  string   `json:"description_en"`
+	DescriptionKZ  string   `json:"description_kz"`
+	DescriptionRU  string   `json:"description_ru"`
+	AddressEN      string   `json:"address_en" example:"123 Beach Rd"`
+	AddressKZ      string   `json:"address_kz"`
+	AddressRU      string   `json:"address_ru"`
+	Lng            *float64 `json:"lng,omitempty" example:"51.1694"`
+	Lat            *float64 `json:"lat,omitempty" example:"71.4491"`
+	IsActive       bool     `json:"is_active" example:"true"`
+	Priority       int      `json:"priority" example:"0"`
+	CommentsRU     *string  `json:"comments_ru,omitempty"`
+	CommentsEN     *string  `json:"comments_en,omitempty"`
+	CommentsKZ     *string  `json:"comments_kz,omitempty"`
+	OwnerID        int      `json:"owner_id" example:"1"`
+	TypeID         int      `json:"type_id" example:"1"`
+	CityID         *int     `json:"city_id,omitempty" example:"1"`
+	CountryID      *int     `json:"country_id,omitempty" example:"1"`
+	GuestsWithPets bool     `json:"guests_with_pets" example:"false"`
+	BestHouse      bool     `json:"best_house" example:"false"`
+	Promotion      bool     `json:"promotion" example:"false"`
+	DistrictEN     string   `json:"district_en,omitempty"`
+	DistrictKZ     string   `json:"district_kz,omitempty"`
+	DistrictRU     string   `json:"district_ru,omitempty"`
+	PhoneNumber    string   `json:"phone_number,omitempty"`
+	LikeCount      int      `json:"like_count" example:"5"`
+	IsLiked        bool     `json:"is_liked" example:"false"`
+	CountryCityNameKZ string `json:"country_city_name_kz,omitempty"`
+	CountryCityNameRU string `json:"country_city_name_ru,omitempty"`
+	CountryCityNameEN string `json:"country_city_name_en,omitempty"`
+	OwnerFullName  string   `json:"owner_full_name,omitempty"`
+	Images         []Image  `json:"images"`
+	CreatedAt      string   `json:"created_at"`
+	UpdatedAt      string   `json:"updated_at"`
+}
+
 // SlugCheckResponse slug availability check response
 type SlugCheckResponse struct {
 	Available bool   `json:"available" example:"true"`

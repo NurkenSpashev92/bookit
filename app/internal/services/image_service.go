@@ -11,6 +11,7 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/models"
 	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
+	"github.com/nurkenspashev92/bookit/pkg/cache"
 )
 
 const maxHouseImages = 15
@@ -18,11 +19,13 @@ const maxHouseImages = 15
 type ImageService struct {
 	repository *repositories.HouseImageRepository
 	s3         *aws.AwsS3Client
+	cache      *cache.Cache
 }
 
-func NewImageService(repo *repositories.HouseImageRepository, s3 *aws.AwsS3Client) *ImageService {
+func NewImageService(repo *repositories.HouseImageRepository, s3 *aws.AwsS3Client, cache *cache.Cache) *ImageService {
 	return &ImageService{
 		repository: repo,
+		cache:      cache,
 		s3:         s3,
 	}
 }
@@ -133,6 +136,7 @@ func (s *ImageService) UploadHouseImages(ctx context.Context, slug string, files
 		return fmt.Errorf("db save failed: %w", err)
 	}
 
+	s.cache.DeleteByPrefix("houses:")
 	return nil
 }
 
@@ -156,5 +160,6 @@ func (s *ImageService) DeleteHouseImage(ctx context.Context, imageID int) error 
 	}
 	_ = g.Wait()
 
+	s.cache.DeleteByPrefix("houses:")
 	return nil
 }

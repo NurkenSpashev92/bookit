@@ -1584,7 +1584,7 @@ const docTemplate = `{
         },
         "/houses/{slug}": {
             "get": {
-                "description": "Returns a single house by slug",
+                "description": "Returns a single house by slug with is_liked, country/city names, owner name",
                 "produces": [
                     "application/json"
                 ],
@@ -1605,7 +1605,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.House"
+                            "$ref": "#/definitions/schemas.HouseDetailResponse"
                         }
                     },
                     "404": {
@@ -2187,6 +2187,182 @@ const docTemplate = `{
                 }
             }
         },
+        "/stats/charts": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns top by views, top by likes, likes over time, price distribution",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Chart data for owner dashboard",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 30,
+                        "description": "Days for likes chart",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns overall statistics for the authenticated user's houses",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Owner dashboard stats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.DashboardStats"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/houses": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns views, likes, price for each house owned by user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Per-house statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schemas.HouseStatsItem"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/houses/{slug}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns viewers, likers, bookings, views/likes per day charts for a house owned by current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Stats"
+                ],
+                "summary": "Detailed stats for a single house",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.HouseDetailStats"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/types": {
             "get": {
                 "produces": [
@@ -2645,6 +2821,44 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.BookingInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "guest_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_price": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "schemas.CategoryPaginate": {
             "type": "object",
             "properties": {
@@ -2865,6 +3079,39 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Казахстан"
+                }
+            }
+        },
+        "schemas.DashboardStats": {
+            "type": "object",
+            "properties": {
+                "average_likes": {
+                    "type": "number",
+                    "example": 12
+                },
+                "average_price": {
+                    "type": "number",
+                    "example": 85000
+                },
+                "average_views": {
+                    "type": "number",
+                    "example": 150
+                },
+                "median_price": {
+                    "type": "number",
+                    "example": 75000
+                },
+                "total_houses": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "total_likes": {
+                    "type": "integer",
+                    "example": 120
+                },
+                "total_views": {
+                    "type": "integer",
+                    "example": 1500
                 }
             }
         },
@@ -3123,6 +3370,233 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.HouseDetailResponse": {
+            "type": "object",
+            "properties": {
+                "address_en": {
+                    "type": "string",
+                    "example": "123 Beach Rd"
+                },
+                "address_kz": {
+                    "type": "string"
+                },
+                "address_ru": {
+                    "type": "string"
+                },
+                "bath_qty": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "bedroom_qty": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "best_house": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "city_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "comments_en": {
+                    "type": "string"
+                },
+                "comments_kz": {
+                    "type": "string"
+                },
+                "comments_ru": {
+                    "type": "string"
+                },
+                "country_city_name_en": {
+                    "type": "string"
+                },
+                "country_city_name_kz": {
+                    "type": "string"
+                },
+                "country_city_name_ru": {
+                    "type": "string"
+                },
+                "country_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description_en": {
+                    "type": "string"
+                },
+                "description_kz": {
+                    "type": "string"
+                },
+                "description_ru": {
+                    "type": "string"
+                },
+                "district_en": {
+                    "type": "string"
+                },
+                "district_kz": {
+                    "type": "string"
+                },
+                "district_ru": {
+                    "type": "string"
+                },
+                "guest_qty": {
+                    "type": "integer",
+                    "example": 6
+                },
+                "guests_with_pets": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.Image"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_liked": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "lat": {
+                    "type": "number",
+                    "example": 71.4491
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "lng": {
+                    "type": "number",
+                    "example": 51.1694
+                },
+                "name_en": {
+                    "type": "string",
+                    "example": "Beach House"
+                },
+                "name_kz": {
+                    "type": "string"
+                },
+                "name_ru": {
+                    "type": "string"
+                },
+                "owner_full_name": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 50000
+                },
+                "priority": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "promotion": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "rooms_qty": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "beach-house"
+                },
+                "type_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "schemas.HouseDetailStats": {
+            "type": "object",
+            "properties": {
+                "house_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "likes_per_day": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.LikesOverTime"
+                    }
+                },
+                "name_en": {
+                    "type": "string",
+                    "example": "Beach House"
+                },
+                "name_kz": {
+                    "type": "string"
+                },
+                "name_ru": {
+                    "type": "string"
+                },
+                "recent_bookings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.BookingInfo"
+                    }
+                },
+                "recent_likers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.LikerInfo"
+                    }
+                },
+                "recent_viewers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.ViewerInfo"
+                    }
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "total_bookings": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "total_likes": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "total_views": {
+                    "type": "integer",
+                    "example": 350
+                },
+                "unique_views": {
+                    "type": "integer",
+                    "example": 280
+                },
+                "views_per_day": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schemas.LikesOverTime"
+                    }
+                }
+            }
+        },
         "schemas.HouseLikeResponse": {
             "type": "object",
             "properties": {
@@ -3218,6 +3692,41 @@ const docTemplate = `{
                 "slug": {
                     "type": "string",
                     "example": "beach-house"
+                }
+            }
+        },
+        "schemas.HouseStatsItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "like_count": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "name_en": {
+                    "type": "string",
+                    "example": "Beach House"
+                },
+                "name_kz": {
+                    "type": "string"
+                },
+                "name_ru": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 50000
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "beach-house"
+                },
+                "view_count": {
+                    "type": "integer",
+                    "example": 250
                 }
             }
         },
@@ -3447,6 +3956,39 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.LikerInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "liked_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schemas.LikesOverTime": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-03-25"
+                }
+            }
+        },
         "schemas.MessageResponse": {
             "type": "object",
             "properties": {
@@ -3616,6 +4158,29 @@ const docTemplate = `{
                 "phone_number": {
                     "type": "string",
                     "maxLength": 128
+                }
+            }
+        },
+        "schemas.ViewerInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "viewed_at": {
+                    "type": "string"
                 }
             }
         }

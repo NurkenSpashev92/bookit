@@ -115,11 +115,11 @@ func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
 
 // GetHouseBySlug godoc
 // @Summary      Get house by slug
-// @Description  Returns a single house by slug
+// @Description  Returns a single house by slug with is_liked, country/city names, owner name
 // @Tags         Houses
 // @Produce      json
 // @Param        slug   path      string  true  "House slug"
-// @Success      200  {object} models.House
+// @Success      200  {object} schemas.HouseDetailResponse
 // @Failure      404  {object} schemas.ErrorResponse
 // @Router       /houses/{slug} [get]
 func (h *HouseHandler) GetBySlug(c fiber.Ctx) error {
@@ -128,7 +128,12 @@ func (h *HouseHandler) GetBySlug(c fiber.Ctx) error {
 		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
 	}
 
-	house, err := h.houseService.GetBySlug(c.Context(), slug)
+	var userID int
+	if user, ok := c.Locals("user").(models.User); ok {
+		userID = user.ID
+	}
+
+	house, err := h.houseService.GetBySlug(c.Context(), slug, userID, c.IP())
 	if err != nil {
 		return c.Status(404).JSON(schemas.ErrorResponse{Error: "house not found"})
 	}

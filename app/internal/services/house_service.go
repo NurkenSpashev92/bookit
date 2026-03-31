@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/gosimple/slug"
 	"golang.org/x/sync/errgroup"
@@ -19,11 +18,11 @@ type HouseService struct {
 	cache          *cache.Cache
 }
 
-func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository) *HouseService {
+func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository, c *cache.Cache) *HouseService {
 	return &HouseService{
 		repository:     repo,
 		likeRepository: likeRepo,
-		cache:          cache.New(5 * time.Minute),
+		cache:          c,
 	}
 }
 
@@ -31,57 +30,49 @@ func (s *HouseService) GetAllPaginated(ctx context.Context, userID int, filter s
 	cacheKey := filter.CacheKey(limit, offset)
 
 	// Try cache — houses data is the same for all users, only is_liked differs
+	var cached cachedHouseList
+	if s.cache.Get(cacheKey, &cached) {
+		houses := make([]schemas.HouseListItem, len(cached.Houses))
+		copy(houses, cached.Houses)
+
+		if userID > 0 {
+			likedIDs, err := s.likeRepository.GetUserLikedHouseIDs(ctx, userID)
+			if err == nil {
+				applyLiked(houses, likedIDs)
+			}
+		}
+
+		return houses, cached.Total, nil
+	}
+
+	// Cache miss — parallel fetch houses + liked IDs
+	g, gctx := errgroup.WithContext(ctx)
+
 	var houses []schemas.HouseListItem
 	var total int
-	var fromCache bool
+	g.Go(func() error {
+		var err error
+		houses, total, err = s.repository.GetAllPaginated(gctx, filter, limit, offset)
+		return err
+	})
 
-	if cached, ok := s.cache.Get(cacheKey); ok {
-		result := cached.(*cachedHouseList)
-		// Copy slice so is_liked overlay doesn't mutate cache
-		houses = make([]schemas.HouseListItem, len(result.houses))
-		copy(houses, result.houses)
-		total = result.total
-		fromCache = true
-	}
-
-	if !fromCache {
-		// Parallel: fetch houses + liked IDs
-		g, gctx := errgroup.WithContext(ctx)
-
+	var likedIDs []int
+	if userID > 0 {
 		g.Go(func() error {
 			var err error
-			houses, total, err = s.repository.GetAllPaginated(gctx, filter, limit, offset)
+			likedIDs, err = s.likeRepository.GetUserLikedHouseIDs(gctx, userID)
 			return err
 		})
-
-		var likedIDs []int
-		if userID > 0 {
-			g.Go(func() error {
-				var err error
-				likedIDs, err = s.likeRepository.GetUserLikedHouseIDs(gctx, userID)
-				return err
-			})
-		}
-
-		if err := g.Wait(); err != nil {
-			return nil, 0, err
-		}
-
-		s.cache.Set(cacheKey, &cachedHouseList{houses: houses, total: total})
-
-		if userID > 0 {
-			applyLiked(houses, likedIDs)
-		}
-
-		return houses, total, nil
 	}
 
-	// From cache — still need to fetch liked IDs for auth users
+	if err := g.Wait(); err != nil {
+		return nil, 0, err
+	}
+
+	s.cache.Set(cacheKey, &cachedHouseList{Houses: houses, Total: total})
+
 	if userID > 0 {
-		likedIDs, err := s.likeRepository.GetUserLikedHouseIDs(ctx, userID)
-		if err == nil {
-			applyLiked(houses, likedIDs)
-		}
+		applyLiked(houses, likedIDs)
 	}
 
 	return houses, total, nil
@@ -101,16 +92,35 @@ func applyLiked(houses []schemas.HouseListItem, likedIDs []int) {
 }
 
 type cachedHouseList struct {
-	houses []schemas.HouseListItem
-	total  int
+	Houses []schemas.HouseListItem `json:"houses"`
+	Total  int                     `json:"total"`
 }
 
 func (s *HouseService) GetMyHouses(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error) {
 	return s.repository.GetByOwnerPaginated(ctx, ownerID, limit, offset)
 }
 
-func (s *HouseService) GetBySlug(ctx context.Context, slug string) (models.House, error) {
-	return s.repository.GetBySlug(ctx, slug)
+func (s *HouseService) GetBySlug(ctx context.Context, slug string, userID int, ip string) (schemas.HouseDetailResponse, error) {
+	house, err := s.repository.GetBySlug(ctx, slug)
+	if err != nil {
+		return house, err
+	}
+
+	// Async view recording
+	var uid *int
+	if userID > 0 {
+		uid = &userID
+	}
+	go s.repository.RecordView(context.Background(), slug, uid, ip)
+
+	if userID > 0 {
+		liked, _, lErr := s.likeRepository.StatusWithCount(ctx, userID, slug)
+		if lErr == nil {
+			house.IsLiked = liked
+		}
+	}
+
+	return house, nil
 }
 
 func (s *HouseService) Create(ctx context.Context, req schemas.HouseCreateRequest, ownerID int) (models.House, error) {

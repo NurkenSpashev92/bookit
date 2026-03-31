@@ -51,6 +51,9 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	if filter.OwnerID != nil {
 		wb.add("h.owner_id", "=", *filter.OwnerID)
 	}
+	if filter.Name != nil {
+		wb.addILike("h.name_en", *filter.Name)
+	}
 	if filter.MinPrice != nil {
 		wb.add("h.price", ">=", *filter.MinPrice)
 	}
@@ -207,9 +210,18 @@ func newWhereBuilder() *whereBuilder {
 func (w *whereBuilder) add(col, op string, val interface{}) {
 	w.values = append(w.values, val)
 	if col != "" {
-		// placeholder index determined at build time
 		w.conditions = append(w.conditions, fmt.Sprintf("%s %s {%d}", col, op, len(w.values)-1))
 	}
+}
+
+func (w *whereBuilder) addILike(col string, val string) {
+	pattern := "%" + val + "%"
+	w.values = append(w.values, pattern)
+	idx := len(w.values) - 1
+	w.conditions = append(w.conditions, fmt.Sprintf(
+		"(h.name_en ILIKE {%d} OR h.name_kz ILIKE {%d} OR h.name_ru ILIKE {%d})",
+		idx, idx, idx,
+	))
 }
 
 func (w *whereBuilder) nextArgForOffset(offset int) int {
@@ -247,9 +259,10 @@ func (w *whereBuilder) build(argOffset int) (string, []interface{}) {
 	return result, w.values
 }
 
-func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (models.House, error) {
-	var house models.House
+func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schemas.HouseDetailResponse, error) {
+	var h schemas.HouseDetailResponse
 	var imagesJSON []byte
+	var createdAt, updatedAt time.Time
 	baseURL := r.awsCfg.BaseURL()
 
 	query := `
@@ -262,8 +275,15 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (models.Ho
 			h.owner_id, h.type_id, h.city_id, h.country_id, h.guests_with_pets, h.best_house, h.promotion,
 			h.district_en, h.district_kz, h.district_ru, h.phone_number, h.created_at, h.updated_at,
 			h.like_count,
-			COALESCE(img.images, '[]') as images
+			CONCAT(c.name_kz, ', ', ct.name_kz),
+			CONCAT(c.name_ru, ', ', ct.name_ru),
+			CONCAT(c.name_en, ', ', ct.name_en),
+			CONCAT(u.first_name, ' ', u.last_name),
+			COALESCE(img.images, '[]')
 		FROM houses h
+		LEFT JOIN countries c ON c.id = h.country_id
+		LEFT JOIN cities ct ON ct.id = h.city_id
+		LEFT JOIN users u ON u.id = h.owner_id
 		LEFT JOIN LATERAL (
 			SELECT COALESCE(json_agg(
 				json_build_object(
@@ -282,29 +302,46 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (models.Ho
 	`
 
 	err := r.db.QueryRow(ctx, query, slug, baseURL).Scan(
-		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug,
-		&house.Price, &house.RoomsQty, &house.GuestQty, &house.BedroomQty, &house.BathQty,
-		&house.DescriptionEN, &house.DescriptionKZ, &house.DescriptionRU,
-		&house.AddressEN, &house.AddressKZ, &house.AddressRU,
-		&house.Lng, &house.Lat, &house.IsActive, &house.Priority,
-		&house.CommentsRU, &house.CommentsEN, &house.CommentsKZ,
-		&house.OwnerID, &house.TypeID, &house.CityID, &house.CountryID,
-		&house.GuestsWithPets, &house.BestHouse, &house.Promotion,
-		&house.DistrictEN, &house.DistrictKZ, &house.DistrictRU,
-		&house.PhoneNumber, &house.CreatedAt, &house.UpdatedAt,
-		&house.LikeCount,
+		&h.ID, &h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug,
+		&h.Price, &h.RoomsQty, &h.GuestQty, &h.BedroomQty, &h.BathQty,
+		&h.DescriptionEN, &h.DescriptionKZ, &h.DescriptionRU,
+		&h.AddressEN, &h.AddressKZ, &h.AddressRU,
+		&h.Lng, &h.Lat, &h.IsActive, &h.Priority,
+		&h.CommentsRU, &h.CommentsEN, &h.CommentsKZ,
+		&h.OwnerID, &h.TypeID, &h.CityID, &h.CountryID,
+		&h.GuestsWithPets, &h.BestHouse, &h.Promotion,
+		&h.DistrictEN, &h.DistrictKZ, &h.DistrictRU,
+		&h.PhoneNumber, &createdAt, &updatedAt,
+		&h.LikeCount,
+		&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
+		&h.OwnerFullName,
 		&imagesJSON,
 	)
 	if err != nil {
-		return house, err
+		return h, err
 	}
+
+	h.CreatedAt = createdAt.Format(time.RFC3339)
+	h.UpdatedAt = updatedAt.Format(time.RFC3339)
 
 	if len(imagesJSON) == 0 {
 		imagesJSON = []byte("[]")
 	}
+	err = json.Unmarshal(imagesJSON, &h.Images)
+	return h, err
+}
 
-	err = json.Unmarshal(imagesJSON, &house.Images)
-	return house, err
+func (r *HouseRepository) RecordView(ctx context.Context, slug string, userID *int, ip string) {
+	var houseID int
+	err := r.db.QueryRow(ctx, `SELECT id FROM houses WHERE slug=$1`, slug).Scan(&houseID)
+	if err != nil {
+		return
+	}
+	_, _ = r.db.Exec(ctx,
+		`INSERT INTO house_views (house_id, user_id, ip_address) VALUES ($1, $2, $3)`,
+		houseID, userID, ip,
+	)
+	_, _ = r.db.Exec(ctx, `UPDATE houses SET view_count = view_count + 1 WHERE id = $1`, houseID)
 }
 
 func (r *HouseRepository) Create(ctx context.Context, h schemas.HouseCreateRequest) (models.House, error) {
@@ -336,7 +373,7 @@ func (r *HouseRepository) Create(ctx context.Context, h schemas.HouseCreateReque
 		query,
 		h.NameEN, h.NameKZ, h.NameRU, slugValue, h.Price.Int(), h.RoomsQty.Int(), h.GuestQty.Int(), h.BedroomQty.Int(), h.BathQty.IntPtr(),
 		h.DescriptionEN, h.DescriptionKZ, h.DescriptionRU, h.AddressEN, h.AddressKZ, h.AddressRU,
-		h.Lng.Float64Ptr(), h.Lat.Float64Ptr(), h.IsActive, h.Priority.Int(), h.OwnerID, h.TypeID.Int(), h.CityID.IntPtr(), h.CountryID.IntPtr(),
+		h.Lng.Float64Ptr(), h.Lat.Float64Ptr(), true, h.Priority.Int(), h.OwnerID, h.TypeID.Int(), h.CityID.IntPtr(), h.CountryID.IntPtr(),
 		h.GuestsWithPets, h.BestHouse, h.Promotion, h.DistrictEN, h.DistrictKZ, h.DistrictRU, h.PhoneNumber,
 	).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug, &house.Price, &house.RoomsQty, &house.GuestQty,

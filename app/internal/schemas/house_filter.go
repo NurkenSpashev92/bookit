@@ -9,6 +9,7 @@ import (
 )
 
 type HouseFilter struct {
+	Name           *string
 	MinPrice       *int
 	MaxPrice       *int
 	GuestCount     *int
@@ -26,6 +27,7 @@ type HouseFilter struct {
 
 func ParseHouseFilter(c fiber.Ctx) HouseFilter {
 	f := HouseFilter{}
+	f.Name = queryString(c, "house_name")
 	f.MinPrice = queryInt(c, "min_price")
 	f.MaxPrice = queryInt(c, "max_price")
 	f.GuestCount = queryInt(c, "guest_count")
@@ -42,7 +44,7 @@ func ParseHouseFilter(c fiber.Ctx) HouseFilter {
 }
 
 func (f HouseFilter) IsEmpty() bool {
-	return f.MinPrice == nil && f.MaxPrice == nil && f.GuestCount == nil &&
+	return f.Name == nil && f.MinPrice == nil && f.MaxPrice == nil && f.GuestCount == nil &&
 		f.RoomsQty == nil && f.BedroomQty == nil && f.BedQty == nil && f.BathQty == nil &&
 		f.GuestsWithPets == nil && f.CategoryID == nil && f.TypeID == nil &&
 		f.CountryID == nil && f.CityID == nil
@@ -50,6 +52,9 @@ func (f HouseFilter) IsEmpty() bool {
 
 func (f HouseFilter) CacheKey(limit, offset int) string {
 	var parts []string
+	if f.Name != nil {
+		parts = append(parts, fmt.Sprintf("n%s", *f.Name))
+	}
 	if f.MinPrice != nil {
 		parts = append(parts, fmt.Sprintf("mn%d", *f.MinPrice))
 	}
@@ -88,6 +93,14 @@ func (f HouseFilter) CacheKey(limit, offset int) string {
 	}
 	filter := strings.Join(parts, ".")
 	return fmt.Sprintf("houses:%s:%d:%d", filter, limit, offset)
+}
+
+func queryString(c fiber.Ctx, key string) *string {
+	s := c.Query(key)
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func queryInt(c fiber.Ctx, key string) *int {

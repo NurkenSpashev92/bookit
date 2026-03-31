@@ -162,6 +162,31 @@ definitions:
         example: "+77001234567"
         type: string
     type: object
+  schemas.BookingInfo:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      end_date:
+        type: string
+      first_name:
+        type: string
+      guest_count:
+        type: integer
+      id:
+        type: integer
+      last_name:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      total_price:
+        type: integer
+      user_id:
+        type: integer
+    type: object
   schemas.CategoryPaginate:
     properties:
       icon:
@@ -328,6 +353,30 @@ definitions:
         example: Казахстан
         maxLength: 255
         type: string
+    type: object
+  schemas.DashboardStats:
+    properties:
+      average_likes:
+        example: 12
+        type: number
+      average_price:
+        example: 85000
+        type: number
+      average_views:
+        example: 150
+        type: number
+      median_price:
+        example: 75000
+        type: number
+      total_houses:
+        example: 10
+        type: integer
+      total_likes:
+        example: 120
+        type: integer
+      total_views:
+        example: 1500
+        type: integer
     type: object
   schemas.ErrorResponse:
     properties:
@@ -523,6 +572,166 @@ definitions:
     - price
     - type_id
     type: object
+  schemas.HouseDetailResponse:
+    properties:
+      address_en:
+        example: 123 Beach Rd
+        type: string
+      address_kz:
+        type: string
+      address_ru:
+        type: string
+      bath_qty:
+        example: 1
+        type: integer
+      bedroom_qty:
+        example: 2
+        type: integer
+      best_house:
+        example: false
+        type: boolean
+      city_id:
+        example: 1
+        type: integer
+      comments_en:
+        type: string
+      comments_kz:
+        type: string
+      comments_ru:
+        type: string
+      country_city_name_en:
+        type: string
+      country_city_name_kz:
+        type: string
+      country_city_name_ru:
+        type: string
+      country_id:
+        example: 1
+        type: integer
+      created_at:
+        type: string
+      description_en:
+        type: string
+      description_kz:
+        type: string
+      description_ru:
+        type: string
+      district_en:
+        type: string
+      district_kz:
+        type: string
+      district_ru:
+        type: string
+      guest_qty:
+        example: 6
+        type: integer
+      guests_with_pets:
+        example: false
+        type: boolean
+      id:
+        example: 1
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/schemas.Image'
+        type: array
+      is_active:
+        example: true
+        type: boolean
+      is_liked:
+        example: false
+        type: boolean
+      lat:
+        example: 71.4491
+        type: number
+      like_count:
+        example: 5
+        type: integer
+      lng:
+        example: 51.1694
+        type: number
+      name_en:
+        example: Beach House
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      owner_full_name:
+        type: string
+      owner_id:
+        example: 1
+        type: integer
+      phone_number:
+        type: string
+      price:
+        example: 50000
+        type: integer
+      priority:
+        example: 0
+        type: integer
+      promotion:
+        example: false
+        type: boolean
+      rooms_qty:
+        example: 3
+        type: integer
+      slug:
+        example: beach-house
+        type: string
+      type_id:
+        example: 1
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  schemas.HouseDetailStats:
+    properties:
+      house_id:
+        example: 1
+        type: integer
+      likes_per_day:
+        items:
+          $ref: '#/definitions/schemas.LikesOverTime'
+        type: array
+      name_en:
+        example: Beach House
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      recent_bookings:
+        items:
+          $ref: '#/definitions/schemas.BookingInfo'
+        type: array
+      recent_likers:
+        items:
+          $ref: '#/definitions/schemas.LikerInfo'
+        type: array
+      recent_viewers:
+        items:
+          $ref: '#/definitions/schemas.ViewerInfo'
+        type: array
+      slug:
+        type: string
+      total_bookings:
+        example: 5
+        type: integer
+      total_likes:
+        example: 15
+        type: integer
+      total_views:
+        example: 350
+        type: integer
+      unique_views:
+        example: 280
+        type: integer
+      views_per_day:
+        items:
+          $ref: '#/definitions/schemas.LikesOverTime'
+        type: array
+    type: object
   schemas.HouseLikeResponse:
     properties:
       like_count:
@@ -593,6 +802,31 @@ definitions:
       slug:
         example: beach-house
         type: string
+    type: object
+  schemas.HouseStatsItem:
+    properties:
+      id:
+        example: 1
+        type: integer
+      like_count:
+        example: 15
+        type: integer
+      name_en:
+        example: Beach House
+        type: string
+      name_kz:
+        type: string
+      name_ru:
+        type: string
+      price:
+        example: 50000
+        type: integer
+      slug:
+        example: beach-house
+        type: string
+      view_count:
+        example: 250
+        type: integer
     type: object
   schemas.HouseUpdateRequest:
     description: Request body for updating a house (all fields optional)
@@ -761,6 +995,28 @@ definitions:
       text:
         type: string
     type: object
+  schemas.LikerInfo:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      liked_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  schemas.LikesOverTime:
+    properties:
+      count:
+        example: 5
+        type: integer
+      date:
+        example: "2026-03-25"
+        type: string
+    type: object
   schemas.MessageResponse:
     properties:
       message:
@@ -885,6 +1141,21 @@ definitions:
         type: string
       phone_number:
         maxLength: 128
+        type: string
+    type: object
+  schemas.ViewerInfo:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      ip:
+        type: string
+      last_name:
+        type: string
+      user_id:
+        type: integer
+      viewed_at:
         type: string
     type: object
 host: localhost:8080
@@ -1844,7 +2115,8 @@ paths:
       tags:
       - Houses
     get:
-      description: Returns a single house by slug
+      description: Returns a single house by slug with is_liked, country/city names,
+        owner name
       parameters:
       - description: House slug
         in: path
@@ -1857,7 +2129,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.House'
+            $ref: '#/definitions/schemas.HouseDetailResponse'
         "404":
           description: Not Found
           schema:
@@ -2280,6 +2552,118 @@ paths:
       summary: Get current user's houses
       tags:
       - Houses
+  /stats/charts:
+    get:
+      description: Returns top by views, top by likes, likes over time, price distribution
+      parameters:
+      - default: 30
+        description: Days for likes chart
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Chart data for owner dashboard
+      tags:
+      - Stats
+  /stats/dashboard:
+    get:
+      description: Returns overall statistics for the authenticated user's houses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.DashboardStats'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Owner dashboard stats
+      tags:
+      - Stats
+  /stats/houses:
+    get:
+      description: Returns views, likes, price for each house owned by user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schemas.HouseStatsItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Per-house statistics
+      tags:
+      - Stats
+  /stats/houses/{slug}:
+    get:
+      description: Returns viewers, likers, bookings, views/likes per day charts for
+        a house owned by current user
+      parameters:
+      - description: House slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.HouseDetailStats'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Detailed stats for a single house
+      tags:
+      - Stats
   /types:
     get:
       produces:

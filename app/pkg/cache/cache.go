@@ -1,80 +1,66 @@
 package cache
 
 import (
-	"sync"
+	"context"
+	"encoding/json"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
-type entry struct {
-	data      interface{}
-	expiresAt time.Time
-}
-
 type Cache struct {
-	mu      sync.RWMutex
-	entries map[string]entry
-	ttl     time.Duration
+	client *redis.Client
+	ttl    time.Duration
 }
 
-func New(ttl time.Duration) *Cache {
-	c := &Cache{
-		entries: make(map[string]entry),
-		ttl:     ttl,
+func New(client *redis.Client, ttl time.Duration) *Cache {
+	return &Cache{
+		client: client,
+		ttl:    ttl,
 	}
-	go c.cleanup()
-	return c
 }
 
-func (c *Cache) Get(key string) (interface{}, bool) {
-	c.mu.RLock()
-	e, ok := c.entries[key]
-	c.mu.RUnlock()
-
-	if !ok || time.Now().After(e.expiresAt) {
-		return nil, false
+func (c *Cache) Get(key string, dest interface{}) bool {
+	data, err := c.client.Get(context.Background(), key).Bytes()
+	if err != nil {
+		return false
 	}
-	return e.data, true
+	if err := json.Unmarshal(data, dest); err != nil {
+		return false
+	}
+	return true
 }
 
-func (c *Cache) Set(key string, data interface{}) {
-	c.mu.Lock()
-	c.entries[key] = entry{data: data, expiresAt: time.Now().Add(c.ttl)}
-	c.mu.Unlock()
+func (c *Cache) Set(key string, value interface{}) {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return
+	}
+	c.client.Set(context.Background(), key, data, c.ttl)
 }
 
 func (c *Cache) Delete(key string) {
-	c.mu.Lock()
-	delete(c.entries, key)
-	c.mu.Unlock()
+	c.client.Del(context.Background(), key)
 }
 
 func (c *Cache) DeleteByPrefix(prefix string) {
-	c.mu.Lock()
-	for k := range c.entries {
-		if len(k) >= len(prefix) && k[:len(prefix)] == prefix {
-			delete(c.entries, k)
+	ctx := context.Background()
+	var cursor uint64
+	for {
+		keys, next, err := c.client.Scan(ctx, cursor, prefix+"*", 100).Result()
+		if err != nil {
+			return
+		}
+		if len(keys) > 0 {
+			c.client.Del(ctx, keys...)
+		}
+		cursor = next
+		if cursor == 0 {
+			break
 		}
 	}
-	c.mu.Unlock()
 }
 
 func (c *Cache) Flush() {
-	c.mu.Lock()
-	c.entries = make(map[string]entry)
-	c.mu.Unlock()
-}
-
-func (c *Cache) cleanup() {
-	ticker := time.NewTicker(c.ttl)
-	defer ticker.Stop()
-	for range ticker.C {
-		now := time.Now()
-		c.mu.Lock()
-		for k, e := range c.entries {
-			if now.After(e.expiresAt) {
-				delete(c.entries, k)
-			}
-		}
-		c.mu.Unlock()
-	}
+	c.client.FlushDB(context.Background())
 }

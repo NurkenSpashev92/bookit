@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/nurkenspashev92/bookit/cmd/router"
 	"github.com/nurkenspashev92/bookit/configs"
@@ -17,6 +18,7 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/repositories"
 	"github.com/nurkenspashev92/bookit/internal/services"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
+	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
@@ -60,17 +62,33 @@ func (app *ApiApp) Run() {
 	faqRepo := repositories.NewFAQRepository(db)
 	inquiryRepo := repositories.NewInquiryRepository(db)
 
+	// Redis + Cache
+	cfgRedis := configs.NewRedisConfig()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     cfgRedis.Host + ":" + cfgRedis.Port,
+		Password: cfgRedis.Password,
+		DB:       cfgRedis.DB,
+	})
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+	defer redisClient.Close()
+
+	houseCache := cache.New(redisClient, 5*time.Minute)
+
 	// Services
 	jwtService := services.NewJWTService(cfgJwt)
 	userService := services.NewUserService(userRepo, jwtService, cfgAws)
-	houseService := services.NewHouseService(houseRepo, houseLikeRepo)
+	houseService := services.NewHouseService(houseRepo, houseLikeRepo, houseCache)
 	houseLikeService := services.NewHouseLikeService(houseLikeRepo)
-	imageService := services.NewImageService(imageRepo, s3client)
+	imageService := services.NewImageService(imageRepo, s3client, houseCache)
 	avatarService := services.NewAvatarService(userRepo, s3client)
 	categoryService := services.NewCategoryService(categoryRepo, s3client, cfgAws)
 	countryService := services.NewCountryService(countryRepo)
 	cityService := services.NewCityService(cityRepo)
 	typeService := services.NewTypeService(typeRepo, s3client, cfgAws)
+	statsRepo := repositories.NewStatsRepository(db)
+	statsService := services.NewStatsService(statsRepo)
 	faqService := services.NewFAQService(faqRepo)
 	inquiryService := services.NewInquiryService(inquiryRepo)
 
@@ -81,12 +99,13 @@ func (app *ApiApp) Run() {
 		HouseLike: houseLikeService,
 		Image:     imageService,
 		Avatar:    avatarService,
-		Category: categoryService,
-		Country:  countryService,
-		City:     cityService,
-		Type:     typeService,
-		FAQ:      faqService,
-		Inquiry:  inquiryService,
+		Category:  categoryService,
+		Country:   countryService,
+		City:      cityService,
+		Type:      typeService,
+		FAQ:       faqService,
+		Inquiry:   inquiryService,
+		Stats:     statsService,
 	}
 
 	app.App = router.RegisterRoutes(app.App, db, svc)

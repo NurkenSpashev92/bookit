@@ -27,6 +27,7 @@ type Services struct {
 	Type      *services.TypeService
 	FAQ       *services.FAQService
 	Inquiry   *services.InquiryService
+	Stats     *services.StatsService
 }
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
@@ -42,6 +43,7 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 	cityHandler := handlers.NewCityHandler(svc.City)
 	typeHandler := handlers.NewTypeHandler(svc.Type)
 	avatarHandler := handlers.NewAvatarHandler(svc.Avatar)
+	statsHandler := handlers.NewStatsHandler(svc.Stats)
 	faqHandler := handlers.NewFAQHandler(svc.FAQ, svc.Inquiry)
 
 	apiV1 := app.Group("/api/v1")
@@ -121,6 +123,14 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 
 		apiV1.Get("/my-houses", middleware.AuthRequired(svc.JWT), houseHandler.MyHouses)
 
+		stats := apiV1.Group("/stats")
+		{
+			stats.Get("/dashboard", middleware.AuthRequired(svc.JWT), statsHandler.Dashboard)
+			stats.Get("/houses", middleware.AuthRequired(svc.JWT), statsHandler.HouseStats)
+			stats.Get("/houses/:slug", middleware.AuthRequired(svc.JWT), statsHandler.HouseDetail)
+			stats.Get("/charts", middleware.AuthRequired(svc.JWT), statsHandler.Charts)
+		}
+
 		houses := apiV1.Group("/houses")
 		{
 			houses.Get("/", middleware.AuthOptional(svc.JWT), houseHandler.GetAll)
@@ -132,7 +142,7 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 			houses.Get("/liked", middleware.AuthRequired(svc.JWT), houseLikeHandler.UserLikedHouses)
 			houses.Delete("/images/:image_id", middleware.AuthRequired(svc.JWT), imageHandler.Delete)
 
-			houses.Get("/:slug", houseHandler.GetBySlug)
+			houses.Get("/:slug", middleware.AuthOptional(svc.JWT), houseHandler.GetBySlug)
 
 			houses.Post("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Like)
 			houses.Delete("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Unlike)
