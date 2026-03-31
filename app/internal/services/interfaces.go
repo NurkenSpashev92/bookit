@@ -19,7 +19,7 @@ type UserRepository interface {
 
 type HouseRepository interface {
 	GetAll(ctx context.Context) ([]schemas.HouseListItem, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schemas.HouseListItem, int, error)
+	GetAllPaginated(ctx context.Context, filter schemas.HouseFilter, limit, offset int) ([]schemas.HouseListItem, int, error)
 	GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error)
 	GetBySlug(ctx context.Context, slug string) (models.House, error)
 	Create(ctx context.Context, req schemas.HouseCreateRequest) (models.House, error)

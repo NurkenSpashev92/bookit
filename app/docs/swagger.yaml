@@ -769,7 +769,7 @@ definitions:
     type: object
   schemas.PaginatedResponse:
     properties:
-      items: {}
+      data: {}
       page:
         example: 1
         type: integer
@@ -1705,7 +1705,7 @@ paths:
       - HealthCheck
   /houses:
     get:
-      description: Returns a paginated list of all houses
+      description: Returns a filtered, paginated list of all houses
       parameters:
       - default: 1
         description: Page number
@@ -1716,6 +1716,54 @@ paths:
         description: Items per page
         in: query
         name: page_size
+        type: integer
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: integer
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: integer
+      - description: Minimum guest capacity
+        in: query
+        name: guest_count
+        type: integer
+      - description: Minimum rooms
+        in: query
+        name: rooms_qty
+        type: integer
+      - description: Minimum bedrooms
+        in: query
+        name: bedroom_qty
+        type: integer
+      - description: Minimum beds
+        in: query
+        name: bed_qty
+        type: integer
+      - description: Minimum bathrooms
+        in: query
+        name: bath_qty
+        type: integer
+      - description: Allows pets
+        in: query
+        name: guests_with_pets
+        type: boolean
+      - description: Category ID
+        in: query
+        name: category
+        type: integer
+      - description: House type ID
+        in: query
+        name: house_type
+        type: integer
+      - description: Country ID
+        in: query
+        name: country
+        type: integer
+      - description: City ID
+        in: query
+        name: city
         type: integer
       produces:
       - application/json

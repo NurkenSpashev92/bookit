@@ -1289,7 +1289,7 @@ const docTemplate = `{
         },
         "/houses": {
             "get": {
-                "description": "Returns a paginated list of all houses",
+                "description": "Returns a filtered, paginated list of all houses",
                 "produces": [
                     "application/json"
                 ],
@@ -1310,6 +1310,78 @@ const docTemplate = `{
                         "default": 10,
                         "description": "Items per page",
                         "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Minimum price",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum price",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Minimum guest capacity",
+                        "name": "guest_count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Minimum rooms",
+                        "name": "rooms_qty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Minimum bedrooms",
+                        "name": "bedroom_qty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Minimum beds",
+                        "name": "bed_qty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Minimum bathrooms",
+                        "name": "bath_qty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Allows pets",
+                        "name": "guests_with_pets",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "House type ID",
+                        "name": "house_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Country ID",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "City ID",
+                        "name": "city",
                         "in": "query"
                     }
                 ],
@@ -3387,7 +3459,7 @@ const docTemplate = `{
         "schemas.PaginatedResponse": {
             "type": "object",
             "properties": {
-                "items": {},
+                "data": {},
                 "page": {
                     "type": "integer",
                     "example": 1

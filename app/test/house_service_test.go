@@ -33,7 +33,7 @@ func (m *mockHouseRepo) GetAll(_ context.Context) ([]schemas.HouseListItem, erro
 	return items, nil
 }
 
-func (m *mockHouseRepo) GetAllPaginated(_ context.Context, _, _ int) ([]schemas.HouseListItem, int, error) {
+func (m *mockHouseRepo) GetAllPaginated(_ context.Context, _ schemas.HouseFilter, _, _ int) ([]schemas.HouseListItem, int, error) {
 	items, err := m.GetAll(nil)
 	return items, len(items), err
 }

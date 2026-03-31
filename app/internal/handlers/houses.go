@@ -21,11 +21,23 @@ func NewHouseHandler(houseService *services.HouseService) *HouseHandler {
 
 // GetHouses godoc
 // @Summary      Get all houses
-// @Description  Returns a paginated list of all houses
+// @Description  Returns a filtered, paginated list of all houses
 // @Tags         Houses
 // @Produce      json
-// @Param        page      query int false "Page number" default(1)
-// @Param        page_size query int false "Items per page" default(10)
+// @Param        page            query int    false "Page number" default(1)
+// @Param        page_size       query int    false "Items per page" default(10)
+// @Param        min_price       query int    false "Minimum price"
+// @Param        max_price       query int    false "Maximum price"
+// @Param        guest_count     query int    false "Minimum guest capacity"
+// @Param        rooms_qty       query int    false "Minimum rooms"
+// @Param        bedroom_qty     query int    false "Minimum bedrooms"
+// @Param        bed_qty         query int    false "Minimum beds"
+// @Param        bath_qty        query int    false "Minimum bathrooms"
+// @Param        guests_with_pets query bool  false "Allows pets"
+// @Param        category        query int    false "Category ID"
+// @Param        house_type      query int    false "House type ID"
+// @Param        country         query int    false "Country ID"
+// @Param        city            query int    false "City ID"
 // @Success      200  {object} schemas.PaginatedResponse
 // @Failure      500  {object} schemas.ErrorResponse
 // @Router       /houses [get]
@@ -36,8 +48,9 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 	}
 
 	p := schemas.ParsePagination(c)
+	filter := schemas.ParseHouseFilter(c)
 
-	houses, total, err := h.houseService.GetAllPaginated(c.Context(), userID, p.PageSize, p.Offset)
+	houses, total, err := h.houseService.GetAllPaginated(c.Context(), userID, filter, p.PageSize, p.Offset)
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}

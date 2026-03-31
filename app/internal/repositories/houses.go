@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/models"
@@ -25,217 +27,224 @@ func NewHouseRepository(db *pgxpool.Pool, awsCfg *configs.AwsConfig) *HouseRepos
 }
 
 func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, error) {
-	houses, _, err := r.GetAllPaginated(ctx, 0, 0)
+	houses, _, err := r.GetAllPaginated(ctx, schemas.HouseFilter{}, 0, 0)
 	return houses, err
 }
 
-func (r *HouseRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]schemas.HouseListItem, int, error) {
+func (r *HouseRepository) GetAllPaginated(ctx context.Context, filter schemas.HouseFilter, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	return r.queryHousesPaginated(ctx, filter, limit, offset)
+}
+
+func (r *HouseRepository) GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	f := schemas.HouseFilter{}
+	f.OwnerID = &ownerID
+	return r.queryHousesPaginated(ctx, f, limit, offset)
+}
+
+func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schemas.HouseFilter, limit, offset int) ([]schemas.HouseListItem, int, error) {
 	baseURL := r.awsCfg.BaseURL()
 
+	// Build WHERE conditions dynamically
+	// $1 is always baseURL for the SELECT query
+	// For COUNT query, args start at $1
+	wb := newWhereBuilder()
+	if filter.OwnerID != nil {
+		wb.add("h.owner_id", "=", *filter.OwnerID)
+	}
+	if filter.MinPrice != nil {
+		wb.add("h.price", ">=", *filter.MinPrice)
+	}
+	if filter.MaxPrice != nil {
+		wb.add("h.price", "<=", *filter.MaxPrice)
+	}
+	if filter.GuestCount != nil {
+		wb.add("h.guest_qty", ">=", *filter.GuestCount)
+	}
+	if filter.RoomsQty != nil {
+		wb.add("h.rooms_qty", ">=", *filter.RoomsQty)
+	}
+	if filter.BedroomQty != nil {
+		wb.add("h.bedroom_qty", ">=", *filter.BedroomQty)
+	}
+	if filter.BedQty != nil {
+		wb.add("h.bedroom_qty", ">=", *filter.BedQty)
+	}
+	if filter.BathQty != nil {
+		wb.add("h.bath_qty", ">=", *filter.BathQty)
+	}
+	if filter.GuestsWithPets != nil && *filter.GuestsWithPets {
+		wb.add("h.guests_with_pets", "=", true)
+	}
+	if filter.TypeID != nil {
+		wb.add("h.type_id", "=", *filter.TypeID)
+	}
+	if filter.CountryID != nil {
+		wb.add("h.country_id", "=", *filter.CountryID)
+	}
+	if filter.CityID != nil {
+		wb.add("h.city_id", "=", *filter.CityID)
+	}
+
+	if filter.CategoryID != nil {
+		wb.add("", "", *filter.CategoryID) // value used by category join
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM houses`).Scan(&total); err != nil {
-		return nil, 0, err
-	}
-
-	query := `
-		SELECT
-			h.id,
-			h.name_en,
-			h.name_kz,
-			h.name_ru,
-			h.slug,
-			h.price,
-			h.address_en,
-			h.address_kz,
-			h.address_ru,
-			h.priority,
-			h.guests_with_pets,
-			h.best_house,
-			h.promotion,
-			CONCAT(c.name_kz, ', ', ct.name_kz) AS country_name_kz,
-			CONCAT(c.name_ru, ', ', ct.name_ru) AS country_name_ru,
-			CONCAT(c.name_en, ', ', ct.name_en) AS country_name_en,
-			CONCAT(u.first_name, ' ', u.last_name) AS full_name,
-			h.like_count,
-			COALESCE(img.images, '[]') as images
-		FROM houses h
-		LEFT JOIN countries c ON c.id = h.country_id
-		LEFT JOIN cities ct ON ct.id = h.city_id
-		LEFT JOIN users u ON u.id = h.owner_id
-		LEFT JOIN LATERAL (
-			SELECT COALESCE(json_agg(
-				json_build_object(
-					'id', i.id,
-					'original', $1 || i.original,
-					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $1 || i.thumbnail ELSE '' END,
-					'mime_type', i.mimetype,
-					'size', i.size,
-					'house_id', i.house_id
-				)
-			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
-			FROM (
-				SELECT id, original, thumbnail, mimetype, size, house_id
-				FROM images
-				WHERE house_id = h.id
-				ORDER BY id
-				LIMIT 5
-			) i
-		) img ON true
-		ORDER BY h.id DESC
-	`
-
-	args := []interface{}{baseURL}
-	if limit > 0 {
-		query += ` LIMIT $2 OFFSET $3`
-		args = append(args, limit, offset)
-	}
-
-	rows, err := r.db.Query(ctx, query, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
+	g.Go(func() error {
+		countWhere, countArgs := wb.build(0) // no baseURL offset
+		countCatJoin := ""
+		if filter.CategoryID != nil {
+			countCatJoin = fmt.Sprintf("INNER JOIN house_category hc ON hc.house_id = h.id AND hc.category_id = $%d", len(countArgs))
+			// category_id is already the last arg
+		}
+		q := fmt.Sprintf(`SELECT COUNT(*) FROM houses h %s %s`, countCatJoin, countWhere)
+		return r.db.QueryRow(gctx, q, countArgs...).Scan(&total)
+	})
 
 	var houses []schemas.HouseListItem
+	g.Go(func() error {
+		selectWhere, selectArgs := wb.build(1) // offset by 1 for $1=baseURL
+		allArgs := append([]interface{}{baseURL}, selectArgs...)
 
-	for rows.Next() {
-		var h schemas.HouseListItem
-		var imagesJSON []byte
+		selectCatJoin := ""
+		if filter.CategoryID != nil {
+			selectCatJoin = fmt.Sprintf("INNER JOIN house_category hc ON hc.house_id = h.id AND hc.category_id = $%d", len(allArgs))
+		}
 
-		err := rows.Scan(
-			&h.ID,
-			&h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug,
-			&h.Price,
-			&h.AddressEN, &h.AddressKZ, &h.AddressRU,
-			&h.Priority,
-			&h.GuestsWithPets,
-			&h.BestHouse,
-			&h.Promotion,
-			&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
-			&h.OwnerFullName,
-			&h.LikeCount,
-			&imagesJSON,
-		)
+		pagination := ""
+		if limit > 0 {
+			pagination = fmt.Sprintf("LIMIT $%d OFFSET $%d", len(allArgs)+1, len(allArgs)+2)
+			allArgs = append(allArgs, limit, offset)
+		}
 
+		query := fmt.Sprintf(`
+			SELECT
+				h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price,
+				h.address_en, h.address_kz, h.address_ru,
+				h.priority, h.guests_with_pets, h.best_house, h.promotion,
+				CONCAT(c.name_kz, ', ', ct.name_kz),
+				CONCAT(c.name_ru, ', ', ct.name_ru),
+				CONCAT(c.name_en, ', ', ct.name_en),
+				CONCAT(u.first_name, ' ', u.last_name),
+				h.like_count,
+				COALESCE(img.images, '[]')
+			FROM houses h
+			%s
+			LEFT JOIN countries c ON c.id = h.country_id
+			LEFT JOIN cities ct ON ct.id = h.city_id
+			LEFT JOIN users u ON u.id = h.owner_id
+			LEFT JOIN LATERAL (
+				SELECT COALESCE(json_agg(
+					json_build_object(
+						'id', i.id,
+						'original', $1 || i.original,
+						'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $1 || i.thumbnail ELSE '' END,
+						'mime_type', i.mimetype,
+						'size', i.size,
+						'house_id', i.house_id
+					)
+				) FILTER (WHERE i.id IS NOT NULL), '[]') as images
+				FROM (
+					SELECT id, original, thumbnail, mimetype, size, house_id
+					FROM images WHERE house_id = h.id ORDER BY id LIMIT 5
+				) i
+			) img ON true
+			%s
+			ORDER BY h.id DESC
+			%s`, selectCatJoin, selectWhere, pagination)
+
+		rows, err := r.db.Query(gctx, query, allArgs...)
 		if err != nil {
-			return nil, 0, err
+			return err
 		}
+		defer rows.Close()
 
-		if len(imagesJSON) == 0 {
-			imagesJSON = []byte("[]")
+		for rows.Next() {
+			var h schemas.HouseListItem
+			var imagesJSON []byte
+
+			if err := rows.Scan(
+				&h.ID, &h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug, &h.Price,
+				&h.AddressEN, &h.AddressKZ, &h.AddressRU,
+				&h.Priority, &h.GuestsWithPets, &h.BestHouse, &h.Promotion,
+				&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
+				&h.OwnerFullName, &h.LikeCount, &imagesJSON,
+			); err != nil {
+				return err
+			}
+
+			if len(imagesJSON) == 0 {
+				imagesJSON = []byte("[]")
+			}
+			if err := json.Unmarshal(imagesJSON, &h.Images); err != nil {
+				return err
+			}
+
+			houses = append(houses, h)
 		}
+		return nil
+	})
 
-		if err = json.Unmarshal(imagesJSON, &h.Images); err != nil {
-			return nil, 0, err
-		}
-
-		houses = append(houses, h)
+	if err := g.Wait(); err != nil {
+		return nil, 0, err
 	}
 
 	return houses, total, nil
 }
 
-func (r *HouseRepository) GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error) {
-	baseURL := r.awsCfg.BaseURL()
+// whereBuilder builds parameterized WHERE clauses dynamically.
+type whereBuilder struct {
+	conditions []string
+	values     []interface{}
+}
 
-	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM houses WHERE owner_id=$1`, ownerID).Scan(&total); err != nil {
-		return nil, 0, err
+func newWhereBuilder() *whereBuilder {
+	return &whereBuilder{}
+}
+
+func (w *whereBuilder) add(col, op string, val interface{}) {
+	w.values = append(w.values, val)
+	if col != "" {
+		// placeholder index determined at build time
+		w.conditions = append(w.conditions, fmt.Sprintf("%s %s {%d}", col, op, len(w.values)-1))
+	}
+}
+
+func (w *whereBuilder) nextArgForOffset(offset int) int {
+	return len(w.values) + 1 + offset
+}
+
+// build returns WHERE clause and args with param indices offset by `argOffset`.
+// For COUNT queries argOffset=0 ($1,$2,...), for SELECT argOffset=1 ($2,$3,...) because $1=baseURL.
+func (w *whereBuilder) build(argOffset int) (string, []interface{}) {
+	if len(w.conditions) == 0 && len(w.values) == len(w.conditions) {
+		return "", w.values
 	}
 
-	query := `
-		SELECT
-			h.id,
-			h.name_en,
-			h.name_kz,
-			h.name_ru,
-			h.slug,
-			h.price,
-			h.address_en,
-			h.address_kz,
-			h.address_ru,
-			h.priority,
-			h.guests_with_pets,
-			h.best_house,
-			h.promotion,
-			CONCAT(c.name_kz, ', ', ct.name_kz) AS country_name_kz,
-			CONCAT(c.name_ru, ', ', ct.name_ru) AS country_name_ru,
-			CONCAT(c.name_en, ', ', ct.name_en) AS country_name_en,
-			CONCAT(u.first_name, ' ', u.last_name) AS full_name,
-			h.like_count,
-			COALESCE(img.images, '[]') as images
-		FROM houses h
-		LEFT JOIN countries c ON c.id = h.country_id
-		LEFT JOIN cities ct ON ct.id = h.city_id
-		LEFT JOIN users u ON u.id = h.owner_id
-		LEFT JOIN LATERAL (
-			SELECT COALESCE(json_agg(
-				json_build_object(
-					'id', i.id,
-					'original', $1 || i.original,
-					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $1 || i.thumbnail ELSE '' END,
-					'mime_type', i.mimetype,
-					'size', i.size,
-					'house_id', i.house_id
-				)
-			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
-			FROM (
-				SELECT id, original, thumbnail, mimetype, size, house_id
-				FROM images
-				WHERE house_id = h.id
-				ORDER BY id
-				LIMIT 5
-			) i
-		) img ON true
-		WHERE h.owner_id = $2
-		ORDER BY h.id DESC
-	`
-
-	args := []interface{}{baseURL, ownerID}
-	if limit > 0 {
-		query += ` LIMIT $3 OFFSET $4`
-		args = append(args, limit, offset)
-	}
-
-	rows, err := r.db.Query(ctx, query, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	var houses []schemas.HouseListItem
-	for rows.Next() {
-		var h schemas.HouseListItem
-		var imagesJSON []byte
-
-		if err := rows.Scan(
-			&h.ID,
-			&h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug,
-			&h.Price,
-			&h.AddressEN, &h.AddressKZ, &h.AddressRU,
-			&h.Priority,
-			&h.GuestsWithPets,
-			&h.BestHouse,
-			&h.Promotion,
-			&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
-			&h.OwnerFullName,
-			&h.LikeCount,
-			&imagesJSON,
-		); err != nil {
-			return nil, 0, err
+	result := ""
+	if len(w.conditions) > 0 {
+		parts := make([]string, len(w.conditions))
+		for i, cond := range w.conditions {
+			_ = i
+			// Replace {idx} with $N
+			parts[i] = cond
 		}
 
-		if len(imagesJSON) == 0 {
-			imagesJSON = []byte("[]")
-		}
-		if err := json.Unmarshal(imagesJSON, &h.Images); err != nil {
-			return nil, 0, err
+		// Now replace {idx} placeholders with proper $N
+		for i := range parts {
+			for j := range w.values {
+				placeholder := fmt.Sprintf("{%d}", j)
+				replacement := fmt.Sprintf("$%d", j+1+argOffset)
+				parts[i] = strings.Replace(parts[i], placeholder, replacement, 1)
+			}
 		}
 
-		houses = append(houses, h)
+		result = "WHERE " + strings.Join(parts, " AND ")
 	}
 
-	return houses, total, nil
+	return result, w.values
 }
 
 func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (models.House, error) {
