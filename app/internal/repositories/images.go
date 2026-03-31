@@ -18,6 +18,12 @@ func NewHouseImageRepository(db *pgxpool.Pool) *HouseImageRepository {
 	return &HouseImageRepository{db: db}
 }
 
+func (r *HouseImageRepository) GetHouseIDBySlug(ctx context.Context, slug string) (int, error) {
+	var id int
+	err := r.db.QueryRow(ctx, `SELECT id FROM houses WHERE slug=$1`, slug).Scan(&id)
+	return id, err
+}
+
 func (r *HouseImageRepository) CountByHouse(ctx context.Context, houseID int) (int, error) {
 	var count int
 	err := r.db.QueryRow(ctx,

@@ -11,15 +11,35 @@ import (
 )
 
 type HouseService struct {
-	repository HouseRepository
+	repository     HouseRepository
+	likeRepository HouseLikeRepository
 }
 
-func NewHouseService(repo HouseRepository) *HouseService {
-	return &HouseService{repository: repo}
+func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository) *HouseService {
+	return &HouseService{repository: repo, likeRepository: likeRepo}
 }
 
-func (s *HouseService) GetAll(ctx context.Context) ([]schemas.HouseListItem, error) {
-	return s.repository.GetAll(ctx)
+func (s *HouseService) GetAll(ctx context.Context, userID int) ([]schemas.HouseListItem, error) {
+	houses, err := s.repository.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if userID > 0 {
+		likedIDs, err := s.likeRepository.GetUserLikedHouseIDs(ctx, userID)
+		if err != nil {
+			return houses, nil
+		}
+		liked := make(map[int]bool, len(likedIDs))
+		for _, id := range likedIDs {
+			liked[id] = true
+		}
+		for i := range houses {
+			houses[i].IsLiked = liked[houses[i].ID]
+		}
+	}
+
+	return houses, nil
 }
 
 func (s *HouseService) GetBySlug(ctx context.Context, slug string) (models.House, error) {
@@ -38,12 +58,12 @@ func (s *HouseService) Create(ctx context.Context, req schemas.HouseCreateReques
 	return house, nil
 }
 
-func (s *HouseService) Update(ctx context.Context, id int, req schemas.HouseUpdateRequest) (models.House, error) {
-	return s.repository.Update(ctx, id, req)
+func (s *HouseService) Update(ctx context.Context, slug string, req schemas.HouseUpdateRequest) (models.House, error) {
+	return s.repository.Update(ctx, slug, req)
 }
 
-func (s *HouseService) Delete(ctx context.Context, id int) error {
-	return s.repository.Delete(ctx, id)
+func (s *HouseService) Delete(ctx context.Context, slug string) error {
+	return s.repository.Delete(ctx, slug)
 }
 
 func (s *HouseService) CheckSlug(ctx context.Context, rawSlug string) (bool, string, error) {

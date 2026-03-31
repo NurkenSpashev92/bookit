@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/Flussen/swagger-fiber-v3"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -109,10 +111,10 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 
 		houses := apiV1.Group("/houses")
 		{
-			houses.Get("/", houseHandler.GetAll)
+			houses.Get("/", middleware.AuthOptional(svc.JWT), houseHandler.GetAll)
 			houses.Post("/", middleware.AuthRequired(svc.JWT), houseHandler.Create)
-			houses.Patch("/:id", middleware.AuthRequired(svc.JWT), houseHandler.Update)
-			houses.Delete("/:id", middleware.AuthRequired(svc.JWT), houseHandler.Delete)
+			houses.Patch("/:slug", middleware.AuthRequired(svc.JWT), houseHandler.Update)
+			houses.Delete("/:slug", middleware.AuthRequired(svc.JWT), houseHandler.Delete)
 
 			houses.Get("/check-slug", houseHandler.CheckSlug)
 			houses.Get("/liked", middleware.AuthRequired(svc.JWT), houseLikeHandler.UserLikedHouses)
@@ -120,11 +122,15 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 
 			houses.Get("/:slug", houseHandler.GetBySlug)
 
-			houses.Post("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Like)
-			houses.Delete("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Unlike)
-			houses.Get("/:id/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Status)
+			houses.Post("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Like)
+			houses.Delete("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Unlike)
+			houses.Get("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Status)
 
-			houses.Post("/:id/images", middleware.AuthRequired(svc.JWT), imageHandler.Upload)
+			houses.Post("/:slug/images",
+				middleware.AuthRequired(svc.JWT),
+				middleware.UploadLimits(50*1024*1024, 2*time.Minute),
+				imageHandler.Upload,
+			)
 		}
 	}
 

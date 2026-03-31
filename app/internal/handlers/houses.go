@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -29,7 +28,12 @@ func NewHouseHandler(houseService *services.HouseService) *HouseHandler {
 // @Failure      500  {object} schemas.ErrorResponse
 // @Router       /houses [get]
 func (h *HouseHandler) GetAll(c fiber.Ctx) error {
-	houses, err := h.houseService.GetAll(c.Context())
+	var userID int
+	if user, ok := c.Locals("user").(models.User); ok {
+		userID = user.ID
+	}
+
+	houses, err := h.houseService.GetAll(c.Context(), userID)
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
@@ -100,16 +104,19 @@ func (h *HouseHandler) Create(c fiber.Ctx) error {
 // @Tags         Houses
 // @Accept       json
 // @Produce      json
-// @Param        id     path      int  true  "House ID"
+// @Param        slug   path      string  true  "House slug"
 // @Param        house  body      schemas.HouseUpdateRequest true  "House update data"
 // @Success      200    {object} models.House
 // @Failure      400    {object} schemas.ErrorResponse
 // @Failure      401    {object} schemas.ErrorResponse
 // @Failure      500    {object} schemas.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /houses/{id} [patch]
+// @Router       /houses/{slug} [patch]
 func (h *HouseHandler) Update(c fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
+	}
 
 	var req schemas.HouseUpdateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
@@ -119,7 +126,7 @@ func (h *HouseHandler) Update(c fiber.Ctx) error {
 		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
 
-	house, err := h.houseService.Update(c.Context(), id, req)
+	house, err := h.houseService.Update(c.Context(), slug, req)
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
@@ -129,19 +136,22 @@ func (h *HouseHandler) Update(c fiber.Ctx) error {
 
 // DeleteHouse godoc
 // @Summary      Delete house
-// @Description  Deletes a house by ID. Auth required.
+// @Description  Deletes a house by slug. Auth required.
 // @Tags         Houses
 // @Produce      json
-// @Param        id   path      int  true  "House ID"
+// @Param        slug   path      string  true  "House slug"
 // @Success      200  {object} schemas.MessageResponse
 // @Failure      401  {object} schemas.ErrorResponse
 // @Failure      500  {object} schemas.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /houses/{id} [delete]
+// @Router       /houses/{slug} [delete]
 func (h *HouseHandler) Delete(c fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
+	}
 
-	if err := h.houseService.Delete(c.Context(), id); err != nil {
+	if err := h.houseService.Delete(c.Context(), slug); err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
 

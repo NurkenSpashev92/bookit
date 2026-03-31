@@ -36,7 +36,12 @@ type uploadedImage struct {
 	height   int
 }
 
-func (s *ImageService) UploadHouseImages(ctx context.Context, houseID int, files []*multipart.FileHeader) error {
+func (s *ImageService) UploadHouseImages(ctx context.Context, slug string, files []*multipart.FileHeader) error {
+	houseID, err := s.repository.GetHouseIDBySlug(ctx, slug)
+	if err != nil {
+		return fmt.Errorf("house not found")
+	}
+
 	count, err := s.repository.CountByHouse(ctx, houseID)
 	if err != nil {
 		return err
@@ -67,7 +72,7 @@ func (s *ImageService) UploadHouseImages(ctx context.Context, houseID int, files
 
 	// Phase 2: Upload to S3 — limit concurrency to avoid overwhelming S3
 	results := make([]uploadedImage, len(files))
-	uploadGroup, ctx := errgroup.WithContext(ctx)
+	uploadGroup, uploadCtx := errgroup.WithContext(ctx)
 	uploadGroup.SetLimit(6)
 
 	for idx, pr := range procResults {
@@ -78,13 +83,13 @@ func (s *ImageService) UploadHouseImages(ctx context.Context, houseID int, files
 
 		// Upload original
 		uploadGroup.Go(func() error {
-			_, err := s.s3.UploadCompressed(ctx, originalKey, img.Original, "image/jpeg")
+			_, err := s.s3.UploadCompressed(uploadCtx, originalKey, img.Original, "image/jpeg")
 			return err
 		})
 
 		// Upload thumbnail
 		uploadGroup.Go(func() error {
-			_, err := s.s3.UploadCompressed(ctx, thumbKey, img.Thumbnail, "image/webp")
+			_, err := s.s3.UploadCompressed(uploadCtx, thumbKey, img.Thumbnail, "image/webp")
 			return err
 		})
 

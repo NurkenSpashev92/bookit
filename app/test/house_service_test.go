@@ -56,22 +56,18 @@ func (m *mockHouseRepo) Create(_ context.Context, req schemas.HouseCreateRequest
 	return h, nil
 }
 
-func (m *mockHouseRepo) Update(_ context.Context, id int, _ schemas.HouseUpdateRequest) (models.House, error) {
-	for _, h := range m.houses {
-		if h.ID == id {
-			return h, nil
-		}
+func (m *mockHouseRepo) Update(_ context.Context, slug string, _ schemas.HouseUpdateRequest) (models.House, error) {
+	h, ok := m.houses[slug]
+	if !ok {
+		return models.House{}, fmt.Errorf("house with slug '%s' not found", slug)
 	}
-	return models.House{}, fmt.Errorf("house with id %d not found", id)
+	return h, nil
 }
 
-func (m *mockHouseRepo) Delete(_ context.Context, id int) error {
-	for slug, h := range m.houses {
-		if h.ID == id {
-			delete(m.houses, slug)
-			delete(m.slugs, slug)
-			return nil
-		}
+func (m *mockHouseRepo) Delete(_ context.Context, slug string) error {
+	if _, ok := m.houses[slug]; ok {
+		delete(m.houses, slug)
+		delete(m.slugs, slug)
 	}
 	return nil
 }
@@ -82,7 +78,7 @@ func (m *mockHouseRepo) SlugExists(_ context.Context, slug string) (bool, error)
 
 func TestHouseService_CheckSlug(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo)
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo())
 	ctx := context.Background()
 
 	available, normalized, err := svc.CheckSlug(ctx, "Beach House")
@@ -107,7 +103,7 @@ func TestHouseService_CheckSlug(t *testing.T) {
 
 func TestHouseService_Create_SetsOwnerID(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo)
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo())
 
 	house, err := svc.Create(context.Background(), schemas.HouseCreateRequest{
 		NameEN: "Test", Slug: "test-house",
@@ -122,7 +118,7 @@ func TestHouseService_Create_SetsOwnerID(t *testing.T) {
 
 func TestHouseService_Create_SlugExists(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo)
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo())
 	ctx := context.Background()
 
 	svc.Create(ctx, schemas.HouseCreateRequest{NameEN: "A", Slug: "dup"}, 1)
@@ -138,7 +134,7 @@ func TestHouseService_Create_SlugExists(t *testing.T) {
 
 func TestHouseService_GetBySlug(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo)
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo())
 
 	svc.Create(context.Background(), schemas.HouseCreateRequest{NameEN: "Beach", Slug: "beach"}, 1)
 
@@ -152,7 +148,7 @@ func TestHouseService_GetBySlug(t *testing.T) {
 }
 
 func TestHouseService_GetBySlug_NotFound(t *testing.T) {
-	svc := services.NewHouseService(newMockHouseRepo())
+	svc := services.NewHouseService(newMockHouseRepo(), newMockHouseLikeRepo())
 	_, err := svc.GetBySlug(context.Background(), "nope")
 	if err == nil {
 		t.Error("expected error")
@@ -161,11 +157,11 @@ func TestHouseService_GetBySlug_NotFound(t *testing.T) {
 
 func TestHouseService_Delete(t *testing.T) {
 	repo := newMockHouseRepo()
-	svc := services.NewHouseService(repo)
+	svc := services.NewHouseService(repo, newMockHouseLikeRepo())
 
-	house, _ := svc.Create(context.Background(), schemas.HouseCreateRequest{NameEN: "Del", Slug: "del"}, 1)
+	svc.Create(context.Background(), schemas.HouseCreateRequest{NameEN: "Del", Slug: "del"}, 1)
 
-	err := svc.Delete(context.Background(), house.ID)
+	err := svc.Delete(context.Background(), "del")
 	if err != nil {
 		t.Fatal(err)
 	}

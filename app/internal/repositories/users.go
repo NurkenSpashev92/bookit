@@ -29,12 +29,17 @@ func (r *UserRepository) Create(ctx context.Context, user schemas.UserCreateRequ
 		return u, fmt.Errorf("failed to hash password: %w", err)
 	}
 
+	var dateOfBirth interface{}
+	if user.DateOfBirth != "" {
+		dateOfBirth = user.DateOfBirth
+	}
+
 	err = r.db.QueryRow(ctx,
-		`INSERT INTO users 
+		`INSERT INTO users
 			(email, first_name, last_name, middle_name, password, date_of_birth, phone_number, is_superuser, is_active, date_joined, created_at, updated_at)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW(),NOW())
 		 RETURNING id,email,first_name,last_name,middle_name,password,date_of_birth,phone_number,is_superuser,is_active,date_joined,created_at,updated_at`,
-		user.Email, user.FirstName, user.LastName, user.MiddleName, string(hashedPassword), user.DateOfBirth, user.PhoneNumber,
+		user.Email, user.FirstName, user.LastName, user.MiddleName, string(hashedPassword), dateOfBirth, user.PhoneNumber,
 		false, true,
 	).Scan(
 		&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.Password, &u.DateOfBirth, &u.PhoneNumber,

@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/nurkenspashev92/bookit/internal/models"
@@ -22,22 +20,22 @@ func NewHouseLikeHandler(likeService *services.HouseLikeService) *HouseLikeHandl
 // @Summary Like a house
 // @Tags Houses
 // @Produce json
-// @Param id path int true "House ID"
+// @Param slug path string true "House slug"
 // @Success 200 {object} schemas.HouseLikeResponse
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 401 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /houses/{id}/like [post]
+// @Router /houses/{slug}/like [post]
 func (h *HouseLikeHandler) Like(c fiber.Ctx) error {
 	user := c.Locals("user").(models.User)
 
-	houseID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid house id"})
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
 	}
 
-	resp, err := h.likeService.Like(c.Context(), user.ID, houseID)
+	resp, err := h.likeService.Like(c.Context(), user.ID, slug)
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
@@ -49,22 +47,22 @@ func (h *HouseLikeHandler) Like(c fiber.Ctx) error {
 // @Summary Unlike a house
 // @Tags Houses
 // @Produce json
-// @Param id path int true "House ID"
+// @Param slug path string true "House slug"
 // @Success 200 {object} schemas.HouseLikeResponse
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 401 {object} schemas.ErrorResponse
 // @Failure 404 {object} schemas.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /houses/{id}/like [delete]
+// @Router /houses/{slug}/like [delete]
 func (h *HouseLikeHandler) Unlike(c fiber.Ctx) error {
 	user := c.Locals("user").(models.User)
 
-	houseID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid house id"})
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
 	}
 
-	resp, err := h.likeService.Unlike(c.Context(), user.ID, houseID)
+	resp, err := h.likeService.Unlike(c.Context(), user.ID, slug)
 	if err != nil {
 		return c.Status(404).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
@@ -76,21 +74,21 @@ func (h *HouseLikeHandler) Unlike(c fiber.Ctx) error {
 // @Summary Check if user liked a house
 // @Tags Houses
 // @Produce json
-// @Param id path int true "House ID"
+// @Param slug path string true "House slug"
 // @Success 200 {object} schemas.HouseLikeResponse
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 401 {object} schemas.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /houses/{id}/like [get]
+// @Router /houses/{slug}/like [get]
 func (h *HouseLikeHandler) Status(c fiber.Ctx) error {
 	user := c.Locals("user").(models.User)
 
-	houseID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid house id"})
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
 	}
 
-	resp, err := h.likeService.Status(c.Context(), user.ID, houseID)
+	resp, err := h.likeService.Status(c.Context(), user.ID, slug)
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}

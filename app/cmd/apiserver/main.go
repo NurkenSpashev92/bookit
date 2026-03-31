@@ -63,7 +63,7 @@ func (app *ApiApp) Run() {
 	// Services
 	jwtService := services.NewJWTService(cfgJwt)
 	userService := services.NewUserService(userRepo, jwtService)
-	houseService := services.NewHouseService(houseRepo)
+	houseService := services.NewHouseService(houseRepo, houseLikeRepo)
 	houseLikeService := services.NewHouseLikeService(houseLikeRepo)
 	imageService := services.NewImageService(imageRepo, s3client)
 	categoryService := services.NewCategoryService(categoryRepo, s3client, cfgAws)

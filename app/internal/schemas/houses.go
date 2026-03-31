@@ -188,6 +188,7 @@ type HouseListItem struct {
 	CountryCityNameEN string `json:"country_city_name_en" example:"Kazakhstan, Astana"`
 	OwnerFullName  string  `json:"owner_full_name" example:"John Doe"`
 	LikeCount      int     `json:"like_count" example:"5"`
+	IsLiked     bool    `json:"is_liked" example:"false"`
 	Images         []Image `json:"images"`
 }
 

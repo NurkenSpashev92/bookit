@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nurkenspashev92/bookit/internal/schemas"
@@ -16,7 +18,21 @@ func NewHouseLikeRepository(db *pgxpool.Pool) *HouseLikeRepository {
 	return &HouseLikeRepository{db: db}
 }
 
-func (r *HouseLikeRepository) LikeReturningCount(ctx context.Context, userID, houseID int) (int, error) {
+func (r *HouseLikeRepository) getHouseIDBySlug(ctx context.Context, slug string) (int, error) {
+	var id int
+	err := r.db.QueryRow(ctx, `SELECT id FROM houses WHERE slug=$1`, slug).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, errors.New("house not found")
+	}
+	return id, err
+}
+
+func (r *HouseLikeRepository) LikeReturningCount(ctx context.Context, userID int, slug string) (int, error) {
+	houseID, err := r.getHouseIDBySlug(ctx, slug)
+	if err != nil {
+		return 0, err
+	}
+
 	var count int
 	query := `
 		WITH ins AS (
@@ -26,11 +42,16 @@ func (r *HouseLikeRepository) LikeReturningCount(ctx context.Context, userID, ho
 		)
 		SELECT like_count FROM houses WHERE id = $2
 	`
-	err := r.db.QueryRow(ctx, query, userID, houseID).Scan(&count)
+	err = r.db.QueryRow(ctx, query, userID, houseID).Scan(&count)
 	return count, err
 }
 
-func (r *HouseLikeRepository) UnlikeReturningCount(ctx context.Context, userID, houseID int) (int, error) {
+func (r *HouseLikeRepository) UnlikeReturningCount(ctx context.Context, userID int, slug string) (int, error) {
+	houseID, err := r.getHouseIDBySlug(ctx, slug)
+	if err != nil {
+		return 0, err
+	}
+
 	var count int
 	query := `
 		WITH del AS (
@@ -39,11 +60,16 @@ func (r *HouseLikeRepository) UnlikeReturningCount(ctx context.Context, userID, 
 		)
 		SELECT like_count FROM houses WHERE id = $2
 	`
-	err := r.db.QueryRow(ctx, query, userID, houseID).Scan(&count)
+	err = r.db.QueryRow(ctx, query, userID, houseID).Scan(&count)
 	return count, err
 }
 
-func (r *HouseLikeRepository) StatusWithCount(ctx context.Context, userID, houseID int) (bool, int, error) {
+func (r *HouseLikeRepository) StatusWithCount(ctx context.Context, userID int, slug string) (bool, int, error) {
+	houseID, err := r.getHouseIDBySlug(ctx, slug)
+	if err != nil {
+		return false, 0, err
+	}
+
 	var liked bool
 	var count int
 	query := `
@@ -51,7 +77,7 @@ func (r *HouseLikeRepository) StatusWithCount(ctx context.Context, userID, house
 			EXISTS(SELECT 1 FROM house_likes WHERE user_id=$1 AND house_id=$2),
 			(SELECT like_count FROM houses WHERE id=$2)
 	`
-	err := r.db.QueryRow(ctx, query, userID, houseID).Scan(&liked, &count)
+	err = r.db.QueryRow(ctx, query, userID, houseID).Scan(&liked, &count)
 	return liked, count, err
 }
 

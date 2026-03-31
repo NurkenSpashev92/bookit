@@ -240,7 +240,7 @@ func (r *HouseRepository) Create(ctx context.Context, h schemas.HouseCreateReque
 	return house, err
 }
 
-func (r *HouseRepository) getForUpdate(ctx context.Context, id int) (models.House, error) {
+func (r *HouseRepository) getForUpdate(ctx context.Context, slug string) (models.House, error) {
 	var house models.House
 	query := `
 		SELECT id, name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
@@ -250,9 +250,9 @@ func (r *HouseRepository) getForUpdate(ctx context.Context, id int) (models.Hous
 			comments_ru, comments_en, comments_kz,
 			owner_id, type_id, city_id, country_id, guests_with_pets, best_house, promotion,
 			district_en, district_kz, district_ru, phone_number, created_at, updated_at
-		FROM houses WHERE id=$1
+		FROM houses WHERE slug=$1
 	`
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	err := r.db.QueryRow(ctx, query, slug).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug,
 		&house.Price, &house.RoomsQty, &house.GuestQty, &house.BedroomQty, &house.BathQty,
 		&house.DescriptionEN, &house.DescriptionKZ, &house.DescriptionRU,
@@ -267,11 +267,11 @@ func (r *HouseRepository) getForUpdate(ctx context.Context, id int) (models.Hous
 	return house, err
 }
 
-func (r *HouseRepository) Update(ctx context.Context, id int, h schemas.HouseUpdateRequest) (models.House, error) {
-	house, err := r.getForUpdate(ctx, id)
+func (r *HouseRepository) Update(ctx context.Context, slug string, h schemas.HouseUpdateRequest) (models.House, error) {
+	house, err := r.getForUpdate(ctx, slug)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return models.House{}, fmt.Errorf("house with id %d not found", id)
+			return models.House{}, fmt.Errorf("house with slug '%s' not found", slug)
 		}
 		return house, err
 	}
@@ -413,8 +413,8 @@ func (r *HouseRepository) Update(ctx context.Context, id int, h schemas.HouseUpd
 	return house, nil
 }
 
-func (r *HouseRepository) Delete(ctx context.Context, id int) error {
-	_, err := r.db.Exec(ctx, "DELETE FROM houses WHERE id=$1", id)
+func (r *HouseRepository) Delete(ctx context.Context, slug string) error {
+	_, err := r.db.Exec(ctx, "DELETE FROM houses WHERE slug=$1", slug)
 	return err
 }
 

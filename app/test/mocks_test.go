@@ -63,46 +63,59 @@ func (m *mockUserRepo) GetByEmail(ctx context.Context, email string) (models.Use
 // --- House Like Repository Mock ---
 
 type mockHouseLikeRepo struct {
-	likes map[string]bool // "userID:houseID"
-	counts map[int]int    // houseID -> count
+	likes  map[string]bool   // "userID:slug"
+	counts map[string]int    // slug -> count
 }
 
 func newMockHouseLikeRepo() *mockHouseLikeRepo {
 	return &mockHouseLikeRepo{
 		likes:  make(map[string]bool),
-		counts: make(map[int]int),
+		counts: make(map[string]int),
 	}
 }
 
-func (m *mockHouseLikeRepo) key(userID, houseID int) string {
-	return fmt.Sprintf("%d:%d", userID, houseID)
+func (m *mockHouseLikeRepo) key(userID int, slug string) string {
+	return fmt.Sprintf("%d:%s", userID, slug)
 }
 
-func (m *mockHouseLikeRepo) LikeReturningCount(_ context.Context, userID, houseID int) (int, error) {
-	k := m.key(userID, houseID)
+func (m *mockHouseLikeRepo) LikeReturningCount(_ context.Context, userID int, slug string) (int, error) {
+	k := m.key(userID, slug)
 	if !m.likes[k] {
 		m.likes[k] = true
-		m.counts[houseID]++
+		m.counts[slug]++
 	}
-	return m.counts[houseID], nil
+	return m.counts[slug], nil
 }
 
-func (m *mockHouseLikeRepo) UnlikeReturningCount(_ context.Context, userID, houseID int) (int, error) {
-	k := m.key(userID, houseID)
+func (m *mockHouseLikeRepo) UnlikeReturningCount(_ context.Context, userID int, slug string) (int, error) {
+	k := m.key(userID, slug)
 	if m.likes[k] {
 		delete(m.likes, k)
-		m.counts[houseID]--
+		m.counts[slug]--
 	}
-	return m.counts[houseID], nil
+	return m.counts[slug], nil
 }
 
-func (m *mockHouseLikeRepo) StatusWithCount(_ context.Context, userID, houseID int) (bool, int, error) {
-	k := m.key(userID, houseID)
-	return m.likes[k], m.counts[houseID], nil
+func (m *mockHouseLikeRepo) StatusWithCount(_ context.Context, userID int, slug string) (bool, int, error) {
+	k := m.key(userID, slug)
+	return m.likes[k], m.counts[slug], nil
 }
 
 func (m *mockHouseLikeRepo) GetUserLikedHouses(_ context.Context, _ int) ([]schemas.HouseLikeItem, error) {
 	return []schemas.HouseLikeItem{}, nil
+}
+
+func (m *mockHouseLikeRepo) GetUserLikedHouseIDs(_ context.Context, userID int) ([]int, error) {
+	var ids []int
+	for k := range m.likes {
+		var uid int
+		var slug string
+		fmt.Sscanf(k, "%d:%s", &uid, &slug)
+		if uid == userID {
+			ids = append(ids, uid)
+		}
+	}
+	return ids, nil
 }
 
 // --- FAQ Repository Mock ---

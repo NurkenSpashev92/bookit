@@ -17,16 +17,17 @@ type HouseRepository interface {
 	GetAll(ctx context.Context) ([]schemas.HouseListItem, error)
 	GetBySlug(ctx context.Context, slug string) (models.House, error)
 	Create(ctx context.Context, req schemas.HouseCreateRequest) (models.House, error)
-	Update(ctx context.Context, id int, req schemas.HouseUpdateRequest) (models.House, error)
-	Delete(ctx context.Context, id int) error
+	Update(ctx context.Context, slug string, req schemas.HouseUpdateRequest) (models.House, error)
+	Delete(ctx context.Context, slug string) error
 	SlugExists(ctx context.Context, slug string) (bool, error)
 }
 
 type HouseLikeRepository interface {
-	LikeReturningCount(ctx context.Context, userID, houseID int) (int, error)
-	UnlikeReturningCount(ctx context.Context, userID, houseID int) (int, error)
-	StatusWithCount(ctx context.Context, userID, houseID int) (bool, int, error)
+	LikeReturningCount(ctx context.Context, userID int, slug string) (int, error)
+	UnlikeReturningCount(ctx context.Context, userID int, slug string) (int, error)
+	StatusWithCount(ctx context.Context, userID int, slug string) (bool, int, error)
 	GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseLikeItem, error)
+	GetUserLikedHouseIDs(ctx context.Context, userID int) ([]int, error)
 }
 
 type CountryRepository interface {

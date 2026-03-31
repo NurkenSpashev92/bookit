@@ -24,18 +24,18 @@ func NewImageHandler(imageService *services.ImageService) *ImageHandler {
 // @Tags Houses
 // @Accept multipart/form-data
 // @Produce json
-// @Param id path int true "House ID"
+// @Param slug path string true "House slug"
 // @Param files formData []file true "Images"
 // @Success 200 {object} schemas.MessageResponse
 // @Failure 400 {object} schemas.ErrorResponse
 // @Failure 401 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /houses/{id}/images [post]
+// @Router /houses/{slug}/images [post]
 func (h *ImageHandler) Upload(c fiber.Ctx) error {
-	houseID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid house id"})
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
 	}
 
 	form, err := c.MultipartForm()
@@ -43,12 +43,15 @@ func (h *ImageHandler) Upload(c fiber.Ctx) error {
 		return c.Status(400).JSON(schemas.ErrorResponse{Error: "invalid form"})
 	}
 
-	files := form.File["files"]
+	files := form.File["files[]"]
+	if len(files) == 0 {
+		files = form.File["files"]
+	}
 	if len(files) == 0 {
 		return c.Status(400).JSON(schemas.ErrorResponse{Error: "no files"})
 	}
 
-	if err := h.imageService.UploadHouseImages(c.Context(), houseID, files); err != nil {
+	if err := h.imageService.UploadHouseImages(c.Context(), slug, files); err != nil {
 		if errors.Is(err, services.ErrMaxImagesExceeded) {
 			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
 		}
