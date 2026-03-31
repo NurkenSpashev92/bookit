@@ -51,7 +51,7 @@ func (app *ApiApp) Run() {
 	// Repositories
 	userRepo := repositories.NewUserRepository(db)
 	houseRepo := repositories.NewHouseRepository(db, cfgAws)
-	houseLikeRepo := repositories.NewHouseLikeRepository(db)
+	houseLikeRepo := repositories.NewHouseLikeRepository(db, cfgAws)
 	imageRepo := repositories.NewHouseImageRepository(db)
 	categoryRepo := repositories.NewCategoryRepository(db)
 	countryRepo := repositories.NewCountryRepository(db)
@@ -62,10 +62,11 @@ func (app *ApiApp) Run() {
 
 	// Services
 	jwtService := services.NewJWTService(cfgJwt)
-	userService := services.NewUserService(userRepo, jwtService)
+	userService := services.NewUserService(userRepo, jwtService, cfgAws)
 	houseService := services.NewHouseService(houseRepo, houseLikeRepo)
 	houseLikeService := services.NewHouseLikeService(houseLikeRepo)
 	imageService := services.NewImageService(imageRepo, s3client)
+	avatarService := services.NewAvatarService(userRepo, s3client)
 	categoryService := services.NewCategoryService(categoryRepo, s3client, cfgAws)
 	countryService := services.NewCountryService(countryRepo)
 	cityService := services.NewCityService(cityRepo)
@@ -79,6 +80,7 @@ func (app *ApiApp) Run() {
 		House:     houseService,
 		HouseLike: houseLikeService,
 		Image:     imageService,
+		Avatar:    avatarService,
 		Category: categoryService,
 		Country:  countryService,
 		City:     cityService,

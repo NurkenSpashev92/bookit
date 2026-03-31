@@ -127,7 +127,10 @@ definitions:
     type: object
   schemas.AuthResponse:
     properties:
-      token:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      refresh_token:
         example: eyJhbGciOiJIUzI1NiIs...
         type: string
       user:
@@ -136,6 +139,9 @@ definitions:
   schemas.AuthUser:
     properties:
       avatar:
+        type: string
+      date_of_birth:
+        example: "1992-09-12"
         type: string
       email:
         example: user@example.com
@@ -151,6 +157,9 @@ definitions:
         type: string
       middle_name:
         example: M
+        type: string
+      phone_number:
+        example: "+77001234567"
         type: string
     type: object
   schemas.CategoryPaginate:
@@ -172,6 +181,21 @@ definitions:
       name_ru:
         example: Апартаменты
         type: string
+    type: object
+  schemas.ChangePasswordRequest:
+    description: Request body for changing user password
+    properties:
+      new_password:
+        example: newsecret456
+        maxLength: 255
+        minLength: 6
+        type: string
+      old_password:
+        example: secret123
+        type: string
+    required:
+    - new_password
+    - old_password
     type: object
   schemas.City:
     properties:
@@ -499,38 +523,6 @@ definitions:
     - price
     - type_id
     type: object
-  schemas.HouseLikeItem:
-    properties:
-      address_en:
-        example: 123 Beach Rd
-        type: string
-      address_kz:
-        type: string
-      address_ru:
-        type: string
-      id:
-        example: 1
-        type: integer
-      liked_at:
-        example: "2026-03-30T12:00:00Z"
-        format: date-time
-        type: string
-      name_en:
-        example: Beach House
-        type: string
-      name_kz:
-        example: Жағажай үйі
-        type: string
-      name_ru:
-        example: Пляжный дом
-        type: string
-      price:
-        example: 50000
-        type: integer
-      slug:
-        example: beach-house
-        type: string
-    type: object
   schemas.HouseLikeResponse:
     properties:
       like_count:
@@ -571,6 +563,9 @@ definitions:
         items:
           $ref: '#/definitions/schemas.Image'
         type: array
+      is_liked:
+        example: false
+        type: boolean
       like_count:
         example: 5
         type: integer
@@ -772,6 +767,29 @@ definitions:
         example: operation completed
         type: string
     type: object
+  schemas.PaginatedResponse:
+    properties:
+      items: {}
+      page:
+        example: 1
+        type: integer
+      page_size:
+        example: 10
+        type: integer
+      total:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
+    type: object
+  schemas.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
   schemas.SlugCheckResponse:
     properties:
       available:
@@ -844,9 +862,30 @@ definitions:
       password:
         example: secret123
         type: string
+      phone_number:
+        example: "+77001234567"
+        type: string
     required:
-    - email
     - password
+    type: object
+  schemas.UserUpdateRequest:
+    description: Request body for updating user profile
+    properties:
+      date_of_birth:
+        format: date
+        type: string
+      first_name:
+        maxLength: 255
+        type: string
+      last_name:
+        maxLength: 255
+        type: string
+      middle_name:
+        maxLength: 255
+        type: string
+      phone_number:
+        maxLength: 128
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -893,10 +932,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/schemas.MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Logout user
@@ -920,6 +955,161 @@ paths:
       summary: Get current authenticated user
       tags:
       - Auth
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Fields to update
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.UserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.AuthUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update current user profile
+      tags:
+      - Auth
+  /auth/me/avatar:
+    delete:
+      description: Remove the authenticated user's avatar
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete user avatar
+      tags:
+      - Auth
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload or replace the authenticated user's avatar
+      parameters:
+      - description: Avatar image
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Upload user avatar
+      tags:
+      - Auth
+  /auth/me/password:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Old and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Change user password
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Uses refresh token from cookie or body to issue new token pair
+      parameters:
+      - description: Refresh token (optional, can use cookie)
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/schemas.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
   /auth/register:
     post:
       consumes:
@@ -940,6 +1130,10 @@ paths:
             $ref: '#/definitions/schemas.AuthResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
         "500":
@@ -1511,16 +1705,25 @@ paths:
       - HealthCheck
   /houses:
     get:
-      description: Returns a list of all houses
+      description: Returns a paginated list of all houses
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/schemas.HouseListItem'
-            type: array
+            $ref: '#/definitions/schemas.PaginatedResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1563,15 +1766,15 @@ paths:
       summary: Create a new house
       tags:
       - Houses
-  /houses/{id}:
+  /houses/{slug}:
     delete:
-      description: Deletes a house by ID. Auth required.
+      description: Deletes a house by slug. Auth required.
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1593,13 +1796,13 @@ paths:
       tags:
       - Houses
     get:
-      description: Returns a single house by ID
+      description: Returns a single house by slug
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1611,7 +1814,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/schemas.ErrorResponse'
-      summary: Get house by ID
+      summary: Get house by slug
       tags:
       - Houses
     patch:
@@ -1619,11 +1822,11 @@ paths:
       - application/json
       description: Updates house data. Auth required.
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       - description: House update data
         in: body
         name: house
@@ -1654,17 +1857,17 @@ paths:
       summary: Update house
       tags:
       - Houses
-  /houses/{id}/images:
+  /houses/{slug}/images:
     post:
       consumes:
       - multipart/form-data
       description: Upload multiple images for a house (max 15 images per house)
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       - collectionFormat: csv
         description: Images
         in: formData
@@ -1697,14 +1900,14 @@ paths:
       summary: Upload house images
       tags:
       - Houses
-  /houses/{id}/like:
+  /houses/{slug}/like:
     delete:
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1731,11 +1934,11 @@ paths:
       - Houses
     get:
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1758,11 +1961,11 @@ paths:
       - Houses
     post:
       parameters:
-      - description: House ID
+      - description: House slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1852,7 +2055,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.HouseLikeItem'
+              $ref: '#/definitions/schemas.HouseListItem'
             type: array
         "401":
           description: Unauthorized
@@ -1995,6 +2198,40 @@ paths:
       summary: Update an inquiry
       tags:
       - Inquiry
+  /my-houses:
+    get:
+      description: Returns paginated houses owned by the authenticated user
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schemas.PaginatedResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schemas.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user's houses
+      tags:
+      - Houses
   /types:
     get:
       produces:

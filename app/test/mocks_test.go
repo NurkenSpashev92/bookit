@@ -60,6 +60,31 @@ func (m *mockUserRepo) GetByEmail(ctx context.Context, email string) (models.Use
 	return u, nil
 }
 
+func (m *mockUserRepo) GetByPhoneNumber(_ context.Context, phone string) (models.User, error) {
+	for _, u := range m.users {
+		if u.PhoneNumber != nil && *u.PhoneNumber == phone {
+			return u, nil
+		}
+	}
+	return models.User{}, fmt.Errorf("user not found")
+}
+
+func (m *mockUserRepo) Update(_ context.Context, userID int, _ schemas.UserUpdateRequest) (models.User, error) {
+	u, ok := m.users[userID]
+	if !ok {
+		return models.User{}, fmt.Errorf("user not found")
+	}
+	return u, nil
+}
+
+func (m *mockUserRepo) UpdatePassword(_ context.Context, _ int, _ string) error {
+	return nil
+}
+
+func (m *mockUserRepo) UpdateAvatar(_ context.Context, _ int, _ string) error {
+	return nil
+}
+
 // --- House Like Repository Mock ---
 
 type mockHouseLikeRepo struct {
@@ -101,8 +126,12 @@ func (m *mockHouseLikeRepo) StatusWithCount(_ context.Context, userID int, slug 
 	return m.likes[k], m.counts[slug], nil
 }
 
-func (m *mockHouseLikeRepo) GetUserLikedHouses(_ context.Context, _ int) ([]schemas.HouseLikeItem, error) {
-	return []schemas.HouseLikeItem{}, nil
+func (m *mockHouseLikeRepo) GetUserLikedHouses(_ context.Context, _ int) ([]schemas.HouseListItem, error) {
+	return []schemas.HouseListItem{}, nil
+}
+
+func (m *mockHouseLikeRepo) GetUserLikedHousesPaginated(_ context.Context, _ int, _, _ int) ([]schemas.HouseListItem, int, error) {
+	return []schemas.HouseListItem{}, 0, nil
 }
 
 func (m *mockHouseLikeRepo) GetUserLikedHouseIDs(_ context.Context, userID int) ([]int, error) {

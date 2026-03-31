@@ -34,6 +34,9 @@ func (h *FAQHandler) GetAll(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
+	if faqs == nil {
+		faqs = []schemas.FAQ{}
+	}
 	return c.JSON(faqs)
 }
 
@@ -154,6 +157,9 @@ func (h *FAQHandler) GetInquiries(c fiber.Ctx) error {
 	list, err := h.inquiryService.GetAll(c.Context())
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+	if list == nil {
+		list = []schemas.Inquiry{}
 	}
 	return c.JSON(list)
 }

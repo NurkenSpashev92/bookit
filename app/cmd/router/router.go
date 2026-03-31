@@ -20,6 +20,7 @@ type Services struct {
 	House     *services.HouseService
 	HouseLike *services.HouseLikeService
 	Image     *services.ImageService
+	Avatar    *services.AvatarService
 	Category  *services.CategoryService
 	Country   *services.CountryService
 	City      *services.CityService
@@ -40,6 +41,7 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 	countryHandler := handlers.NewCountryHandler(svc.Country)
 	cityHandler := handlers.NewCityHandler(svc.City)
 	typeHandler := handlers.NewTypeHandler(svc.Type)
+	avatarHandler := handlers.NewAvatarHandler(svc.Avatar)
 	faqHandler := handlers.NewFAQHandler(svc.FAQ, svc.Inquiry)
 
 	apiV1 := app.Group("/api/v1")
@@ -53,6 +55,14 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 			auth.Post("/refresh", authHandler.Refresh)
 			auth.Post("/logout", authHandler.Logout)
 			auth.Get("/me", authHandler.Me)
+			auth.Patch("/me", middleware.AuthRequired(svc.JWT), authHandler.UpdateProfile)
+			auth.Patch("/me/password", middleware.AuthRequired(svc.JWT), authHandler.ChangePassword)
+			auth.Post("/me/avatar",
+				middleware.AuthRequired(svc.JWT),
+				middleware.UploadLimits(10*1024*1024, 30*time.Second),
+				avatarHandler.Upload,
+			)
+			auth.Delete("/me/avatar", middleware.AuthRequired(svc.JWT), avatarHandler.Delete)
 		}
 
 		category := apiV1.Group("/categories")
@@ -108,6 +118,8 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 			inquiry.Patch("/:id", middleware.AuthRequired(svc.JWT), faqHandler.UpdateInquiry)
 			inquiry.Delete("/:id", middleware.AuthRequired(svc.JWT), faqHandler.DeleteInquiry)
 		}
+
+		apiV1.Get("/my-houses", middleware.AuthRequired(svc.JWT), houseHandler.MyHouses)
 
 		houses := apiV1.Group("/houses")
 		{

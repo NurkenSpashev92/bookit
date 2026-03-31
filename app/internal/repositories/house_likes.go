@@ -2,20 +2,23 @@ package repositories
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
 
 type HouseLikeRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	awsCfg *configs.AwsConfig
 }
 
-func NewHouseLikeRepository(db *pgxpool.Pool) *HouseLikeRepository {
-	return &HouseLikeRepository{db: db}
+func NewHouseLikeRepository(db *pgxpool.Pool, awsCfg *configs.AwsConfig) *HouseLikeRepository {
+	return &HouseLikeRepository{db: db, awsCfg: awsCfg}
 }
 
 func (r *HouseLikeRepository) getHouseIDBySlug(ctx context.Context, slug string) (int, error) {
@@ -111,36 +114,115 @@ func (r *HouseLikeRepository) GetUserLikedHouseIDs(ctx context.Context, userID i
 	return ids, nil
 }
 
-func (r *HouseLikeRepository) GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseLikeItem, error) {
+func (r *HouseLikeRepository) GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseListItem, error) {
+	result, _, err := r.GetUserLikedHousesPaginated(ctx, userID, 0, 0)
+	return result, err
+}
+
+func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, userID, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	baseURL := r.awsCfg.BaseURL()
+
+	var total int
+	err := r.db.QueryRow(ctx,
+		`SELECT COUNT(*) FROM house_likes WHERE user_id=$1`, userID,
+	).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	query := `
 		SELECT
-			h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price,
-			h.address_en, h.address_kz, h.address_ru,
-			hl.created_at AS liked_at
+			h.id,
+			h.name_en,
+			h.name_kz,
+			h.name_ru,
+			h.slug,
+			h.price,
+			h.address_en,
+			h.address_kz,
+			h.address_ru,
+			h.priority,
+			h.guests_with_pets,
+			h.best_house,
+			h.promotion,
+			CONCAT(c.name_kz, ', ', ct.name_kz) AS country_name_kz,
+			CONCAT(c.name_ru, ', ', ct.name_ru) AS country_name_ru,
+			CONCAT(c.name_en, ', ', ct.name_en) AS country_name_en,
+			CONCAT(u.first_name, ' ', u.last_name) AS full_name,
+			h.like_count,
+			COALESCE(img.images, '[]') as images
 		FROM house_likes hl
 		INNER JOIN houses h ON h.id = hl.house_id
+		LEFT JOIN countries c ON c.id = h.country_id
+		LEFT JOIN cities ct ON ct.id = h.city_id
+		LEFT JOIN users u ON u.id = h.owner_id
+		LEFT JOIN LATERAL (
+			SELECT COALESCE(json_agg(
+				json_build_object(
+					'id', i.id,
+					'original', $2 || i.original,
+					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $2 || i.thumbnail ELSE '' END,
+					'mime_type', i.mimetype,
+					'size', i.size,
+					'house_id', i.house_id
+				)
+			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
+			FROM (
+				SELECT id, original, thumbnail, mimetype, size, house_id
+				FROM images
+				WHERE house_id = h.id
+				ORDER BY id
+				LIMIT 5
+			) i
+		) img ON true
 		WHERE hl.user_id = $1
 		ORDER BY hl.created_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, userID)
+	args := []interface{}{userID, baseURL}
+	if limit > 0 {
+		query += ` LIMIT $3 OFFSET $4`
+		args = append(args, limit, offset)
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	var items []schemas.HouseLikeItem
+	var houses []schemas.HouseListItem
 	for rows.Next() {
-		var item schemas.HouseLikeItem
+		var h schemas.HouseListItem
+		var imagesJSON []byte
+
 		if err := rows.Scan(
-			&item.ID, &item.NameEN, &item.NameKZ, &item.NameRU,
-			&item.Slug, &item.Price,
-			&item.AddressEN, &item.AddressKZ, &item.AddressRU,
-			&item.LikedAt,
+			&h.ID,
+			&h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug,
+			&h.Price,
+			&h.AddressEN, &h.AddressKZ, &h.AddressRU,
+			&h.Priority,
+			&h.GuestsWithPets,
+			&h.BestHouse,
+			&h.Promotion,
+			&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
+			&h.OwnerFullName,
+			&h.LikeCount,
+			&imagesJSON,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-		items = append(items, item)
+
+		h.IsLiked = true
+
+		if len(imagesJSON) == 0 {
+			imagesJSON = []byte("[]")
+		}
+		if err := json.Unmarshal(imagesJSON, &h.Images); err != nil {
+			return nil, 0, err
+		}
+
+		houses = append(houses, h)
 	}
-	return items, nil
+	return houses, total, nil
 }

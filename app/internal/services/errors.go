@@ -10,4 +10,5 @@ var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrInvalidToken       = errors.New("invalid or expired token")
 	ErrAccountDisabled    = errors.New("account is disabled")
+	ErrAvatarNotFound     = errors.New("avatar not found")
 )

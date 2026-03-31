@@ -100,7 +100,7 @@ func (h *HouseLikeHandler) Status(c fiber.Ctx) error {
 // @Summary Get houses liked by current user
 // @Tags Houses
 // @Produce json
-// @Success 200 {array} schemas.HouseLikeItem
+// @Success 200 {array} schemas.HouseListItem
 // @Failure 401 {object} schemas.ErrorResponse
 // @Failure 500 {object} schemas.ErrorResponse
 // @Security ApiKeyAuth
@@ -114,7 +114,7 @@ func (h *HouseLikeHandler) UserLikedHouses(c fiber.Ctx) error {
 	}
 
 	if houses == nil {
-		houses = []schemas.HouseLikeItem{}
+		houses = []schemas.HouseListItem{}
 	}
 
 	return c.JSON(houses)

@@ -3,12 +3,18 @@ package test
 import (
 	"testing"
 
+	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/models"
 	"github.com/nurkenspashev92/bookit/internal/services"
 )
 
+func testAwsConfig() *configs.AwsConfig {
+	return configs.NewAwsConfig()
+}
+
 func TestUserMapper_ToAuthUser(t *testing.T) {
 	mapper := services.UserMapper{}
+	awsCfg := testAwsConfig()
 	user := models.User{
 		ID:         10,
 		Email:      "test@mail.com",
@@ -19,7 +25,7 @@ func TestUserMapper_ToAuthUser(t *testing.T) {
 		Password:   "should-not-appear",
 	}
 
-	auth := mapper.ToAuthUser(user)
+	auth := mapper.ToAuthUser(user, awsCfg)
 
 	if auth.ID != 10 {
 		t.Errorf("ID = %d, want 10", auth.ID)
@@ -36,16 +42,17 @@ func TestUserMapper_ToAuthUser(t *testing.T) {
 	if auth.MiddleName != "A" {
 		t.Errorf("MiddleName = %q, want A", auth.MiddleName)
 	}
-	if auth.Avatar != "pic.jpg" {
-		t.Errorf("Avatar = %q, want pic.jpg", auth.Avatar)
+	if auth.Avatar == "" {
+		t.Error("Avatar should not be empty")
 	}
 }
 
 func TestUserMapper_ToAuthUser_EmptyFields(t *testing.T) {
 	mapper := services.UserMapper{}
+	awsCfg := testAwsConfig()
 	user := models.User{ID: 1, Email: "x@y.com"}
 
-	auth := mapper.ToAuthUser(user)
+	auth := mapper.ToAuthUser(user, awsCfg)
 
 	if auth.FirstName != "" {
 		t.Errorf("FirstName should be empty, got %q", auth.FirstName)

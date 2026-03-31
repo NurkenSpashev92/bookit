@@ -21,10 +21,12 @@ func NewHouseHandler(houseService *services.HouseService) *HouseHandler {
 
 // GetHouses godoc
 // @Summary      Get all houses
-// @Description  Returns a list of all houses
+// @Description  Returns a paginated list of all houses
 // @Tags         Houses
 // @Produce      json
-// @Success      200  {array}  schemas.HouseListItem
+// @Param        page      query int false "Page number" default(1)
+// @Param        page_size query int false "Items per page" default(10)
+// @Success      200  {object} schemas.PaginatedResponse
 // @Failure      500  {object} schemas.ErrorResponse
 // @Router       /houses [get]
 func (h *HouseHandler) GetAll(c fiber.Ctx) error {
@@ -33,11 +35,69 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 		userID = user.ID
 	}
 
-	houses, err := h.houseService.GetAll(c.Context(), userID)
+	p := schemas.ParsePagination(c)
+
+	houses, total, err := h.houseService.GetAllPaginated(c.Context(), userID, p.PageSize, p.Offset)
 	if err != nil {
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
 	}
-	return c.JSON(houses)
+
+	if houses == nil {
+		houses = []schemas.HouseListItem{}
+	}
+
+	totalPages := total / p.PageSize
+	if total%p.PageSize > 0 {
+		totalPages++
+	}
+
+	return c.JSON(schemas.PaginatedResponse{
+		Data:       houses,
+		Total:      total,
+		Page:       p.Page,
+		PageSize:   p.PageSize,
+		TotalPages: totalPages,
+	})
+}
+
+// MyHouses godoc
+// @Summary      Get current user's houses
+// @Description  Returns paginated houses owned by the authenticated user
+// @Tags         Houses
+// @Produce      json
+// @Param        page      query int false "Page number" default(1)
+// @Param        page_size query int false "Items per page" default(10)
+// @Success      200  {object} schemas.PaginatedResponse
+// @Failure      401  {object} schemas.ErrorResponse
+// @Failure      500  {object} schemas.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /my-houses [get]
+func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
+	user := c.Locals("user").(models.User)
+
+	p := schemas.ParsePagination(c)
+
+	houses, total, err := h.houseService.GetMyHouses(c.Context(), user.ID, p.PageSize, p.Offset)
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	if houses == nil {
+		houses = []schemas.HouseListItem{}
+	}
+
+	totalPages := total / p.PageSize
+	if total%p.PageSize > 0 {
+		totalPages++
+	}
+
+	return c.JSON(schemas.PaginatedResponse{
+		Data:       houses,
+		Total:      total,
+		Page:       p.Page,
+		PageSize:   p.PageSize,
+		TotalPages: totalPages,
+	})
 }
 
 // GetHouseBySlug godoc

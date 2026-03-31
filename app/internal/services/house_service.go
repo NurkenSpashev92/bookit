@@ -20,15 +20,20 @@ func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository) *HouseS
 }
 
 func (s *HouseService) GetAll(ctx context.Context, userID int) ([]schemas.HouseListItem, error) {
-	houses, err := s.repository.GetAll(ctx)
+	houses, _, err := s.GetAllPaginated(ctx, userID, 0, 0)
+	return houses, err
+}
+
+func (s *HouseService) GetAllPaginated(ctx context.Context, userID, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	houses, total, err := s.repository.GetAllPaginated(ctx, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if userID > 0 {
 		likedIDs, err := s.likeRepository.GetUserLikedHouseIDs(ctx, userID)
 		if err != nil {
-			return houses, nil
+			return houses, total, nil
 		}
 		liked := make(map[int]bool, len(likedIDs))
 		for _, id := range likedIDs {
@@ -39,7 +44,11 @@ func (s *HouseService) GetAll(ctx context.Context, userID int) ([]schemas.HouseL
 		}
 	}
 
-	return houses, nil
+	return houses, total, nil
+}
+
+func (s *HouseService) GetMyHouses(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	return s.repository.GetByOwnerPaginated(ctx, ownerID, limit, offset)
 }
 
 func (s *HouseService) GetBySlug(ctx context.Context, slug string) (models.House, error) {

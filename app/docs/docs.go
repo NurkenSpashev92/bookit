@@ -80,12 +80,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/schemas.MessageResponse"
                         }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
                     }
                 }
             }
@@ -104,6 +98,251 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "Get current authenticated user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Update current user profile",
+                "parameters": [
+                    {
+                        "description": "Fields to update",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.UserUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.AuthUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/avatar": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Upload or replace the authenticated user's avatar",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Upload user avatar",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Avatar image",
+                        "name": "avatar",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Remove the authenticated user's avatar",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Delete user avatar",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/password": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Change user password",
+                "parameters": [
+                    {
+                        "description": "Old and new password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Uses refresh token from cookie or body to issue new token pair",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh token (optional, can use cookie)",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.RefreshRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -152,6 +391,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -1044,7 +1289,7 @@ const docTemplate = `{
         },
         "/houses": {
             "get": {
-                "description": "Returns a list of all houses",
+                "description": "Returns a paginated list of all houses",
                 "produces": [
                     "application/json"
                 ],
@@ -1052,14 +1297,27 @@ const docTemplate = `{
                     "Houses"
                 ],
                 "summary": "Get all houses",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/schemas.HouseListItem"
-                            }
+                            "$ref": "#/definitions/schemas.PaginatedResponse"
                         }
                     },
                     "500": {
@@ -1233,7 +1491,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.HouseLikeItem"
+                                "$ref": "#/definitions/schemas.HouseListItem"
                             }
                         }
                     },
@@ -1252,21 +1510,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/houses/{id}": {
+        "/houses/{slug}": {
             "get": {
-                "description": "Returns a single house by ID",
+                "description": "Returns a single house by slug",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Houses"
                 ],
-                "summary": "Get house by ID",
+                "summary": "Get house by slug",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     }
@@ -1292,7 +1550,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Deletes a house by ID. Auth required.",
+                "description": "Deletes a house by slug. Auth required.",
                 "produces": [
                     "application/json"
                 ],
@@ -1302,9 +1560,9 @@ const docTemplate = `{
                 "summary": "Delete house",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     }
@@ -1349,9 +1607,9 @@ const docTemplate = `{
                 "summary": "Update house",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     },
@@ -1393,7 +1651,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/houses/{id}/images": {
+        "/houses/{slug}/images": {
             "post": {
                 "security": [
                     {
@@ -1413,9 +1671,9 @@ const docTemplate = `{
                 "summary": "Upload house images",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     },
@@ -1459,7 +1717,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/houses/{id}/like": {
+        "/houses/{slug}/like": {
             "get": {
                 "security": [
                     {
@@ -1475,9 +1733,9 @@ const docTemplate = `{
                 "summary": "Check if user liked a house",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     }
@@ -1518,9 +1776,9 @@ const docTemplate = `{
                 "summary": "Like a house",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     }
@@ -1567,9 +1825,9 @@ const docTemplate = `{
                 "summary": "Unlike a house",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "House ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "House slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     }
@@ -1797,6 +2055,59 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/my-houses": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns paginated houses owned by the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Houses"
+                ],
+                "summary": "Get current user's houses",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.PaginatedResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/schemas.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/schemas.ErrorResponse"
                         }
@@ -2213,7 +2524,11 @@ const docTemplate = `{
         "schemas.AuthResponse": {
             "type": "object",
             "properties": {
-                "token": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIs..."
+                },
+                "refresh_token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIs..."
                 },
@@ -2227,6 +2542,10 @@ const docTemplate = `{
             "properties": {
                 "avatar": {
                     "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string",
+                    "example": "1992-09-12"
                 },
                 "email": {
                     "type": "string",
@@ -2247,6 +2566,10 @@ const docTemplate = `{
                 "middle_name": {
                     "type": "string",
                     "example": "M"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+77001234567"
                 }
             }
         },
@@ -2275,6 +2598,26 @@ const docTemplate = `{
                 "name_ru": {
                     "type": "string",
                     "example": "Апартаменты"
+                }
+            }
+        },
+        "schemas.ChangePasswordRequest": {
+            "description": "Request body for changing user password",
+            "type": "object",
+            "required": [
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 6,
+                    "example": "newsecret456"
+                },
+                "old_password": {
+                    "type": "string",
+                    "example": "secret123"
                 }
             }
         },
@@ -2708,50 +3051,6 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.HouseLikeItem": {
-            "type": "object",
-            "properties": {
-                "address_en": {
-                    "type": "string",
-                    "example": "123 Beach Rd"
-                },
-                "address_kz": {
-                    "type": "string"
-                },
-                "address_ru": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "liked_at": {
-                    "type": "string",
-                    "format": "date-time",
-                    "example": "2026-03-30T12:00:00Z"
-                },
-                "name_en": {
-                    "type": "string",
-                    "example": "Beach House"
-                },
-                "name_kz": {
-                    "type": "string",
-                    "example": "Жағажай үйі"
-                },
-                "name_ru": {
-                    "type": "string",
-                    "example": "Пляжный дом"
-                },
-                "price": {
-                    "type": "integer",
-                    "example": 50000
-                },
-                "slug": {
-                    "type": "string",
-                    "example": "beach-house"
-                }
-            }
-        },
         "schemas.HouseLikeResponse": {
             "type": "object",
             "properties": {
@@ -2807,6 +3106,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/schemas.Image"
                     }
+                },
+                "is_liked": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "like_count": {
                     "type": "integer",
@@ -3081,6 +3384,39 @@ const docTemplate = `{
                 }
             }
         },
+        "schemas.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "items": {},
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "schemas.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "schemas.SlugCheckResponse": {
             "type": "object",
             "properties": {
@@ -3167,7 +3503,6 @@ const docTemplate = `{
             "description": "Request body for user login",
             "type": "object",
             "required": [
-                "email",
                 "password"
             ],
             "properties": {
@@ -3179,6 +3514,36 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "secret123"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+77001234567"
+                }
+            }
+        },
+        "schemas.UserUpdateRequest": {
+            "description": "Request body for updating user profile",
+            "type": "object",
+            "properties": {
+                "date_of_birth": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "first_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "last_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "middle_name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 128
                 }
             }
         }

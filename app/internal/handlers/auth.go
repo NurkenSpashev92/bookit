@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/nurkenspashev92/bookit/internal/models"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 	"github.com/nurkenspashev92/bookit/internal/services"
 )
@@ -120,6 +121,76 @@ func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 	setRefreshCookie(c, resp.RefreshToken)
 
 	return c.JSON(resp)
+}
+
+// UpdateProfile godoc
+// @Summary Update current user profile
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param user body schemas.UserUpdateRequest true "Fields to update"
+// @Success 200 {object} schemas.AuthUser
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 401 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /auth/me [patch]
+func (h *AuthHandler) UpdateProfile(c fiber.Ctx) error {
+	user, ok := c.Locals("user").(models.User)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(schemas.ErrorResponse{Error: "unauthenticated"})
+	}
+
+	var req schemas.UserUpdateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	authUser, err := h.userService.UpdateProfile(c.Context(), user.ID, req)
+	if err != nil {
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(authUser)
+}
+
+// ChangePassword godoc
+// @Summary Change user password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body schemas.ChangePasswordRequest true "Old and new password"
+// @Success 200 {object} schemas.MessageResponse
+// @Failure 400 {object} schemas.ErrorResponse
+// @Failure 401 {object} schemas.ErrorResponse
+// @Failure 500 {object} schemas.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /auth/me/password [patch]
+func (h *AuthHandler) ChangePassword(c fiber.Ctx) error {
+	user, ok := c.Locals("user").(models.User)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(schemas.ErrorResponse{Error: "unauthenticated"})
+	}
+
+	var req schemas.ChangePasswordRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+	if err := req.Validate(); err != nil {
+		return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	if err := h.userService.ChangePassword(c.Context(), user.ID, req); err != nil {
+		if errors.Is(err, services.ErrInvalidCredentials) {
+			return c.Status(401).JSON(schemas.ErrorResponse{Error: "old password is incorrect"})
+		}
+		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})
+	}
+
+	return c.JSON(schemas.MessageResponse{Message: "password changed"})
 }
 
 // Logout godoc

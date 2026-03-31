@@ -33,6 +33,15 @@ func (m *mockHouseRepo) GetAll(_ context.Context) ([]schemas.HouseListItem, erro
 	return items, nil
 }
 
+func (m *mockHouseRepo) GetAllPaginated(_ context.Context, _, _ int) ([]schemas.HouseListItem, int, error) {
+	items, err := m.GetAll(nil)
+	return items, len(items), err
+}
+
+func (m *mockHouseRepo) GetByOwnerPaginated(_ context.Context, _, _, _ int) ([]schemas.HouseListItem, int, error) {
+	return []schemas.HouseListItem{}, 0, nil
+}
+
 func (m *mockHouseRepo) GetBySlug(_ context.Context, slug string) (models.House, error) {
 	h, ok := m.houses[slug]
 	if !ok {

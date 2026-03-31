@@ -25,7 +25,17 @@ func NewHouseRepository(db *pgxpool.Pool, awsCfg *configs.AwsConfig) *HouseRepos
 }
 
 func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, error) {
+	houses, _, err := r.GetAllPaginated(ctx, 0, 0)
+	return houses, err
+}
+
+func (r *HouseRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]schemas.HouseListItem, int, error) {
 	baseURL := r.awsCfg.BaseURL()
+
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM houses`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
 
 	query := `
 		SELECT
@@ -74,9 +84,15 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 		ORDER BY h.id DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, baseURL)
+	args := []interface{}{baseURL}
+	if limit > 0 {
+		query += ` LIMIT $2 OFFSET $3`
+		args = append(args, limit, offset)
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -102,22 +118,124 @@ func (r *HouseRepository) GetAll(ctx context.Context) ([]schemas.HouseListItem, 
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		if len(imagesJSON) == 0 {
 			imagesJSON = []byte("[]")
 		}
 
-		err = json.Unmarshal(imagesJSON, &h.Images)
-		if err != nil {
-			return nil, err
+		if err = json.Unmarshal(imagesJSON, &h.Images); err != nil {
+			return nil, 0, err
 		}
 
 		houses = append(houses, h)
 	}
 
-	return houses, nil
+	return houses, total, nil
+}
+
+func (r *HouseRepository) GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	baseURL := r.awsCfg.BaseURL()
+
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM houses WHERE owner_id=$1`, ownerID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+		SELECT
+			h.id,
+			h.name_en,
+			h.name_kz,
+			h.name_ru,
+			h.slug,
+			h.price,
+			h.address_en,
+			h.address_kz,
+			h.address_ru,
+			h.priority,
+			h.guests_with_pets,
+			h.best_house,
+			h.promotion,
+			CONCAT(c.name_kz, ', ', ct.name_kz) AS country_name_kz,
+			CONCAT(c.name_ru, ', ', ct.name_ru) AS country_name_ru,
+			CONCAT(c.name_en, ', ', ct.name_en) AS country_name_en,
+			CONCAT(u.first_name, ' ', u.last_name) AS full_name,
+			h.like_count,
+			COALESCE(img.images, '[]') as images
+		FROM houses h
+		LEFT JOIN countries c ON c.id = h.country_id
+		LEFT JOIN cities ct ON ct.id = h.city_id
+		LEFT JOIN users u ON u.id = h.owner_id
+		LEFT JOIN LATERAL (
+			SELECT COALESCE(json_agg(
+				json_build_object(
+					'id', i.id,
+					'original', $1 || i.original,
+					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $1 || i.thumbnail ELSE '' END,
+					'mime_type', i.mimetype,
+					'size', i.size,
+					'house_id', i.house_id
+				)
+			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
+			FROM (
+				SELECT id, original, thumbnail, mimetype, size, house_id
+				FROM images
+				WHERE house_id = h.id
+				ORDER BY id
+				LIMIT 5
+			) i
+		) img ON true
+		WHERE h.owner_id = $2
+		ORDER BY h.id DESC
+	`
+
+	args := []interface{}{baseURL, ownerID}
+	if limit > 0 {
+		query += ` LIMIT $3 OFFSET $4`
+		args = append(args, limit, offset)
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var houses []schemas.HouseListItem
+	for rows.Next() {
+		var h schemas.HouseListItem
+		var imagesJSON []byte
+
+		if err := rows.Scan(
+			&h.ID,
+			&h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug,
+			&h.Price,
+			&h.AddressEN, &h.AddressKZ, &h.AddressRU,
+			&h.Priority,
+			&h.GuestsWithPets,
+			&h.BestHouse,
+			&h.Promotion,
+			&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
+			&h.OwnerFullName,
+			&h.LikeCount,
+			&imagesJSON,
+		); err != nil {
+			return nil, 0, err
+		}
+
+		if len(imagesJSON) == 0 {
+			imagesJSON = []byte("[]")
+		}
+		if err := json.Unmarshal(imagesJSON, &h.Images); err != nil {
+			return nil, 0, err
+		}
+
+		houses = append(houses, h)
+	}
+
+	return houses, total, nil
 }
 
 func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (models.House, error) {

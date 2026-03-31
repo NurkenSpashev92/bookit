@@ -10,7 +10,7 @@ type User struct {
 	MiddleName  string     `json:"middle_name,omitempty"`
 	Password    string     `json:"-"`
 	DateOfBirth *time.Time `json:"date_of_birth,omitempty"`
-	PhoneNumber string     `json:"phone_number,omitempty"`
+	PhoneNumber *string    `json:"phone_number,omitempty"`
 	Avatar      string     `json:"avatar,omitempty"`
 	IsSuperuser bool       `json:"is_superuser"`
 	IsActive    bool       `json:"is_active"`

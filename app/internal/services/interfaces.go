@@ -11,10 +11,16 @@ type UserRepository interface {
 	Create(ctx context.Context, req schemas.UserCreateRequest) (models.User, error)
 	GetByID(ctx context.Context, id int) (models.User, error)
 	GetByEmail(ctx context.Context, email string) (models.User, error)
+	GetByPhoneNumber(ctx context.Context, phone string) (models.User, error)
+	Update(ctx context.Context, userID int, req schemas.UserUpdateRequest) (models.User, error)
+	UpdatePassword(ctx context.Context, userID int, hashedPassword string) error
+	UpdateAvatar(ctx context.Context, userID int, avatar string) error
 }
 
 type HouseRepository interface {
 	GetAll(ctx context.Context) ([]schemas.HouseListItem, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]schemas.HouseListItem, int, error)
+	GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schemas.HouseListItem, int, error)
 	GetBySlug(ctx context.Context, slug string) (models.House, error)
 	Create(ctx context.Context, req schemas.HouseCreateRequest) (models.House, error)
 	Update(ctx context.Context, slug string, req schemas.HouseUpdateRequest) (models.House, error)
@@ -26,7 +32,8 @@ type HouseLikeRepository interface {
 	LikeReturningCount(ctx context.Context, userID int, slug string) (int, error)
 	UnlikeReturningCount(ctx context.Context, userID int, slug string) (int, error)
 	StatusWithCount(ctx context.Context, userID int, slug string) (bool, int, error)
-	GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseLikeItem, error)
+	GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseListItem, error)
+	GetUserLikedHousesPaginated(ctx context.Context, userID, limit, offset int) ([]schemas.HouseListItem, int, error)
 	GetUserLikedHouseIDs(ctx context.Context, userID int) ([]int, error)
 }
 

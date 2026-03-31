@@ -38,6 +38,10 @@ func (s *HouseLikeService) Status(ctx context.Context, userID int, slug string) 
 	return &schemas.HouseLikeResponse{Liked: liked, LikeCount: count}, nil
 }
 
-func (s *HouseLikeService) GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseLikeItem, error) {
+func (s *HouseLikeService) GetUserLikedHouses(ctx context.Context, userID int) ([]schemas.HouseListItem, error) {
 	return s.repository.GetUserLikedHouses(ctx, userID)
+}
+
+func (s *HouseLikeService) GetFavoriteHouses(ctx context.Context, userID, limit, offset int) ([]schemas.HouseListItem, int, error) {
+	return s.repository.GetUserLikedHousesPaginated(ctx, userID, limit, offset)
 }

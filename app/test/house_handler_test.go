@@ -113,7 +113,7 @@ func TestHouseHandler_CheckSlug_RouteOrder(t *testing.T) {
 		return c.JSON(schemas.SlugCheckResponse{Available: true, Slug: "test"})
 	})
 	app.Get("/houses/liked", func(c fiber.Ctx) error {
-		return c.JSON([]schemas.HouseLikeItem{})
+		return c.JSON([]schemas.HouseListItem{})
 	})
 	app.Get("/houses/:slug", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"slug": c.Params("slug")})

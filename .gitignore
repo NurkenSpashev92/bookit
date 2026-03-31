@@ -34,3 +34,4 @@ bin/
 tmp/
 .env
 .claude/
+img/

@@ -58,7 +58,7 @@ func TestHouseLikeHandler_UserLikedHouses_EmptyList(t *testing.T) {
 	app := newTestApp()
 
 	app.Get("/houses/liked", middleware.AuthRequired(jwtSvc), func(c fiber.Ctx) error {
-		return c.JSON([]schemas.HouseLikeItem{})
+		return c.JSON([]schemas.HouseListItem{})
 	})
 
 	token := generateTestToken(jwtSvc, 1, "u@t.com")
@@ -69,7 +69,7 @@ func TestHouseLikeHandler_UserLikedHouses_EmptyList(t *testing.T) {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
 	}
 
-	var items []schemas.HouseLikeItem
+	var items []schemas.HouseListItem
 	parseJSON(t, resp, &items)
 	if len(items) != 0 {
 		t.Errorf("expected empty list, got %d", len(items))

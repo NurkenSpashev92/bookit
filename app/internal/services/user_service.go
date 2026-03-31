@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/models"
 	"github.com/nurkenspashev92/bookit/internal/schemas"
 )
@@ -15,12 +16,14 @@ type UserService struct {
 	repository UserRepository
 	jwtService *JWTService
 	mapper     UserMapper
+	awsCfg     *configs.AwsConfig
 }
 
-func NewUserService(repo UserRepository, jwtService *JWTService) *UserService {
+func NewUserService(repo UserRepository, jwtService *JWTService, awsCfg *configs.AwsConfig) *UserService {
 	return &UserService{
 		repository: repo,
 		jwtService: jwtService,
+		awsCfg:     awsCfg,
 	}
 }
 
@@ -40,7 +43,7 @@ func (s *UserService) Register(ctx context.Context, req schemas.UserCreateReques
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
-	authUser := s.mapper.ToAuthUser(user)
+	authUser := s.mapper.ToAuthUser(user, s.awsCfg)
 	return &schemas.AuthResponse{
 		User:         authUser,
 		AccessToken:  tokens.AccessToken,
@@ -49,9 +52,15 @@ func (s *UserService) Register(ctx context.Context, req schemas.UserCreateReques
 }
 
 func (s *UserService) Login(ctx context.Context, req schemas.UserLoginRequest) (*schemas.AuthResponse, error) {
-	req.Email = normalizeEmail(req.Email)
+	var user models.User
+	var err error
 
-	user, err := s.repository.GetByEmail(ctx, req.Email)
+	if req.Email != "" {
+		req.Email = normalizeEmail(req.Email)
+		user, err = s.repository.GetByEmail(ctx, req.Email)
+	} else {
+		user, err = s.repository.GetByPhoneNumber(ctx, req.PhoneNumber)
+	}
 	if err != nil {
 		return nil, ErrInvalidCredentials
 	}
@@ -69,7 +78,7 @@ func (s *UserService) Login(ctx context.Context, req schemas.UserLoginRequest) (
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
-	authUser := s.mapper.ToAuthUser(user)
+	authUser := s.mapper.ToAuthUser(user, s.awsCfg)
 	return &schemas.AuthResponse{
 		User:         authUser,
 		AccessToken:  tokens.AccessToken,
@@ -97,12 +106,40 @@ func (s *UserService) RefreshTokens(ctx context.Context, refreshToken string) (*
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
-	authUser := s.mapper.ToAuthUser(user)
+	authUser := s.mapper.ToAuthUser(user, s.awsCfg)
 	return &schemas.AuthResponse{
 		User:         authUser,
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
 	}, nil
+}
+
+func (s *UserService) ChangePassword(ctx context.Context, userID int, req schemas.ChangePasswordRequest) error {
+	user, err := s.repository.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	return s.repository.UpdatePassword(ctx, userID, string(hashed))
+}
+
+func (s *UserService) UpdateProfile(ctx context.Context, userID int, req schemas.UserUpdateRequest) (*schemas.AuthUser, error) {
+	user, err := s.repository.Update(ctx, userID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	authUser := s.mapper.ToAuthUser(user, s.awsCfg)
+	return &authUser, nil
 }
 
 func (s *UserService) Me(ctx context.Context, accessToken string) (*schemas.AuthResponse, error) {
@@ -116,7 +153,7 @@ func (s *UserService) Me(ctx context.Context, accessToken string) (*schemas.Auth
 		return nil, fmt.Errorf("user not found")
 	}
 
-	authUser := s.mapper.ToAuthUser(user)
+	authUser := s.mapper.ToAuthUser(user, s.awsCfg)
 	return &schemas.AuthResponse{
 		User:        authUser,
 		AccessToken: accessToken,
@@ -130,13 +167,25 @@ func normalizeEmail(email string) string {
 // UserMapper handles User model to DTO conversions.
 type UserMapper struct{}
 
-func (m *UserMapper) ToAuthUser(user models.User) schemas.AuthUser {
+func (m *UserMapper) ToAuthUser(user models.User, awsCfg *configs.AwsConfig) schemas.AuthUser {
+	var phoneNumber string
+	if user.PhoneNumber != nil {
+		phoneNumber = *user.PhoneNumber
+	}
+
+	var dateOfBirth string
+	if user.DateOfBirth != nil {
+		dateOfBirth = user.DateOfBirth.Format("2006-01-02")
+	}
+
 	return schemas.AuthUser{
-		ID:         user.ID,
-		Email:      user.Email,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		MiddleName: user.MiddleName,
-		Avatar:     user.Avatar,
+		ID:          user.ID,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		MiddleName:  user.MiddleName,
+		PhoneNumber: phoneNumber,
+		DateOfBirth: dateOfBirth,
+		Avatar:      awsCfg.AwsS3URL(user.Avatar),
 	}
 }

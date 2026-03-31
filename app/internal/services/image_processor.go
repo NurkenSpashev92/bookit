@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"mime/multipart"
 
 	"github.com/chai2010/webp"
@@ -20,15 +21,22 @@ type Result struct {
 	Size      int
 }
 
-func Process(file *multipart.FileHeader) (*Result, error) {
+func ProcessBytes(data []byte, ext string) (*Result, error) {
+	return processImage(bytes.NewReader(data))
+}
 
+func Process(file *multipart.FileHeader) (*Result, error) {
 	src, err := file.Open()
 	if err != nil {
 		return nil, err
 	}
 	defer src.Close()
 
-	img, format, err := image.Decode(src)
+	return processImage(src)
+}
+
+func processImage(r io.Reader) (*Result, error) {
+	img, format, err := image.Decode(r)
 	if err != nil {
 		return nil, err
 	}
