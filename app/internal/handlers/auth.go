@@ -42,7 +42,7 @@ func (h *AuthHandler) Register(c fiber.Ctx) error {
 
 	resp, err := h.userService.Register(c.Context(), req)
 	if err != nil {
-		if errors.Is(err, services.ErrEmailAlreadyExists) {
+		if errors.Is(err, services.ErrEmailAlreadyExists) || errors.Is(err, services.ErrPhoneAlreadyExists) {
 			return c.Status(409).JSON(schemas.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(500).JSON(schemas.ErrorResponse{Error: err.Error()})

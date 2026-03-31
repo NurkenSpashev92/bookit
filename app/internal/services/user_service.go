@@ -32,8 +32,11 @@ func (s *UserService) Register(ctx context.Context, req schemas.UserCreateReques
 
 	user, err := s.repository.Create(ctx, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
+		if strings.Contains(err.Error(), "email already exists") {
 			return nil, ErrEmailAlreadyExists
+		}
+		if strings.Contains(err.Error(), "phone number already exists") {
+			return nil, ErrPhoneAlreadyExists
 		}
 		return nil, err
 	}

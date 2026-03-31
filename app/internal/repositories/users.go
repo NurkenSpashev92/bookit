@@ -35,6 +35,11 @@ func (r *UserRepository) Create(ctx context.Context, user schemas.UserCreateRequ
 		dateOfBirth = user.DateOfBirth
 	}
 
+	var email interface{}
+	if user.Email != "" {
+		email = user.Email
+	}
+
 	var phoneNumber interface{}
 	if user.PhoneNumber != "" {
 		phoneNumber = user.PhoneNumber
@@ -45,7 +50,7 @@ func (r *UserRepository) Create(ctx context.Context, user schemas.UserCreateRequ
 			(email, first_name, last_name, middle_name, password, date_of_birth, phone_number, is_superuser, is_active, date_joined, created_at, updated_at)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW(),NOW())
 		 RETURNING id,email,first_name,last_name,middle_name,password,date_of_birth,phone_number,is_superuser,is_active,date_joined,created_at,updated_at`,
-		user.Email, user.FirstName, user.LastName, user.MiddleName, string(hashedPassword), dateOfBirth, phoneNumber,
+		email, user.FirstName, user.LastName, user.MiddleName, string(hashedPassword), dateOfBirth, phoneNumber,
 		false, true,
 	).Scan(
 		&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.Password, &u.DateOfBirth, &u.PhoneNumber,
@@ -53,8 +58,13 @@ func (r *UserRepository) Create(ctx context.Context, user schemas.UserCreateRequ
 	)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
-			if pgErr.Code == "23505" && pgErr.ConstraintName == "users_email_key" {
-				return u, fmt.Errorf("email %s already exists", user.Email)
+			if pgErr.Code == "23505" {
+				switch pgErr.ConstraintName {
+				case "users_email_key", "users_email_unique", "ix_users_email":
+					return u, fmt.Errorf("email already exists")
+				case "users_phone_number_key", "users_phone_number_unique":
+					return u, fmt.Errorf("phone number already exists")
+				}
 			}
 		}
 		return u, err
