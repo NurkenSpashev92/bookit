@@ -19,11 +19,6 @@ func NewHouseService(repo HouseRepository, likeRepo HouseLikeRepository) *HouseS
 	return &HouseService{repository: repo, likeRepository: likeRepo}
 }
 
-func (s *HouseService) GetAll(ctx context.Context, userID int) ([]schemas.HouseListItem, error) {
-	houses, _, err := s.GetAllPaginated(ctx, userID, 0, 0)
-	return houses, err
-}
-
 func (s *HouseService) GetAllPaginated(ctx context.Context, userID, limit, offset int) ([]schemas.HouseListItem, int, error) {
 	houses, total, err := s.repository.GetAllPaginated(ctx, limit, offset)
 	if err != nil {
