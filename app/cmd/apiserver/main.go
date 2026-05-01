@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,8 +17,20 @@ import (
 	"github.com/nurkenspashev92/bookit/cmd/router"
 	"github.com/nurkenspashev92/bookit/configs"
 	_ "github.com/nurkenspashev92/bookit/docs"
-	"github.com/nurkenspashev92/bookit/internal/repositories"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	analyticsrepo "github.com/nurkenspashev92/bookit/internal/analytics/repository"
+	analyticssvc "github.com/nurkenspashev92/bookit/internal/analytics/service"
+	bookingrepo "github.com/nurkenspashev92/bookit/internal/booking/repository"
+	bookingsvc "github.com/nurkenspashev92/bookit/internal/booking/service"
+	contentrepo "github.com/nurkenspashev92/bookit/internal/content/repository"
+	contentsvc "github.com/nurkenspashev92/bookit/internal/content/service"
+	identityrepo "github.com/nurkenspashev92/bookit/internal/identity/repository"
+	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
+	interactionrepo "github.com/nurkenspashev92/bookit/internal/interaction/repository"
+	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
+	locationrepo "github.com/nurkenspashev92/bookit/internal/location/repository"
+	locationsvc "github.com/nurkenspashev92/bookit/internal/location/service"
+	propertyrepo "github.com/nurkenspashev92/bookit/internal/property/repository"
+	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
 	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/store"
@@ -51,16 +65,16 @@ func (app *ApiApp) Run() {
 	db := database.Conn
 
 	// Repositories
-	userRepo := repositories.NewUserRepository(db)
-	houseRepo := repositories.NewHouseRepository(db, cfgAws)
-	houseLikeRepo := repositories.NewHouseLikeRepository(db, cfgAws)
-	imageRepo := repositories.NewHouseImageRepository(db)
-	categoryRepo := repositories.NewCategoryRepository(db)
-	countryRepo := repositories.NewCountryRepository(db)
-	cityRepo := repositories.NewCityRepository(db)
-	typeRepo := repositories.NewTypeRepository(db)
-	faqRepo := repositories.NewFAQRepository(db)
-	inquiryRepo := repositories.NewInquiryRepository(db)
+	userRepo := identityrepo.NewUserRepository(db)
+	houseRepo := propertyrepo.NewHouseRepository(db, cfgAws)
+	houseLikeRepo := interactionrepo.NewHouseLikeRepository(db, cfgAws)
+	imageRepo := propertyrepo.NewHouseImageRepository(db)
+	categoryRepo := propertyrepo.NewCategoryRepository(db)
+	countryRepo := locationrepo.NewCountryRepository(db)
+	cityRepo := locationrepo.NewCityRepository(db)
+	typeRepo := propertyrepo.NewTypeRepository(db)
+	faqRepo := contentrepo.NewFAQRepository(db)
+	inquiryRepo := contentrepo.NewInquiryRepository(db)
 
 	// Redis + Cache
 	cfgRedis := configs.NewRedisConfig()
@@ -77,24 +91,24 @@ func (app *ApiApp) Run() {
 	houseCache := cache.New(redisClient, 5*time.Minute)
 
 	// Additional Repositories
-	statsRepo := repositories.NewStatsRepository(db)
-	bookingRepo := repositories.NewBookingRepository(db)
+	statsRepo := analyticsrepo.NewStatsRepository(db)
+	bookingRepo := bookingrepo.NewBookingRepository(db)
 
 	// Services
-	jwtService := services.NewJWTService(cfgJwt)
-	userService := services.NewUserService(userRepo, jwtService, cfgAws)
-	houseService := services.NewHouseService(houseRepo, houseLikeRepo, bookingRepo, houseCache)
-	houseLikeService := services.NewHouseLikeService(houseLikeRepo)
-	imageService := services.NewImageService(imageRepo, s3client, houseCache)
-	avatarService := services.NewAvatarService(userRepo, s3client)
-	categoryService := services.NewCategoryService(categoryRepo, s3client, cfgAws)
-	countryService := services.NewCountryService(countryRepo)
-	cityService := services.NewCityService(cityRepo)
-	typeService := services.NewTypeService(typeRepo, s3client, cfgAws)
-	statsService := services.NewStatsService(statsRepo)
-	bookingService := services.NewBookingService(bookingRepo)
-	faqService := services.NewFAQService(faqRepo)
-	inquiryService := services.NewInquiryService(inquiryRepo)
+	jwtService := identitysvc.NewJWTService(cfgJwt)
+	userService := identitysvc.NewUserService(userRepo, jwtService, cfgAws)
+	houseService := propertysvc.NewHouseService(houseRepo, houseLikeRepo, bookingRepo, houseCache)
+	houseLikeService := interactionsvc.NewHouseLikeService(houseLikeRepo)
+	imageService := propertysvc.NewImageService(imageRepo, s3client, houseCache)
+	avatarService := identitysvc.NewAvatarService(userRepo, s3client)
+	categoryService := propertysvc.NewCategoryService(categoryRepo, s3client, cfgAws)
+	countryService := locationsvc.NewCountryService(countryRepo)
+	cityService := locationsvc.NewCityService(cityRepo)
+	typeService := propertysvc.NewTypeService(typeRepo, s3client, cfgAws)
+	statsService := analyticssvc.NewStatsService(statsRepo)
+	bookingService := bookingsvc.NewBookingService(bookingRepo)
+	faqService := contentsvc.NewFAQService(faqRepo)
+	inquiryService := contentsvc.NewInquiryService(inquiryRepo)
 
 	svc := &router.Services{
 		User:      userService,
@@ -114,6 +128,17 @@ func (app *ApiApp) Run() {
 	}
 
 	app.App = router.RegisterRoutes(app.App, db, svc)
+
+	// pprof on a separate port — gated behind PPROF_PORT env. Binds to 0.0.0.0 so the
+	// port is reachable through the docker port mapping; never expose in production.
+	if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "" {
+		go func() {
+			log.Printf("pprof listening on 0.0.0.0:%s", pprofPort)
+			if err := http.ListenAndServe("0.0.0.0:"+pprofPort, nil); err != nil {
+				log.Printf("pprof server error: %v", err)
+			}
+		}()
+	}
 
 	go func() {
 		appPort := os.Getenv("APP_PORT")

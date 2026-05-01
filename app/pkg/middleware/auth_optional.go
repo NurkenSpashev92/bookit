@@ -3,10 +3,10 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/services"
+	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 )
 
-func AuthOptional(jwtService *services.JWTService) fiber.Handler {
+func AuthOptional(jwtService *identitysvc.JWTService) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		token := c.Cookies("access_token")
 		if token == "" {

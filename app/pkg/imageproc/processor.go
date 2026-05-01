@@ -1,0 +1,77 @@
+package imageproc
+
+import (
+	"bytes"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
+	"mime/multipart"
+
+	"github.com/chai2010/webp"
+	"github.com/disintegration/imaging"
+)
+
+type Result struct {
+	Original  []byte
+	Thumbnail []byte
+	Width     int
+	Height    int
+	Mime      string
+	Size      int
+}
+
+func ProcessBytes(data []byte, ext string) (*Result, error) {
+	return processImage(bytes.NewReader(data))
+}
+
+func Process(file *multipart.FileHeader) (*Result, error) {
+	src, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer src.Close()
+
+	return processImage(src)
+}
+
+func processImage(r io.Reader) (*Result, error) {
+	img, format, err := image.Decode(r)
+	if err != nil {
+		return nil, err
+	}
+
+	bounds := img.Bounds()
+
+	thumb := imaging.Fit(img, 400, 400, imaging.Lanczos)
+
+	var thumbBuf bytes.Buffer
+	err = webp.Encode(&thumbBuf, thumb, &webp.Options{
+		Lossless: false,
+		Quality:  75,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var originalBuf bytes.Buffer
+
+	switch format {
+	case "png":
+		err = png.Encode(&originalBuf, img)
+	default:
+		err = jpeg.Encode(&originalBuf, img, &jpeg.Options{Quality: 85})
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &Result{
+		Original:  originalBuf.Bytes(),
+		Thumbnail: thumbBuf.Bytes(),
+		Width:     bounds.Dx(),
+		Height:    bounds.Dy(),
+		Mime:      "image/webp",
+		Size:      originalBuf.Len(),
+	}, nil
+}

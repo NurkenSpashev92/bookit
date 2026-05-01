@@ -7,18 +7,19 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/schemas"
+	locationschema "github.com/nurkenspashev92/bookit/internal/location/schema"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
 func TestCountryHandler_Create_Validation(t *testing.T) {
 	app := newTestApp()
 	app.Post("/countries", func(c fiber.Ctx) error {
-		var req schemas.CountryCreateRequest
+		var req locationschema.CountryCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(req)
 	})
@@ -48,12 +49,12 @@ func TestCountryHandler_Create_Validation(t *testing.T) {
 func TestCityHandler_Create_Validation(t *testing.T) {
 	app := newTestApp()
 	app.Post("/cities", func(c fiber.Ctx) error {
-		var req schemas.CityCreateRequest
+		var req locationschema.CityCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(req)
 	})

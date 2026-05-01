@@ -6,8 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/schemas"
+	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	identityschema "github.com/nurkenspashev92/bookit/internal/identity/schema"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
@@ -51,7 +52,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 	app := newTestApp()
 
 	app.Get("/protected", middleware.AuthRequired(jwtSvc), func(c fiber.Ctx) error {
-		user := c.Locals("user").(models.User)
+		user := c.Locals("user").(identitymodel.User)
 		return c.JSON(fiber.Map{"user_id": user.ID})
 	})
 
@@ -75,7 +76,7 @@ func TestAuthMiddleware_OldJwtCookie_BackwardCompat(t *testing.T) {
 	app := newTestApp()
 
 	app.Get("/protected", middleware.AuthRequired(jwtSvc), func(c fiber.Ctx) error {
-		user := c.Locals("user").(models.User)
+		user := c.Locals("user").(identitymodel.User)
 		return c.JSON(fiber.Map{"user_id": user.ID})
 	})
 
@@ -96,7 +97,7 @@ func TestAuthHandler_Logout_ClearsCookies(t *testing.T) {
 			Name: "access_token", Value: "", HTTPOnly: true,
 		}
 		c.Cookie(&expired)
-		return c.JSON(schemas.MessageResponse{Message: "logged out"})
+		return c.JSON(shared.MessageResponse{Message: "logged out"})
 	})
 
 	resp := doRequest(t, app, http.MethodPost, "/auth/logout", nil)
@@ -108,12 +109,12 @@ func TestAuthHandler_Logout_ClearsCookies(t *testing.T) {
 func TestAuthHandler_Register_Validation(t *testing.T) {
 	app := newTestApp()
 	app.Post("/auth/register", func(c fiber.Ctx) error {
-		var req schemas.UserCreateRequest
+		var req identityschema.UserCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(nil)
 	})
@@ -141,12 +142,12 @@ func TestAuthHandler_Register_Validation(t *testing.T) {
 func TestAuthHandler_Login_Validation(t *testing.T) {
 	app := newTestApp()
 	app.Post("/auth/login", func(c fiber.Ctx) error {
-		var req schemas.UserLoginRequest
+		var req identityschema.UserLoginRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.JSON(nil)
 	})

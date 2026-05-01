@@ -5,52 +5,71 @@ import (
 
 	"github.com/Flussen/swagger-fiber-v3"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/etag"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	_ "github.com/nurkenspashev92/bookit/docs"
-	"github.com/nurkenspashev92/bookit/internal/handlers"
+	analyticsh "github.com/nurkenspashev92/bookit/internal/analytics/handler"
+	analyticssvc "github.com/nurkenspashev92/bookit/internal/analytics/service"
+	bookingh "github.com/nurkenspashev92/bookit/internal/booking/handler"
+	bookingsvc "github.com/nurkenspashev92/bookit/internal/booking/service"
+	contenth "github.com/nurkenspashev92/bookit/internal/content/handler"
+	contentsvc "github.com/nurkenspashev92/bookit/internal/content/service"
+	identityh "github.com/nurkenspashev92/bookit/internal/identity/handler"
+	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 	"github.com/nurkenspashev92/bookit/internal/initializers"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	"github.com/nurkenspashev92/bookit/internal/platform/healthcheck"
+	interactionh "github.com/nurkenspashev92/bookit/internal/interaction/handler"
+	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
+	locationh "github.com/nurkenspashev92/bookit/internal/location/handler"
+	locationsvc "github.com/nurkenspashev92/bookit/internal/location/service"
+	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
+	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
 type Services struct {
-	User      *services.UserService
-	JWT       *services.JWTService
-	House     *services.HouseService
-	HouseLike *services.HouseLikeService
-	Image     *services.ImageService
-	Avatar    *services.AvatarService
-	Category  *services.CategoryService
-	Country   *services.CountryService
-	City      *services.CityService
-	Type      *services.TypeService
-	FAQ       *services.FAQService
-	Inquiry   *services.InquiryService
-	Stats     *services.StatsService
-	Booking   *services.BookingService
+	User      *identitysvc.UserService
+	JWT       *identitysvc.JWTService
+	House     *propertysvc.HouseService
+	HouseLike *interactionsvc.HouseLikeService
+	Image     *propertysvc.ImageService
+	Avatar    *identitysvc.AvatarService
+	Category  *propertysvc.CategoryService
+	Country   *locationsvc.CountryService
+	City      *locationsvc.CityService
+	Type      *propertysvc.TypeService
+	FAQ       *contentsvc.FAQService
+	Inquiry   *contentsvc.InquiryService
+	Stats     *analyticssvc.StatsService
+	Booking   *bookingsvc.BookingService
 }
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
 	app.Use(middleware.CorsHandler)
 	app.Use(initializers.NewLogger())
+	// Gzip JSON responses — list endpoints shrink 5-10×, smaller wire size means lower latency.
+	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
+	// ETag turns repeat GETs into 304 Not Modified — empty body, fastest possible response.
+	app.Use(etag.New())
 
-	authHandler := handlers.NewAuthHandler(svc.User)
-	houseHandler := handlers.NewHouseHandler(svc.House)
-	houseLikeHandler := handlers.NewHouseLikeHandler(svc.HouseLike)
-	imageHandler := handlers.NewImageHandler(svc.Image)
-	categoryHandler := handlers.NewCategoryHandler(svc.Category)
-	countryHandler := handlers.NewCountryHandler(svc.Country)
-	cityHandler := handlers.NewCityHandler(svc.City)
-	typeHandler := handlers.NewTypeHandler(svc.Type)
-	avatarHandler := handlers.NewAvatarHandler(svc.Avatar)
-	statsHandler := handlers.NewStatsHandler(svc.Stats)
-	bookingHandler := handlers.NewBookingHandler(svc.Booking)
-	faqHandler := handlers.NewFAQHandler(svc.FAQ, svc.Inquiry)
+	authHandler := identityh.NewAuthHandler(svc.User)
+	houseHandler := propertyh.NewHouseHandler(svc.House)
+	houseLikeHandler := interactionh.NewHouseLikeHandler(svc.HouseLike)
+	imageHandler := propertyh.NewImageHandler(svc.Image)
+	categoryHandler := propertyh.NewCategoryHandler(svc.Category)
+	countryHandler := locationh.NewCountryHandler(svc.Country)
+	cityHandler := locationh.NewCityHandler(svc.City)
+	typeHandler := propertyh.NewTypeHandler(svc.Type)
+	avatarHandler := identityh.NewAvatarHandler(svc.Avatar)
+	statsHandler := analyticsh.NewStatsHandler(svc.Stats)
+	bookingHandler := bookingh.NewBookingHandler(svc.Booking)
+	faqHandler := contenth.NewFAQHandler(svc.FAQ, svc.Inquiry)
 
 	apiV1 := app.Group("/api/v1")
 	{
-		apiV1.Get("/healthcheck", handlers.HealthCheck(db))
+		apiV1.Get("/healthcheck", healthcheck.HealthCheck(db))
 
 		auth := apiV1.Group("/auth")
 		{

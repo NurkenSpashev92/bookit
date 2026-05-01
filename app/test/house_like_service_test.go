@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nurkenspashev92/bookit/internal/services"
+	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
 )
 
 func TestHouseLikeService_Like(t *testing.T) {
 	repo := newMockHouseLikeRepo()
-	svc := services.NewHouseLikeService(repo)
+	svc := interactionsvc.NewHouseLikeService(repo)
 
 	resp, err := svc.Like(context.Background(), 1, "beach-house")
 	if err != nil {
@@ -31,7 +31,7 @@ func TestHouseLikeService_Like(t *testing.T) {
 
 func TestHouseLikeService_Unlike(t *testing.T) {
 	repo := newMockHouseLikeRepo()
-	svc := services.NewHouseLikeService(repo)
+	svc := interactionsvc.NewHouseLikeService(repo)
 
 	svc.Like(context.Background(), 1, "beach-house")
 
@@ -49,7 +49,7 @@ func TestHouseLikeService_Unlike(t *testing.T) {
 
 func TestHouseLikeService_Status(t *testing.T) {
 	repo := newMockHouseLikeRepo()
-	svc := services.NewHouseLikeService(repo)
+	svc := interactionsvc.NewHouseLikeService(repo)
 
 	// Not liked
 	resp, _ := svc.Status(context.Background(), 1, "beach-house")
@@ -70,7 +70,7 @@ func TestHouseLikeService_Status(t *testing.T) {
 
 func TestHouseLikeService_MultipleLikes(t *testing.T) {
 	repo := newMockHouseLikeRepo()
-	svc := services.NewHouseLikeService(repo)
+	svc := interactionsvc.NewHouseLikeService(repo)
 
 	svc.Like(context.Background(), 1, "beach-house")
 	svc.Like(context.Background(), 2, "beach-house")

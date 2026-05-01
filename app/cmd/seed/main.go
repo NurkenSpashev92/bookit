@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nurkenspashev92/bookit/configs"
-	"github.com/nurkenspashev92/bookit/internal/services"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
+	"github.com/nurkenspashev92/bookit/pkg/imageproc"
 )
 
 const (
@@ -163,7 +163,7 @@ func main() {
 		for j := 0; j < 5; j++ {
 			imgData := imageFiles[j%len(imageFiles)]
 
-			result, err := services.ProcessBytes(imgData.data, imgData.ext)
+			result, err := imageproc.ProcessBytes(imgData.data, imgData.ext)
 			if err != nil {
 				log.Printf("[house %d] failed to process image %d: %v", houseID, j+1, err)
 				continue

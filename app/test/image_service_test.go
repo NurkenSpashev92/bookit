@@ -3,16 +3,16 @@ package test
 import (
 	"testing"
 
-	"github.com/nurkenspashev92/bookit/internal/services"
+	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 )
 
 func TestImageService_MaxImagesConstant(t *testing.T) {
 	// Verify the constant is accessible and correct
-	if services.ErrMaxImagesExceeded == nil {
+	if propertysvc.ErrMaxImagesExceeded == nil {
 		t.Fatal("ErrMaxImagesExceeded should not be nil")
 	}
-	if services.ErrMaxImagesExceeded.Error() != "maximum 15 images allowed" {
-		t.Errorf("unexpected error message: %s", services.ErrMaxImagesExceeded.Error())
+	if propertysvc.ErrMaxImagesExceeded.Error() != "maximum 15 images allowed" {
+		t.Errorf("unexpected error message: %s", propertysvc.ErrMaxImagesExceeded.Error())
 	}
 }
 
@@ -22,9 +22,9 @@ func TestServiceErrors(t *testing.T) {
 		err  error
 		msg  string
 	}{
-		{"slug exists", services.ErrSlugExists, "slug already exists"},
-		{"max images", services.ErrMaxImagesExceeded, "maximum 15 images allowed"},
-		{"image not found", services.ErrImageNotFound, "image not found"},
+		{"slug exists", propertysvc.ErrSlugExists, "slug already exists"},
+		{"max images", propertysvc.ErrMaxImagesExceeded, "maximum 15 images allowed"},
+		{"image not found", propertysvc.ErrImageNotFound, "image not found"},
 	}
 
 	for _, tt := range tests {

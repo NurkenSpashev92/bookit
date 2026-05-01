@@ -4,17 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nurkenspashev92/bookit/internal/schemas"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	contentschema "github.com/nurkenspashev92/bookit/internal/content/schema"
+	contentsvc "github.com/nurkenspashev92/bookit/internal/content/service"
 )
 
 func TestFAQService_CRUD(t *testing.T) {
 	repo := newMockFAQRepo()
-	svc := services.NewFAQService(repo)
+	svc := contentsvc.NewFAQService(repo)
 	ctx := context.Background()
 
 	// Create
-	req := schemas.FAQCreateRequest{
+	req := contentschema.FAQCreateRequest{
 		QuestionKz: "Q?", AnswerKz: "A",
 		QuestionRu: "В?", AnswerRu: "О",
 		QuestionEn: "Q?", AnswerEn: "A",
@@ -50,7 +50,7 @@ func TestFAQService_CRUD(t *testing.T) {
 
 	// Update
 	newQ := "Updated?"
-	updated, err := svc.Update(ctx, faq.ID, schemas.FAQUpdateRequest{QuestionKz: &newQ})
+	updated, err := svc.Update(ctx, faq.ID, contentschema.FAQUpdateRequest{QuestionKz: &newQ})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestFAQService_CRUD(t *testing.T) {
 
 func TestFAQService_GetByID_NotFound(t *testing.T) {
 	repo := newMockFAQRepo()
-	svc := services.NewFAQService(repo)
+	svc := contentsvc.NewFAQService(repo)
 
 	_, err := svc.GetByID(context.Background(), 999)
 	if err == nil {
@@ -82,7 +82,7 @@ func TestFAQService_GetByID_NotFound(t *testing.T) {
 
 func TestFAQService_Delete_NotFound(t *testing.T) {
 	repo := newMockFAQRepo()
-	svc := services.NewFAQService(repo)
+	svc := contentsvc.NewFAQService(repo)
 
 	err := svc.Delete(context.Background(), 999)
 	if err == nil {

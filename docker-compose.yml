@@ -25,6 +25,7 @@ services:
       - .env
     ports:
       - "${APP_PORT}:8080"
+      - "${PPROF_PORT:-6060}:6060"
     depends_on:
       postgres_db:
         condition: service_healthy

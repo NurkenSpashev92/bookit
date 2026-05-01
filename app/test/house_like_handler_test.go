@@ -6,8 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/schemas"
+	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	interactionschema "github.com/nurkenspashev92/bookit/internal/interaction/schema"
+	propertyschema "github.com/nurkenspashev92/bookit/internal/property/schema"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
@@ -16,7 +17,7 @@ func TestHouseLikeHandler_Like_RequiresAuth(t *testing.T) {
 	app := newTestApp()
 
 	app.Post("/houses/:id/like", middleware.AuthRequired(jwtSvc), func(c fiber.Ctx) error {
-		return c.JSON(schemas.HouseLikeResponse{Liked: true, LikeCount: 1})
+		return c.JSON(interactionschema.HouseLikeResponse{Liked: true, LikeCount: 1})
 	})
 
 	// No cookie
@@ -31,8 +32,8 @@ func TestHouseLikeHandler_Like_WithAuth(t *testing.T) {
 	app := newTestApp()
 
 	app.Post("/houses/:id/like", middleware.AuthRequired(jwtSvc), func(c fiber.Ctx) error {
-		user := c.Locals("user").(models.User)
-		return c.JSON(schemas.HouseLikeResponse{Liked: true, LikeCount: user.ID})
+		user := c.Locals("user").(identitymodel.User)
+		return c.JSON(interactionschema.HouseLikeResponse{Liked: true, LikeCount: user.ID})
 	})
 
 	token := generateTestToken(jwtSvc, 5, "user@test.com")
@@ -43,7 +44,7 @@ func TestHouseLikeHandler_Like_WithAuth(t *testing.T) {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
 	}
 
-	var body schemas.HouseLikeResponse
+	var body interactionschema.HouseLikeResponse
 	parseJSON(t, resp, &body)
 	if !body.Liked {
 		t.Error("expected liked=true")
@@ -58,7 +59,7 @@ func TestHouseLikeHandler_UserLikedHouses_EmptyList(t *testing.T) {
 	app := newTestApp()
 
 	app.Get("/houses/liked", middleware.AuthRequired(jwtSvc), func(c fiber.Ctx) error {
-		return c.JSON([]schemas.HouseListItem{})
+		return c.JSON([]propertyschema.HouseListItem{})
 	})
 
 	token := generateTestToken(jwtSvc, 1, "u@t.com")
@@ -69,7 +70,7 @@ func TestHouseLikeHandler_UserLikedHouses_EmptyList(t *testing.T) {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
 	}
 
-	var items []schemas.HouseListItem
+	var items []propertyschema.HouseListItem
 	parseJSON(t, resp, &items)
 	if len(items) != 0 {
 		t.Errorf("expected empty list, got %d", len(items))

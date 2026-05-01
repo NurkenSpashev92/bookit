@@ -6,18 +6,19 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/schemas"
+	contentschema "github.com/nurkenspashev92/bookit/internal/content/schema"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
 func TestFAQHandler_Create_Validation(t *testing.T) {
 	app := newTestApp()
 	app.Post("/faqs", func(c fiber.Ctx) error {
-		var req schemas.FAQCreateRequest
+		var req contentschema.FAQCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(req)
 	})
@@ -61,12 +62,12 @@ func TestFAQHandler_Create_Validation(t *testing.T) {
 func TestInquiryHandler_Create_Validation(t *testing.T) {
 	app := newTestApp()
 	app.Post("/inquiry", func(c fiber.Ctx) error {
-		var req schemas.InquiryCreateRequest
+		var req contentschema.InquiryCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(req)
 	})

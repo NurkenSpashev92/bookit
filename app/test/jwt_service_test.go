@@ -5,21 +5,21 @@ import (
 	"time"
 
 	"github.com/nurkenspashev92/bookit/configs"
-	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 )
 
-func newTestJWT() *services.JWTService {
+func newTestJWT() *identitysvc.JWTService {
 	cfg := &configs.AuthConfig{
 		JWTSecret: "test-secret-key-for-unit-tests",
 		JWTExpire: 24 * time.Hour,
 	}
-	return services.NewJWTService(cfg)
+	return identitysvc.NewJWTService(cfg)
 }
 
 func TestJWTService_GenerateTokenPair(t *testing.T) {
 	jwt := newTestJWT()
-	user := models.User{ID: 1, Email: "test@example.com"}
+	user := identitymodel.User{ID: 1, Email: "test@example.com"}
 
 	pair, err := jwt.GenerateTokenPair(user)
 	if err != nil {
@@ -38,7 +38,7 @@ func TestJWTService_GenerateTokenPair(t *testing.T) {
 
 func TestJWTService_ValidateAccessToken_Success(t *testing.T) {
 	jwt := newTestJWT()
-	user := models.User{ID: 42, Email: "john@example.com"}
+	user := identitymodel.User{ID: 42, Email: "john@example.com"}
 
 	pair, err := jwt.GenerateTokenPair(user)
 	if err != nil {
@@ -56,7 +56,7 @@ func TestJWTService_ValidateAccessToken_Success(t *testing.T) {
 
 func TestJWTService_ValidateRefreshToken_Success(t *testing.T) {
 	jwt := newTestJWT()
-	user := models.User{ID: 10}
+	user := identitymodel.User{ID: 10}
 
 	pair, _ := jwt.GenerateTokenPair(user)
 
@@ -71,7 +71,7 @@ func TestJWTService_ValidateRefreshToken_Success(t *testing.T) {
 
 func TestJWTService_AccessToken_CantBeUsedAsRefresh(t *testing.T) {
 	jwt := newTestJWT()
-	pair, _ := jwt.GenerateTokenPair(models.User{ID: 1})
+	pair, _ := jwt.GenerateTokenPair(identitymodel.User{ID: 1})
 
 	_, err := jwt.ValidateRefreshToken(pair.AccessToken)
 	if err == nil {
@@ -81,7 +81,7 @@ func TestJWTService_AccessToken_CantBeUsedAsRefresh(t *testing.T) {
 
 func TestJWTService_RefreshToken_CantBeUsedAsAccess(t *testing.T) {
 	jwt := newTestJWT()
-	pair, _ := jwt.GenerateTokenPair(models.User{ID: 1})
+	pair, _ := jwt.GenerateTokenPair(identitymodel.User{ID: 1})
 
 	_, err := jwt.ValidateAccessToken(pair.RefreshToken)
 	if err == nil {
@@ -100,12 +100,12 @@ func TestJWTService_ValidateToken_InvalidToken(t *testing.T) {
 
 func TestJWTService_ValidateToken_WrongSecret(t *testing.T) {
 	jwt1 := newTestJWT()
-	jwt2 := services.NewJWTService(&configs.AuthConfig{
+	jwt2 := identitysvc.NewJWTService(&configs.AuthConfig{
 		JWTSecret: "different-secret",
 		JWTExpire: 24 * time.Hour,
 	})
 
-	pair, _ := jwt1.GenerateTokenPair(models.User{ID: 1})
+	pair, _ := jwt1.GenerateTokenPair(identitymodel.User{ID: 1})
 
 	_, err := jwt2.ValidateAccessToken(pair.AccessToken)
 	if err == nil {
@@ -124,7 +124,7 @@ func TestJWTService_ValidateToken_Empty(t *testing.T) {
 
 func TestJWTService_BackwardCompat_ValidateToken(t *testing.T) {
 	jwt := newTestJWT()
-	user := models.User{ID: 99}
+	user := identitymodel.User{ID: 99}
 
 	token, err := jwt.GenerateToken(user)
 	if err != nil {

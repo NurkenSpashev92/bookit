@@ -6,8 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/handlers"
-	"github.com/nurkenspashev92/bookit/internal/schemas"
+	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
+	propertyschema "github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
 func TestHouseHandler_GetAll_Empty(t *testing.T) {
@@ -15,7 +16,7 @@ func TestHouseHandler_GetAll_Empty(t *testing.T) {
 	// We can't call the real handler without DB, but we test the routing setup.
 	app := newTestApp()
 	app.Get("/houses", func(c fiber.Ctx) error {
-		return c.JSON([]schemas.HouseListItem{})
+		return c.JSON([]propertyschema.HouseListItem{})
 	})
 
 	resp := doRequest(t, app, http.MethodGet, "/houses", nil)
@@ -23,7 +24,7 @@ func TestHouseHandler_GetAll_Empty(t *testing.T) {
 		t.Errorf("status = %d, want 200", resp.StatusCode)
 	}
 
-	var items []schemas.HouseListItem
+	var items []propertyschema.HouseListItem
 	parseJSON(t, resp, &items)
 	if len(items) != 0 {
 		t.Errorf("expected empty list, got %d items", len(items))
@@ -32,14 +33,14 @@ func TestHouseHandler_GetAll_Empty(t *testing.T) {
 
 func TestHouseHandler_GetBySlug_NotFound(t *testing.T) {
 	app := newTestApp()
-	houseHandler := handlers.NewHouseHandler(nil)
+	houseHandler := propertyh.NewHouseHandler(nil)
 	// GetBySlug with nil service will panic — test the route pattern instead
 	app.Get("/houses/:slug", func(c fiber.Ctx) error {
 		slug := c.Params("slug")
 		if slug == "" {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: "slug is required"})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: "slug is required"})
 		}
-		return c.Status(404).JSON(schemas.ErrorResponse{Error: "house not found"})
+		return c.Status(404).JSON(shared.ErrorResponse{Error: "house not found"})
 	})
 	_ = houseHandler // used for type check
 
@@ -48,7 +49,7 @@ func TestHouseHandler_GetBySlug_NotFound(t *testing.T) {
 		t.Errorf("status = %d, want 404", resp.StatusCode)
 	}
 
-	var errResp schemas.ErrorResponse
+	var errResp shared.ErrorResponse
 	parseJSON(t, resp, &errResp)
 	if errResp.Error != "house not found" {
 		t.Errorf("error = %q, want 'house not found'", errResp.Error)
@@ -58,12 +59,12 @@ func TestHouseHandler_GetBySlug_NotFound(t *testing.T) {
 func TestHouseHandler_Create_InvalidJSON(t *testing.T) {
 	app := newTestApp()
 	app.Post("/houses", func(c fiber.Ctx) error {
-		var req schemas.HouseCreateRequest
+		var req propertyschema.HouseCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(nil)
 	})
@@ -74,7 +75,7 @@ func TestHouseHandler_Create_InvalidJSON(t *testing.T) {
 		t.Errorf("status = %d, want 400", resp.StatusCode)
 	}
 
-	var errResp schemas.ErrorResponse
+	var errResp shared.ErrorResponse
 	parseJSON(t, resp, &errResp)
 	if errResp.Error == "" {
 		t.Error("expected validation error message")
@@ -84,12 +85,12 @@ func TestHouseHandler_Create_InvalidJSON(t *testing.T) {
 func TestHouseHandler_Create_ValidationErrors(t *testing.T) {
 	app := newTestApp()
 	app.Post("/houses", func(c fiber.Ctx) error {
-		var req schemas.HouseCreateRequest
+		var req propertyschema.HouseCreateRequest
 		if err := c.Bind().JSON(&req); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		if err := req.Validate(); err != nil {
-			return c.Status(400).JSON(schemas.ErrorResponse{Error: err.Error()})
+			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
 		}
 		return c.Status(201).JSON(nil)
 	})
@@ -110,10 +111,10 @@ func TestHouseHandler_CheckSlug_RouteOrder(t *testing.T) {
 
 	// Static routes must be before /:slug
 	app.Get("/houses/check-slug", func(c fiber.Ctx) error {
-		return c.JSON(schemas.SlugCheckResponse{Available: true, Slug: "test"})
+		return c.JSON(propertyschema.SlugCheckResponse{Available: true, Slug: "test"})
 	})
 	app.Get("/houses/liked", func(c fiber.Ctx) error {
-		return c.JSON([]schemas.HouseListItem{})
+		return c.JSON([]propertyschema.HouseListItem{})
 	})
 	app.Get("/houses/:slug", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"slug": c.Params("slug")})
@@ -124,7 +125,7 @@ func TestHouseHandler_CheckSlug_RouteOrder(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
 	}
-	var slugResp schemas.SlugCheckResponse
+	var slugResp propertyschema.SlugCheckResponse
 	parseJSON(t, resp, &slugResp)
 	if !slugResp.Available {
 		t.Error("expected available=true")

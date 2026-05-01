@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/nurkenspashev92/bookit/configs"
-	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 )
 
 func testAwsConfig() *configs.AwsConfig {
@@ -13,9 +13,9 @@ func testAwsConfig() *configs.AwsConfig {
 }
 
 func TestUserMapper_ToAuthUser(t *testing.T) {
-	mapper := services.UserMapper{}
+	mapper := identitysvc.UserMapper{}
 	awsCfg := testAwsConfig()
-	user := models.User{
+	user := identitymodel.User{
 		ID:         10,
 		Email:      "test@mail.com",
 		FirstName:  "Jane",
@@ -48,9 +48,9 @@ func TestUserMapper_ToAuthUser(t *testing.T) {
 }
 
 func TestUserMapper_ToAuthUser_EmptyFields(t *testing.T) {
-	mapper := services.UserMapper{}
+	mapper := identitysvc.UserMapper{}
 	awsCfg := testAwsConfig()
-	user := models.User{ID: 1, Email: "x@y.com"}
+	user := identitymodel.User{ID: 1, Email: "x@y.com"}
 
 	auth := mapper.ToAuthUser(user, awsCfg)
 

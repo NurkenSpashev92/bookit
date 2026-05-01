@@ -10,6 +10,7 @@ services:
       - .env
     ports:
       - "${APP_PORT}:8080"
+      - "${PPROF_PORT:-6060}:6060"
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -17,6 +18,7 @@ services:
       sh -c "
       go install github.com/swaggo/swag/cmd/swag@latest &&
       go install github.com/air-verse/air@latest &&
+      go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest &&
       air
       "
 

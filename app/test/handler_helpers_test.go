@@ -12,8 +12,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/nurkenspashev92/bookit/configs"
-	"github.com/nurkenspashev92/bookit/internal/models"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 )
 
 func newTestApp() *fiber.App {
@@ -22,15 +22,15 @@ func newTestApp() *fiber.App {
 	})
 }
 
-func newTestJWTService() *services.JWTService {
-	return services.NewJWTService(&configs.AuthConfig{
+func newTestJWTService() *identitysvc.JWTService {
+	return identitysvc.NewJWTService(&configs.AuthConfig{
 		JWTSecret: "test-secret",
 		JWTExpire: 24 * time.Hour,
 	})
 }
 
-func generateTestToken(jwtSvc *services.JWTService, userID int, email string) string {
-	token, _ := jwtSvc.GenerateToken(models.User{
+func generateTestToken(jwtSvc *identitysvc.JWTService, userID int, email string) string {
+	token, _ := jwtSvc.GenerateToken(identitymodel.User{
 		ID:    userID,
 		Email: email,
 	})

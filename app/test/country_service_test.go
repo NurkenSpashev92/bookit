@@ -4,17 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nurkenspashev92/bookit/internal/schemas"
-	"github.com/nurkenspashev92/bookit/internal/services"
+	locationschema "github.com/nurkenspashev92/bookit/internal/location/schema"
+	locationsvc "github.com/nurkenspashev92/bookit/internal/location/service"
 )
 
 func TestCountryService_CRUD(t *testing.T) {
 	repo := newMockCountryRepo()
-	svc := services.NewCountryService(repo)
+	svc := locationsvc.NewCountryService(repo)
 	ctx := context.Background()
 
 	// Create
-	country, err := svc.Create(ctx, schemas.CountryCreateRequest{
+	country, err := svc.Create(ctx, locationschema.CountryCreateRequest{
 		NameKZ: "Қазақстан", NameEN: "Kazakhstan", NameRU: "Казахстан", Code: "KZ",
 	})
 	if err != nil {
@@ -47,7 +47,7 @@ func TestCountryService_CRUD(t *testing.T) {
 
 	// Update
 	newName := "Updated"
-	updated, err := svc.Update(ctx, country.ID, schemas.CountryUpdateRequest{NameEN: &newName})
+	updated, err := svc.Update(ctx, country.ID, locationschema.CountryUpdateRequest{NameEN: &newName})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestCountryService_CRUD(t *testing.T) {
 }
 
 func TestCountryService_GetByID_NotFound(t *testing.T) {
-	svc := services.NewCountryService(newMockCountryRepo())
+	svc := locationsvc.NewCountryService(newMockCountryRepo())
 	_, err := svc.GetByID(context.Background(), 999)
 	if err == nil {
 		t.Error("expected error")
@@ -75,7 +75,7 @@ func TestCountryService_GetByID_NotFound(t *testing.T) {
 }
 
 func TestCountryService_Delete_NotFound(t *testing.T) {
-	svc := services.NewCountryService(newMockCountryRepo())
+	svc := locationsvc.NewCountryService(newMockCountryRepo())
 	err := svc.Delete(context.Background(), 999)
 	if err == nil {
 		t.Error("expected error")
