@@ -18,15 +18,14 @@ else
 endif
 
 .PHONY: help up down build restart logs ps app postgres clean prune install mode test test-v test-cover \
-        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action seed env install-stack
+        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action seed install-stack
 
 help:
 	@echo ""
 	@echo "Mode: $(MODE)"
 	@echo ""
 	@echo "Available commands:"
-	@echo "  make env              📝 Create .env from .env.example"
-	@echo "  make install          🚀 Deploy project"
+	@echo "  make install          🚀 Deploy project (нужен готовый .env)"
 	@echo "  make start            🚀 Start containers"
 	@echo "  make down             🛑 Stop containers"
 	@echo "  make build            🔨 Build containers"
@@ -56,11 +55,11 @@ mode:
 	@echo "Running in $(MODE) mode (DEBUG=$(DEBUG))"
 
 
-env:
-	@bash devops/env.sh $(if $(filter 1,$(FORCE)),--force)
-
 install:
-	@bash devops/env.sh --if-missing
+	@if [ ! -f $(ENV_FILE) ]; then \
+		echo "❌ Нет $(ENV_FILE). Скопируйте .env.example в .env и заполните значения вручную."; \
+		exit 1; \
+	fi
 	@$(MAKE) install-stack
 
 install-stack:
