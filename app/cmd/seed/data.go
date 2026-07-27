@@ -58,7 +58,18 @@ var (
 	districtsKZ = []string{"Орталық", "Жоғары қала", "Орта қала", "Іргетас", "Ескі қала"}
 	districtsRU = []string{"Центр", "Верхний город", "Средний город", "Пригород", "Старый город"}
 
-	defaultTypes = []string{"Apartment", "House", "Villa", "Cottage", "Hotel"}
+	defaultTypes = []typeSeed{
+		{nameEN: "Apartment", nameKZ: "Пәтер", nameRU: "Квартира"},
+		{nameEN: "House", nameKZ: "Үй", nameRU: "Дом"},
+		{nameEN: "Villa", nameKZ: "Вилла", nameRU: "Вилла"},
+		{nameEN: "Cottage", nameKZ: "Коттедж", nameRU: "Коттедж"},
+		{nameEN: "Hotel", nameKZ: "Қонақ үй", nameRU: "Отель"},
+		{nameEN: "Studio", nameKZ: "Студия", nameRU: "Студия"},
+		{nameEN: "Townhouse", nameKZ: "Таунхаус", nameRU: "Таунхаус"},
+		{nameEN: "Guest house", nameKZ: "Қонақжай үй", nameRU: "Гостевой дом"},
+		{nameEN: "Hostel", nameKZ: "Хостел", nameRU: "Хостел"},
+		{nameEN: "Yurt", nameKZ: "Киіз үй", nameRU: "Юрта"},
+	}
 
 	defaultCountries = []countrySeed{
 		{nameEN: "Kazakhstan", nameKZ: "Қазақстан", nameRU: "Казахстан", code: "KZ"},
@@ -84,6 +95,16 @@ var (
 		{nameEN: "Business travel", nameKZ: "Іссапар", nameRU: "Командировка"},
 		{nameEN: "Luxury", nameKZ: "Люкс", nameRU: "Люкс"},
 		{nameEN: "Budget", nameKZ: "Үнемді", nameRU: "Бюджетные"},
+		{nameEN: "Pool", nameKZ: "Бассейнмен", nameRU: "С бассейном"},
+		{nameEN: "Sauna", nameKZ: "Сауна", nameRU: "Сауна и баня"},
+		{nameEN: "Pet friendly", nameKZ: "Үй жануарларымен", nameRU: "С питомцами"},
+		{nameEN: "Amazing views", nameKZ: "Керемет көріністер", nameRU: "Потрясающие виды"},
+		{nameEN: "Camping", nameKZ: "Кемпинг", nameRU: "Кемпинг"},
+		{nameEN: "Cabins", nameKZ: "Шағын үйлер", nameRU: "Домики"},
+		{nameEN: "Design", nameKZ: "Дизайнерлік", nameRU: "Дизайнерские"},
+		{nameEN: "Historic", nameKZ: "Тарихи", nameRU: "Исторические"},
+		{nameEN: "Long stay", nameKZ: "Ұзақ мерзімге", nameRU: "Долгосрочно"},
+		{nameEN: "Trending", nameKZ: "Танымал", nameRU: "Популярные"},
 	}
 )
 
@@ -96,6 +117,10 @@ type citySeed struct {
 }
 
 type categorySeed struct {
+	nameEN, nameKZ, nameRU string
+}
+
+type typeSeed struct {
 	nameEN, nameKZ, nameRU string
 }
 

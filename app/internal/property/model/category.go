@@ -8,7 +8,6 @@ type Category struct {
 	NameRu    string    `json:"name_ru,omitempty"`
 	NameEn    string    `json:"name_en,omitempty"`
 	IsActive  *bool     `json:"is_active,omitempty"`
-	Icon      *string   `json:"icon,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

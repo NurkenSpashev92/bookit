@@ -13,31 +13,46 @@ import (
 func ensureTypes(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
 	ids := make([]int, 0, len(defaultTypes))
 
-	for _, name := range defaultTypes {
-		var id int
+	for _, houseType := range defaultTypes {
+		id, err := ensureRow(ctx, conn, "type", houseType.nameEN,
+			`SELECT id FROM types WHERE name_en = $1 LIMIT 1`,
+			`INSERT INTO types (name_en, name_kz, name_ru, is_active, created_at, updated_at)
+			 VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+			 RETURNING id`,
+			houseType.nameEN, houseType.nameKZ, houseType.nameRU,
+		)
+		if err != nil {
+			return nil, err
+		}
 
-		err := conn.QueryRow(ctx, `SELECT id FROM types WHERE name = $1 LIMIT 1`, name).Scan(&id)
-		switch {
-		case err == nil:
-
-		case errors.Is(err, pgx.ErrNoRows):
-			if err := conn.QueryRow(ctx, `
-				INSERT INTO types (name, is_active, created_at, updated_at)
-				VALUES ($1, TRUE, NOW(), NOW())
-				RETURNING id`, name,
-			).Scan(&id); err != nil {
-				return nil, fmt.Errorf("create type %q: %w", name, err)
-			}
-			log.Printf("Type '%s' created (id=%d)", name, id)
-
-		default:
-			return nil, fmt.Errorf("lookup type %q: %w", name, err)
+		if err := fillTypeTranslations(ctx, conn, id, houseType); err != nil {
+			return nil, err
 		}
 
 		ids = append(ids, id)
 	}
 
 	return ids, nil
+}
+
+// fillTypeTranslations backfills kz/ru names for types created before the
+// multilingual columns existed, where they were copied from the english name.
+func fillTypeTranslations(ctx context.Context, conn *pgxpool.Pool, id int, houseType typeSeed) error {
+	cmd, err := conn.Exec(ctx, `
+		UPDATE types
+		SET name_kz = $1, name_ru = $2, updated_at = NOW()
+		WHERE id = $3 AND (name_kz <> $1 OR name_ru <> $2)`,
+		houseType.nameKZ, houseType.nameRU, id,
+	)
+	if err != nil {
+		return fmt.Errorf("translate type %q: %w", houseType.nameEN, err)
+	}
+
+	if cmd.RowsAffected() > 0 {
+		log.Printf("Type '%s' translations updated (id=%d)", houseType.nameEN, id)
+	}
+
+	return nil
 }
 
 func ensureCountries(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {

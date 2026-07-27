@@ -34,7 +34,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.UserLoginRequest"
+                            "$ref": "#/definitions/schema.UserLoginRequest"
                         }
                     }
                 ],
@@ -42,19 +42,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.AuthResponse"
+                            "$ref": "#/definitions/schema.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -78,7 +78,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     }
                 }
@@ -102,13 +102,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.AuthResponse"
+                            "$ref": "#/definitions/schema.AuthResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -136,7 +136,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.UserUpdateRequest"
+                            "$ref": "#/definitions/schema.UserUpdateRequest"
                         }
                     }
                 ],
@@ -144,25 +144,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.AuthUser"
+                            "$ref": "#/definitions/schema.AuthUser"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -199,25 +199,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/schema.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -240,25 +240,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/schema.AuthResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -288,7 +288,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.ChangePasswordRequest"
+                            "$ref": "#/definitions/schema.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -296,25 +296,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -339,7 +339,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/schemas.RefreshRequest"
+                            "$ref": "#/definitions/schema.RefreshRequest"
                         }
                     }
                 ],
@@ -347,13 +347,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.AuthResponse"
+                            "$ref": "#/definitions/schema.AuthResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -378,7 +378,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.UserCreateRequest"
+                            "$ref": "#/definitions/schema.UserCreateRequest"
                         }
                     }
                 ],
@@ -386,25 +386,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.AuthResponse"
+                            "$ref": "#/definitions/schema.AuthResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -431,20 +431,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.BookingResponse"
+                                "$ref": "#/definitions/schema.BookingResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -473,7 +473,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.BookingCreateRequest"
+                            "$ref": "#/definitions/schema.BookingCreateRequest"
                         }
                     }
                 ],
@@ -481,31 +481,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.BookingResponse"
+                            "$ref": "#/definitions/schema.BookingResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -532,20 +532,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.BookingResponse"
+                                "$ref": "#/definitions/schema.BookingResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -579,19 +579,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.BookingResponse"
+                            "$ref": "#/definitions/schema.BookingResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -629,7 +629,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.BookingUpdateStatusRequest"
+                            "$ref": "#/definitions/schema.BookingUpdateStatusRequest"
                         }
                     }
                 ],
@@ -637,25 +637,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -663,7 +663,6 @@ const docTemplate = `{
         },
         "/categories": {
             "get": {
-                "description": "Returns a list of active categories",
                 "produces": [
                     "application/json"
                 ],
@@ -677,14 +676,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.CategoryPaginate"
+                                "$ref": "#/definitions/schema.CategoryPaginate"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -695,9 +694,8 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Creates a new category",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -708,56 +706,32 @@ const docTemplate = `{
                 "summary": "Create category",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Name KZ",
-                        "name": "name_kz",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name RU",
-                        "name": "name_ru",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name EN",
-                        "name": "name_en",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Is active",
-                        "name": "is_active",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Category icon",
-                        "name": "icon",
-                        "in": "formData"
+                        "description": "Category",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CategoryCreateRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Category"
+                            "$ref": "#/definitions/model.Category"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -785,13 +759,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Category"
+                            "$ref": "#/definitions/model.Category"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -822,13 +796,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -840,7 +814,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -858,53 +832,32 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Name KZ",
-                        "name": "name_kz",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name RU",
-                        "name": "name_ru",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name EN",
-                        "name": "name_en",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Is active",
-                        "name": "is_active",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Icon",
-                        "name": "icon",
-                        "in": "formData"
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CategoryUpdateRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Category"
+                            "$ref": "#/definitions/model.Category"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -925,14 +878,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.City"
+                                "$ref": "#/definitions/schema.City"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -960,7 +913,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CityCreateRequest"
+                            "$ref": "#/definitions/schema.CityCreateRequest"
                         }
                     }
                 ],
@@ -968,19 +921,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.City"
+                            "$ref": "#/definitions/schema.City"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1008,13 +961,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.City"
+                            "$ref": "#/definitions/schema.City"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1045,13 +998,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1086,7 +1039,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CityUpdateRequest"
+                            "$ref": "#/definitions/schema.CityUpdateRequest"
                         }
                     }
                 ],
@@ -1094,19 +1047,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.City"
+                            "$ref": "#/definitions/schema.City"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1127,14 +1080,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.Country"
+                                "$ref": "#/definitions/schema.Country"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1162,7 +1115,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CountryCreateRequest"
+                            "$ref": "#/definitions/schema.CountryCreateRequest"
                         }
                     }
                 ],
@@ -1170,19 +1123,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.Country"
+                            "$ref": "#/definitions/schema.Country"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1210,13 +1163,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.Country"
+                            "$ref": "#/definitions/schema.Country"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1247,13 +1200,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1288,7 +1241,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.CountryUpdateRequest"
+                            "$ref": "#/definitions/schema.CountryUpdateRequest"
                         }
                     }
                 ],
@@ -1296,19 +1249,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.Country"
+                            "$ref": "#/definitions/schema.Country"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1329,14 +1282,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.FAQ"
+                                "$ref": "#/definitions/schema.FAQ"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1364,7 +1317,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.FAQCreateRequest"
+                            "$ref": "#/definitions/schema.FAQCreateRequest"
                         }
                     }
                 ],
@@ -1372,19 +1325,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.FAQ"
+                            "$ref": "#/definitions/schema.FAQ"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1412,13 +1365,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.FAQ"
+                            "$ref": "#/definitions/schema.FAQ"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1449,13 +1402,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1490,7 +1443,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.FAQUpdateRequest"
+                            "$ref": "#/definitions/schema.FAQUpdateRequest"
                         }
                     }
                 ],
@@ -1498,19 +1451,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.FAQ"
+                            "$ref": "#/definitions/schema.FAQ"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1562,91 +1515,19 @@ const docTemplate = `{
                         "description": "Items per page",
                         "name": "page_size",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Minimum price",
-                        "name": "min_price",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Maximum price",
-                        "name": "max_price",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Minimum guest capacity",
-                        "name": "guest_count",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Minimum rooms",
-                        "name": "rooms_qty",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Minimum bedrooms",
-                        "name": "bedroom_qty",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Minimum beds",
-                        "name": "bed_qty",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Minimum bathrooms",
-                        "name": "bath_qty",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Allows pets",
-                        "name": "guests_with_pets",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "category",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "House type ID",
-                        "name": "house_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Country ID",
-                        "name": "country",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "City ID",
-                        "name": "city",
-                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.PaginatedResponse"
+                            "$ref": "#/definitions/shared.PaginatedResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1657,7 +1538,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Creates a new house. Auth required.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1675,7 +1555,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseCreateRequest"
+                            "$ref": "#/definitions/schema.HouseCreateRequest"
                         }
                     }
                 ],
@@ -1683,25 +1563,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.House"
+                            "$ref": "#/definitions/model.House"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1709,7 +1589,6 @@ const docTemplate = `{
         },
         "/houses/check-slug": {
             "get": {
-                "description": "Checks if a house slug is available for use",
                 "produces": [
                     "application/json"
                 ],
@@ -1730,13 +1609,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.SlugCheckResponse"
+                            "$ref": "#/definitions/schema.SlugCheckResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1749,7 +1628,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Deletes image from database and AWS S3",
                 "produces": [
                     "application/json"
                 ],
@@ -1770,25 +1648,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1814,20 +1692,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.HouseListItem"
+                                "$ref": "#/definitions/schema.HouseListItem"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1835,7 +1713,6 @@ const docTemplate = `{
         },
         "/houses/{slug}": {
             "get": {
-                "description": "Returns a single house by slug with is_liked, country/city names, owner name",
                 "produces": [
                     "application/json"
                 ],
@@ -1856,13 +1733,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseDetailResponse"
+                            "$ref": "#/definitions/schema.HouseDetailResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1873,7 +1750,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Deletes a house by slug. Auth required.",
                 "produces": [
                     "application/json"
                 ],
@@ -1894,19 +1770,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1917,7 +1793,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Updates house data. Auth required.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1942,7 +1817,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseUpdateRequest"
+                            "$ref": "#/definitions/schema.HouseUpdateRequest"
                         }
                     }
                 ],
@@ -1950,25 +1825,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.House"
+                            "$ref": "#/definitions/model.House"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -1981,7 +1856,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Upload multiple images for a house (max 15 images per house)",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2016,25 +1890,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2067,19 +1941,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseLikeResponse"
+                            "$ref": "#/definitions/schema.HouseLikeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2110,25 +1984,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseLikeResponse"
+                            "$ref": "#/definitions/schema.HouseLikeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2159,25 +2033,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseLikeResponse"
+                            "$ref": "#/definitions/schema.HouseLikeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2198,14 +2072,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.Inquiry"
+                                "$ref": "#/definitions/schema.Inquiry"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2233,7 +2107,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.InquiryCreateRequest"
+                            "$ref": "#/definitions/schema.InquiryCreateRequest"
                         }
                     }
                 ],
@@ -2241,19 +2115,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.Inquiry"
+                            "$ref": "#/definitions/schema.Inquiry"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2281,13 +2155,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.Inquiry"
+                            "$ref": "#/definitions/schema.Inquiry"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2318,13 +2192,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2359,7 +2233,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schemas.InquiryUpdateRequest"
+                            "$ref": "#/definitions/schema.InquiryUpdateRequest"
                         }
                     }
                 ],
@@ -2367,19 +2241,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.Inquiry"
+                            "$ref": "#/definitions/schema.Inquiry"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2392,7 +2266,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns paginated houses owned by the authenticated user",
                 "produces": [
                     "application/json"
                 ],
@@ -2400,39 +2273,23 @@ const docTemplate = `{
                     "Houses"
                 ],
                 "summary": "Get current user's houses",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.PaginatedResponse"
+                            "$ref": "#/definitions/shared.PaginatedResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2445,7 +2302,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns top by views, top by likes, likes over time, price distribution",
                 "produces": [
                     "application/json"
                 ],
@@ -2473,13 +2329,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2492,7 +2348,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns overall statistics for the authenticated user's houses",
                 "produces": [
                     "application/json"
                 ],
@@ -2504,19 +2359,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.DashboardStats"
+                            "$ref": "#/definitions/schema.DashboardStats"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2529,7 +2384,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns views, likes, price for each house owned by user",
                 "produces": [
                     "application/json"
                 ],
@@ -2543,20 +2397,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.HouseStatsItem"
+                                "$ref": "#/definitions/schema.HouseStatsItem"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2569,7 +2423,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns viewers, likers, bookings, views/likes per day charts for a house owned by current user",
                 "produces": [
                     "application/json"
                 ],
@@ -2590,25 +2443,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.HouseDetailStats"
+                            "$ref": "#/definitions/schema.HouseDetailStats"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2629,14 +2482,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/schemas.TypeResponse"
+                                "$ref": "#/definitions/schema.TypeResponse"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2648,7 +2501,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -2659,42 +2512,32 @@ const docTemplate = `{
                 "summary": "Create a type",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Name",
-                        "name": "name",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Is Active",
-                        "name": "is_active",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Icon",
-                        "name": "icon",
-                        "in": "formData"
+                        "description": "Type",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.TypeCreateRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/schemas.TypeResponse"
+                            "$ref": "#/definitions/schema.TypeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2722,13 +2565,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.TypeResponse"
+                            "$ref": "#/definitions/schema.TypeResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2759,13 +2602,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.MessageResponse"
+                            "$ref": "#/definitions/shared.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2777,7 +2620,7 @@ const docTemplate = `{
                     }
                 ],
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -2795,35 +2638,32 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Name",
-                        "name": "name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Is Active",
-                        "name": "is_active",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Icon",
-                        "name": "icon",
-                        "in": "formData"
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.TypeUpdateRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/schemas.TypeResponse"
+                            "$ref": "#/definitions/schema.TypeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/schemas.ErrorResponse"
+                            "$ref": "#/definitions/shared.ErrorResponse"
                         }
                     }
                 }
@@ -2831,13 +2671,10 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Category": {
+        "model.Category": {
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
-                },
-                "icon": {
                     "type": "string"
                 },
                 "id": {
@@ -2860,7 +2697,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.House": {
+        "model.House": {
             "type": "object",
             "properties": {
                 "address_en": {
@@ -2880,6 +2717,12 @@ const docTemplate = `{
                 },
                 "best_house": {
                     "type": "boolean"
+                },
+                "category_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "city_id": {
                     "type": "integer"
@@ -2929,7 +2772,7 @@ const docTemplate = `{
                 "images": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Image"
+                        "$ref": "#/definitions/model.Image"
                     }
                 },
                 "is_active": {
@@ -2982,7 +2825,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Image": {
+        "model.Image": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -3020,7 +2863,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.AuthResponse": {
+        "schema.AuthResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -3032,11 +2875,11 @@ const docTemplate = `{
                     "example": "eyJhbGciOiJIUzI1NiIs..."
                 },
                 "user": {
-                    "$ref": "#/definitions/schemas.AuthUser"
+                    "$ref": "#/definitions/schema.AuthUser"
                 }
             }
         },
-        "schemas.AuthUser": {
+        "schema.AuthUser": {
             "type": "object",
             "properties": {
                 "avatar": {
@@ -3072,7 +2915,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.BookingCreateRequest": {
+        "schema.BookingCreateRequest": {
             "description": "Request body for creating a booking",
             "type": "object",
             "required": [
@@ -3106,7 +2949,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.BookingInfo": {
+        "schema.BookingInfo": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -3144,7 +2987,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.BookingResponse": {
+        "schema.BookingResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -3231,7 +3074,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.BookingUpdateStatusRequest": {
+        "schema.BookingUpdateStatusRequest": {
             "description": "Request body for updating booking status",
             "type": "object",
             "required": [
@@ -3244,12 +3087,39 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.CategoryPaginate": {
+        "schema.CategoryCreateRequest": {
+            "description": "Request body for creating a category",
+            "type": "object",
+            "required": [
+                "name_en",
+                "name_kz",
+                "name_ru"
+            ],
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name_en": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Apartments"
+                },
+                "name_kz": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Апартаменты"
+                },
+                "name_ru": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Апартаменты"
+                }
+            }
+        },
+        "schema.CategoryPaginate": {
             "type": "object",
             "properties": {
-                "icon": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -3272,7 +3142,32 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.ChangePasswordRequest": {
+        "schema.CategoryUpdateRequest": {
+            "description": "Request body for updating a category (all fields optional)",
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name_en": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Apartments"
+                },
+                "name_kz": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Апартаменты"
+                },
+                "name_ru": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Апартаменты"
+                }
+            }
+        },
+        "schema.ChangePasswordRequest": {
             "description": "Request body for changing user password",
             "type": "object",
             "required": [
@@ -3292,11 +3187,11 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.City": {
+        "schema.City": {
             "type": "object",
             "properties": {
                 "country": {
-                    "$ref": "#/definitions/schemas.Country"
+                    "$ref": "#/definitions/schema.Country"
                 },
                 "id": {
                     "type": "integer",
@@ -3320,7 +3215,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.CityCreateRequest": {
+        "schema.CityCreateRequest": {
             "description": "Request body for creating a city",
             "type": "object",
             "required": [
@@ -3356,7 +3251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.CityUpdateRequest": {
+        "schema.CityUpdateRequest": {
             "description": "Request body for updating a city (all fields optional)",
             "type": "object",
             "properties": {
@@ -3385,7 +3280,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.Country": {
+        "schema.Country": {
             "type": "object",
             "properties": {
                 "code": {
@@ -3410,7 +3305,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.CountryCreateRequest": {
+        "schema.CountryCreateRequest": {
             "description": "Request body for creating a country",
             "type": "object",
             "required": [
@@ -3441,7 +3336,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.CountryUpdateRequest": {
+        "schema.CountryUpdateRequest": {
             "description": "Request body for updating a country (all fields optional)",
             "type": "object",
             "properties": {
@@ -3467,7 +3362,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.DashboardStats": {
+        "schema.DashboardStats": {
             "type": "object",
             "properties": {
                 "average_likes": {
@@ -3500,16 +3395,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "validation failed"
-                }
-            }
-        },
-        "schemas.FAQ": {
+        "schema.FAQ": {
             "type": "object",
             "properties": {
                 "answer_en": {
@@ -3542,7 +3428,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.FAQCreateRequest": {
+        "schema.FAQCreateRequest": {
             "description": "Request body for creating a FAQ entry",
             "type": "object",
             "required": [
@@ -3583,7 +3469,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.FAQUpdateRequest": {
+        "schema.FAQUpdateRequest": {
             "description": "Request body for updating a FAQ entry (all fields optional)",
             "type": "object",
             "properties": {
@@ -3610,42 +3496,37 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.HouseBooking": {
+        "schema.HouseBooking": {
             "type": "object",
             "properties": {
                 "end_date": {
-                    "type": "string",
-                    "example": "2026-04-15"
+                    "type": "string"
                 },
                 "guest_count": {
-                    "type": "integer",
-                    "example": 4
+                    "type": "integer"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "start_date": {
-                    "type": "string",
-                    "example": "2026-04-10"
+                    "type": "string"
                 },
                 "status": {
-                    "type": "string",
-                    "example": "confirmed"
+                    "type": "string"
                 },
                 "total_price": {
-                    "type": "integer",
-                    "example": 250000
+                    "type": "integer"
                 }
             }
         },
-        "schemas.HouseCreateRequest": {
+        "schema.HouseCreateRequest": {
             "description": "Request body for creating a new house",
             "type": "object",
             "required": [
                 "address_en",
                 "address_kz",
                 "address_ru",
+                "category_ids",
                 "description_en",
                 "description_kz",
                 "description_ru",
@@ -3658,8 +3539,7 @@ const docTemplate = `{
             "properties": {
                 "address_en": {
                     "type": "string",
-                    "maxLength": 255,
-                    "example": "123 Beach Rd"
+                    "maxLength": 255
                 },
                 "address_kz": {
                     "type": "string",
@@ -3671,29 +3551,29 @@ const docTemplate = `{
                 },
                 "bath_qty": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 1
+                    "minimum": 0
                 },
                 "bedroom_qty": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 2
+                    "minimum": 0
                 },
                 "best_house": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
+                },
+                "category_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "city_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "country_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "description_en": {
-                    "type": "string",
-                    "example": "A beautiful beach house"
+                    "type": "string"
                 },
                 "description_kz": {
                     "type": "string"
@@ -3715,81 +3595,65 @@ const docTemplate = `{
                 },
                 "guest_qty": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 6
+                    "minimum": 0
                 },
                 "guests_with_pets": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "is_active": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "lat": {
-                    "type": "number",
-                    "example": 71.4491
+                    "type": "number"
                 },
                 "lng": {
-                    "type": "number",
-                    "example": 51.1694
+                    "type": "number"
                 },
                 "name_en": {
                     "type": "string",
-                    "maxLength": 255,
-                    "example": "Beach House"
+                    "maxLength": 255
                 },
                 "name_kz": {
                     "type": "string",
-                    "maxLength": 255,
-                    "example": "Жағажай үйі"
+                    "maxLength": 255
                 },
                 "name_ru": {
                     "type": "string",
-                    "maxLength": 255,
-                    "example": "Пляжный дом"
+                    "maxLength": 255
                 },
                 "phone_number": {
                     "type": "string",
-                    "maxLength": 20,
-                    "example": "+77001234567"
+                    "maxLength": 20
                 },
                 "price": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 50000
+                    "minimum": 0
                 },
                 "priority": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 0
+                    "minimum": 0
                 },
                 "promotion": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "rooms_qty": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 3
+                    "minimum": 0
                 },
                 "slug": {
                     "type": "string",
-                    "maxLength": 255,
-                    "example": "beach-house"
+                    "maxLength": 255
                 },
                 "type_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 }
             }
         },
-        "schemas.HouseDetailResponse": {
+        "schema.HouseDetailResponse": {
             "type": "object",
             "properties": {
                 "address_en": {
-                    "type": "string",
-                    "example": "123 Beach Rd"
+                    "type": "string"
                 },
                 "address_kz": {
                     "type": "string"
@@ -3798,20 +3662,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bath_qty": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "bedroom_qty": {
-                    "type": "integer",
-                    "example": 2
+                    "type": "integer"
                 },
                 "best_house": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "city_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "comments_en": {
                     "type": "string"
@@ -3832,8 +3692,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "country_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "created_at": {
                     "type": "string"
@@ -3857,53 +3716,43 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "guest_qty": {
-                    "type": "integer",
-                    "example": 6
+                    "type": "integer"
                 },
                 "guests_with_pets": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "images": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.Image"
+                        "$ref": "#/definitions/schema.Image"
                     }
                 },
                 "is_active": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "is_booked": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "is_liked": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "lat": {
-                    "type": "number",
-                    "example": 71.4491
+                    "type": "number"
                 },
                 "like_count": {
-                    "type": "integer",
-                    "example": 5
+                    "type": "integer"
                 },
                 "lng": {
-                    "type": "number",
-                    "example": 51.1694
+                    "type": "number"
                 },
                 "my_booking": {
-                    "$ref": "#/definitions/schemas.HouseBooking"
+                    "$ref": "#/definitions/schema.HouseBooking"
                 },
                 "name_en": {
-                    "type": "string",
-                    "example": "Beach House"
+                    "type": "string"
                 },
                 "name_kz": {
                     "type": "string"
@@ -3915,42 +3764,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "owner_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "phone_number": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "integer",
-                    "example": 50000
+                    "type": "integer"
                 },
                 "priority": {
-                    "type": "integer",
-                    "example": 0
+                    "type": "integer"
                 },
                 "promotion": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "rooms_qty": {
-                    "type": "integer",
-                    "example": 3
+                    "type": "integer"
                 },
                 "slug": {
-                    "type": "string",
-                    "example": "beach-house"
+                    "type": "string"
                 },
                 "type_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
                 }
             }
         },
-        "schemas.HouseDetailStats": {
+        "schema.HouseDetailStats": {
             "type": "object",
             "properties": {
                 "house_id": {
@@ -3960,7 +3802,7 @@ const docTemplate = `{
                 "likes_per_day": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.LikesOverTime"
+                        "$ref": "#/definitions/schema.LikesOverTime"
                     }
                 },
                 "name_en": {
@@ -3976,19 +3818,19 @@ const docTemplate = `{
                 "recent_bookings": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.BookingInfo"
+                        "$ref": "#/definitions/schema.BookingInfo"
                     }
                 },
                 "recent_likers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.LikerInfo"
+                        "$ref": "#/definitions/schema.LikerInfo"
                     }
                 },
                 "recent_viewers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.ViewerInfo"
+                        "$ref": "#/definitions/schema.ViewerInfo"
                     }
                 },
                 "slug": {
@@ -4013,12 +3855,12 @@ const docTemplate = `{
                 "views_per_day": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.LikesOverTime"
+                        "$ref": "#/definitions/schema.LikesOverTime"
                     }
                 }
             }
         },
-        "schemas.HouseLikeResponse": {
+        "schema.HouseLikeResponse": {
             "type": "object",
             "properties": {
                 "like_count": {
@@ -4031,12 +3873,11 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.HouseListItem": {
+        "schema.HouseListItem": {
             "type": "object",
             "properties": {
                 "address_en": {
-                    "type": "string",
-                    "example": "123 Beach Rd"
+                    "type": "string"
                 },
                 "address_kz": {
                     "type": "string"
@@ -4045,24 +3886,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "best_house": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "country_city_name_en": {
-                    "type": "string",
-                    "example": "Kazakhstan, Astana"
+                    "type": "string"
                 },
                 "country_city_name_kz": {
-                    "type": "string",
-                    "example": "Қазақстан, Астана"
+                    "type": "string"
                 },
                 "country_city_name_ru": {
-                    "type": "string",
-                    "example": "Казахстан, Астана"
+                    "type": "string"
                 },
                 "guests_with_pets": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "integer",
@@ -4071,52 +3907,42 @@ const docTemplate = `{
                 "images": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/schemas.Image"
+                        "$ref": "#/definitions/schema.Image"
                     }
                 },
                 "is_liked": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "like_count": {
-                    "type": "integer",
-                    "example": 5
+                    "type": "integer"
                 },
                 "name_en": {
-                    "type": "string",
-                    "example": "Beach House"
+                    "type": "string"
                 },
                 "name_kz": {
-                    "type": "string",
-                    "example": "Жағажай үйі"
+                    "type": "string"
                 },
                 "name_ru": {
-                    "type": "string",
-                    "example": "Пляжный дом"
+                    "type": "string"
                 },
                 "owner_full_name": {
-                    "type": "string",
-                    "example": "John Doe"
+                    "type": "string"
                 },
                 "price": {
-                    "type": "integer",
-                    "example": 50000
+                    "type": "integer"
                 },
                 "priority": {
-                    "type": "integer",
-                    "example": 0
+                    "type": "integer"
                 },
                 "promotion": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "slug": {
-                    "type": "string",
-                    "example": "beach-house"
+                    "type": "string"
                 }
             }
         },
-        "schemas.HouseStatsItem": {
+        "schema.HouseStatsItem": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4151,7 +3977,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.HouseUpdateRequest": {
+        "schema.HouseUpdateRequest": {
             "description": "Request body for updating a house (all fields optional)",
             "type": "object",
             "properties": {
@@ -4176,8 +4002,7 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "best_house": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "city_id": {
                     "type": "integer"
@@ -4211,25 +4036,20 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "guests_with_pets": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "is_active": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "lat": {
-                    "type": "number",
-                    "example": 71.4491
+                    "type": "number"
                 },
                 "lng": {
-                    "type": "number",
-                    "example": 51.1694
+                    "type": "number"
                 },
                 "name_en": {
                     "type": "string",
-                    "maxLength": 255,
-                    "example": "Beach House"
+                    "maxLength": 255
                 },
                 "name_kz": {
                     "type": "string",
@@ -4245,16 +4065,14 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "integer",
-                    "minimum": 0,
-                    "example": 50000
+                    "minimum": 0
                 },
                 "priority": {
                     "type": "integer",
                     "minimum": 0
                 },
                 "promotion": {
-                    "type": "boolean",
-                    "example": false
+                    "type": "boolean"
                 },
                 "rooms_qty": {
                     "type": "integer",
@@ -4265,12 +4083,11 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "type_id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 }
             }
         },
-        "schemas.Image": {
+        "schema.Image": {
             "type": "object",
             "properties": {
                 "house_id": {
@@ -4299,7 +4116,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.Inquiry": {
+        "schema.Inquiry": {
             "type": "object",
             "properties": {
                 "email": {
@@ -4325,7 +4142,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.InquiryCreateRequest": {
+        "schema.InquiryCreateRequest": {
             "description": "Request body for creating an inquiry",
             "type": "object",
             "required": [
@@ -4354,7 +4171,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.InquiryUpdateRequest": {
+        "schema.InquiryUpdateRequest": {
             "description": "Request body for updating an inquiry (all fields optional)",
             "type": "object",
             "properties": {
@@ -4377,7 +4194,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.LikerInfo": {
+        "schema.LikerInfo": {
             "type": "object",
             "properties": {
                 "email": {
@@ -4397,7 +4214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.LikesOverTime": {
+        "schema.LikesOverTime": {
             "type": "object",
             "properties": {
                 "count": {
@@ -4410,38 +4227,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.MessageResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "operation completed"
-                }
-            }
-        },
-        "schemas.PaginatedResponse": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "page_size": {
-                    "type": "integer",
-                    "example": 10
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 100
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 10
-                }
-            }
-        },
-        "schemas.RefreshRequest": {
+        "schema.RefreshRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -4452,26 +4238,50 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.SlugCheckResponse": {
+        "schema.SlugCheckResponse": {
             "type": "object",
             "properties": {
                 "available": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "slug": {
-                    "type": "string",
-                    "example": "beach-house"
+                    "type": "string"
                 }
             }
         },
-        "schemas.TypeResponse": {
+        "schema.TypeCreateRequest": {
+            "description": "Request body for creating a type",
+            "type": "object",
+            "required": [
+                "name_en",
+                "name_kz",
+                "name_ru"
+            ],
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name_en": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Apartment"
+                },
+                "name_kz": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Пәтер"
+                },
+                "name_ru": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Квартира"
+                }
+            }
+        },
+        "schema.TypeResponse": {
             "type": "object",
             "properties": {
-                "icon": {
-                    "type": "string",
-                    "example": "https://s3.amazonaws.com/icon.png"
-                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -4480,14 +4290,46 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
-                "name": {
+                "name_en": {
+                    "type": "string",
+                    "example": "Apartment"
+                },
+                "name_kz": {
+                    "type": "string",
+                    "example": "Пәтер"
+                },
+                "name_ru": {
+                    "type": "string",
+                    "example": "Квартира"
+                }
+            }
+        },
+        "schema.TypeUpdateRequest": {
+            "description": "Request body for updating a type (all fields optional)",
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name_en": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Apartment"
+                },
+                "name_kz": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Пәтер"
+                },
+                "name_ru": {
                     "type": "string",
                     "maxLength": 255,
                     "example": "Квартира"
                 }
             }
         },
-        "schemas.UserCreateRequest": {
+        "schema.UserCreateRequest": {
             "description": "Request body for user registration",
             "type": "object",
             "required": [
@@ -4534,7 +4376,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.UserLoginRequest": {
+        "schema.UserLoginRequest": {
             "description": "Request body for user login",
             "type": "object",
             "required": [
@@ -4556,7 +4398,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.UserUpdateRequest": {
+        "schema.UserUpdateRequest": {
             "description": "Request body for updating user profile",
             "type": "object",
             "properties": {
@@ -4582,7 +4424,7 @@ const docTemplate = `{
                 }
             }
         },
-        "schemas.ViewerInfo": {
+        "schema.ViewerInfo": {
             "type": "object",
             "properties": {
                 "email": {
@@ -4602,6 +4444,46 @@ const docTemplate = `{
                 },
                 "viewed_at": {
                     "type": "string"
+                }
+            }
+        },
+        "shared.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "validation failed"
+                }
+            }
+        },
+        "shared.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "operation completed"
+                }
+            }
+        },
+        "shared.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
                 }
             }
         }

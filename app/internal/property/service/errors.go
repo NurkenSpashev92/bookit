@@ -7,8 +7,11 @@ import (
 )
 
 var (
-	ErrSlugExists = model.ErrSlugExists
+	ErrSlugExists       = model.ErrSlugExists
+	ErrCategoryNotFound = model.ErrCategoryNotFound
+	ErrHouseNotFound    = model.ErrHouseNotFound
 
 	ErrMaxImagesExceeded = errors.New("maximum 15 images allowed")
+	ErrImageTooLarge     = errors.New("image must be at most 5 MB")
 	ErrImageNotFound     = errors.New("image not found")
 )

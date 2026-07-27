@@ -1,10 +1,8 @@
 basePath: /api/v1
 definitions:
-  models.Category:
+  model.Category:
     properties:
       created_at:
-        type: string
-      icon:
         type: string
       id:
         type: integer
@@ -19,7 +17,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.House:
+  model.House:
     properties:
       address_en:
         type: string
@@ -33,6 +31,10 @@ definitions:
         type: integer
       best_house:
         type: boolean
+      category_ids:
+        items:
+          type: integer
+        type: array
       city_id:
         type: integer
       comments_en:
@@ -65,7 +67,7 @@ definitions:
         type: integer
       images:
         items:
-          $ref: '#/definitions/models.Image'
+          $ref: '#/definitions/model.Image'
         type: array
       is_active:
         type: boolean
@@ -100,7 +102,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  models.Image:
+  model.Image:
     properties:
       created_at:
         type: string
@@ -125,7 +127,7 @@ definitions:
       width:
         type: integer
     type: object
-  schemas.AuthResponse:
+  schema.AuthResponse:
     properties:
       access_token:
         example: eyJhbGciOiJIUzI1NiIs...
@@ -134,9 +136,9 @@ definitions:
         example: eyJhbGciOiJIUzI1NiIs...
         type: string
       user:
-        $ref: '#/definitions/schemas.AuthUser'
+        $ref: '#/definitions/schema.AuthUser'
     type: object
-  schemas.AuthUser:
+  schema.AuthUser:
     properties:
       avatar:
         type: string
@@ -162,7 +164,7 @@ definitions:
         example: "+77001234567"
         type: string
     type: object
-  schemas.BookingCreateRequest:
+  schema.BookingCreateRequest:
     description: Request body for creating a booking
     properties:
       end_date:
@@ -188,7 +190,7 @@ definitions:
     - house_slug
     - start_date
     type: object
-  schemas.BookingInfo:
+  schema.BookingInfo:
     properties:
       created_at:
         type: string
@@ -213,7 +215,7 @@ definitions:
       user_id:
         type: integer
     type: object
-  schemas.BookingResponse:
+  schema.BookingResponse:
     properties:
       created_at:
         type: string
@@ -276,7 +278,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  schemas.BookingUpdateStatusRequest:
+  schema.BookingUpdateStatusRequest:
     description: Request body for updating booking status
     properties:
       status:
@@ -285,10 +287,31 @@ definitions:
     required:
     - status
     type: object
-  schemas.CategoryPaginate:
+  schema.CategoryCreateRequest:
+    description: Request body for creating a category
     properties:
-      icon:
+      is_active:
+        example: true
+        type: boolean
+      name_en:
+        example: Apartments
+        maxLength: 255
         type: string
+      name_kz:
+        example: Апартаменты
+        maxLength: 255
+        type: string
+      name_ru:
+        example: Апартаменты
+        maxLength: 255
+        type: string
+    required:
+    - name_en
+    - name_kz
+    - name_ru
+    type: object
+  schema.CategoryPaginate:
+    properties:
       id:
         example: 1
         type: integer
@@ -305,7 +328,26 @@ definitions:
         example: Апартаменты
         type: string
     type: object
-  schemas.ChangePasswordRequest:
+  schema.CategoryUpdateRequest:
+    description: Request body for updating a category (all fields optional)
+    properties:
+      is_active:
+        example: true
+        type: boolean
+      name_en:
+        example: Apartments
+        maxLength: 255
+        type: string
+      name_kz:
+        example: Апартаменты
+        maxLength: 255
+        type: string
+      name_ru:
+        example: Апартаменты
+        maxLength: 255
+        type: string
+    type: object
+  schema.ChangePasswordRequest:
     description: Request body for changing user password
     properties:
       new_password:
@@ -320,10 +362,10 @@ definitions:
     - new_password
     - old_password
     type: object
-  schemas.City:
+  schema.City:
     properties:
       country:
-        $ref: '#/definitions/schemas.Country'
+        $ref: '#/definitions/schema.Country'
       id:
         example: 1
         type: integer
@@ -340,7 +382,7 @@ definitions:
         example: "010000"
         type: string
     type: object
-  schemas.CityCreateRequest:
+  schema.CityCreateRequest:
     description: Request body for creating a city
     properties:
       country_id:
@@ -368,7 +410,7 @@ definitions:
     - name_kz
     - name_ru
     type: object
-  schemas.CityUpdateRequest:
+  schema.CityUpdateRequest:
     description: Request body for updating a city (all fields optional)
     properties:
       country_id:
@@ -390,7 +432,7 @@ definitions:
         maxLength: 20
         type: string
     type: object
-  schemas.Country:
+  schema.Country:
     properties:
       code:
         example: KZ
@@ -408,7 +450,7 @@ definitions:
         example: Казахстан
         type: string
     type: object
-  schemas.CountryCreateRequest:
+  schema.CountryCreateRequest:
     description: Request body for creating a country
     properties:
       code:
@@ -432,7 +474,7 @@ definitions:
     - name_kz
     - name_ru
     type: object
-  schemas.CountryUpdateRequest:
+  schema.CountryUpdateRequest:
     description: Request body for updating a country (all fields optional)
     properties:
       code:
@@ -452,7 +494,7 @@ definitions:
         maxLength: 255
         type: string
     type: object
-  schemas.DashboardStats:
+  schema.DashboardStats:
     properties:
       average_likes:
         example: 12
@@ -476,13 +518,7 @@ definitions:
         example: 1500
         type: integer
     type: object
-  schemas.ErrorResponse:
-    properties:
-      error:
-        example: validation failed
-        type: string
-    type: object
-  schemas.FAQ:
+  schema.FAQ:
     properties:
       answer_en:
         example: Register on the website
@@ -506,7 +542,7 @@ definitions:
         example: Как забронировать?
         type: string
     type: object
-  schemas.FAQCreateRequest:
+  schema.FAQCreateRequest:
     description: Request body for creating a FAQ entry
     properties:
       answer_en:
@@ -538,7 +574,7 @@ definitions:
     - question_kz
     - question_ru
     type: object
-  schemas.FAQUpdateRequest:
+  schema.FAQUpdateRequest:
     description: Request body for updating a FAQ entry (all fields optional)
     properties:
       answer_en:
@@ -557,32 +593,25 @@ definitions:
         maxLength: 500
         type: string
     type: object
-  schemas.HouseBooking:
+  schema.HouseBooking:
     properties:
       end_date:
-        example: "2026-04-15"
         type: string
       guest_count:
-        example: 4
         type: integer
       id:
-        example: 1
         type: integer
       start_date:
-        example: "2026-04-10"
         type: string
       status:
-        example: confirmed
         type: string
       total_price:
-        example: 250000
         type: integer
     type: object
-  schemas.HouseCreateRequest:
+  schema.HouseCreateRequest:
     description: Request body for creating a new house
     properties:
       address_en:
-        example: 123 Beach Rd
         maxLength: 255
         type: string
       address_kz:
@@ -592,24 +621,22 @@ definitions:
         maxLength: 255
         type: string
       bath_qty:
-        example: 1
         minimum: 0
         type: integer
       bedroom_qty:
-        example: 2
         minimum: 0
         type: integer
       best_house:
-        example: false
         type: boolean
+      category_ids:
+        items:
+          type: integer
+        type: array
       city_id:
-        example: 1
         type: integer
       country_id:
-        example: 1
         type: integer
       description_en:
-        example: A beautiful beach house
         type: string
       description_kz:
         type: string
@@ -625,63 +652,49 @@ definitions:
         maxLength: 255
         type: string
       guest_qty:
-        example: 6
         minimum: 0
         type: integer
       guests_with_pets:
-        example: false
         type: boolean
       is_active:
-        example: true
         type: boolean
       lat:
-        example: 71.4491
         type: number
       lng:
-        example: 51.1694
         type: number
       name_en:
-        example: Beach House
         maxLength: 255
         type: string
       name_kz:
-        example: Жағажай үйі
         maxLength: 255
         type: string
       name_ru:
-        example: Пляжный дом
         maxLength: 255
         type: string
       phone_number:
-        example: "+77001234567"
         maxLength: 20
         type: string
       price:
-        example: 50000
         minimum: 0
         type: integer
       priority:
-        example: 0
         minimum: 0
         type: integer
       promotion:
-        example: false
         type: boolean
       rooms_qty:
-        example: 3
         minimum: 0
         type: integer
       slug:
-        example: beach-house
         maxLength: 255
         type: string
       type_id:
-        example: 1
         type: integer
     required:
     - address_en
     - address_kz
     - address_ru
+    - category_ids
     - description_en
     - description_kz
     - description_ru
@@ -691,26 +704,21 @@ definitions:
     - price
     - type_id
     type: object
-  schemas.HouseDetailResponse:
+  schema.HouseDetailResponse:
     properties:
       address_en:
-        example: 123 Beach Rd
         type: string
       address_kz:
         type: string
       address_ru:
         type: string
       bath_qty:
-        example: 1
         type: integer
       bedroom_qty:
-        example: 2
         type: integer
       best_house:
-        example: false
         type: boolean
       city_id:
-        example: 1
         type: integer
       comments_en:
         type: string
@@ -725,7 +733,6 @@ definitions:
       country_city_name_ru:
         type: string
       country_id:
-        example: 1
         type: integer
       created_at:
         type: string
@@ -742,40 +749,30 @@ definitions:
       district_ru:
         type: string
       guest_qty:
-        example: 6
         type: integer
       guests_with_pets:
-        example: false
         type: boolean
       id:
-        example: 1
         type: integer
       images:
         items:
-          $ref: '#/definitions/schemas.Image'
+          $ref: '#/definitions/schema.Image'
         type: array
       is_active:
-        example: true
         type: boolean
       is_booked:
-        example: false
         type: boolean
       is_liked:
-        example: false
         type: boolean
       lat:
-        example: 71.4491
         type: number
       like_count:
-        example: 5
         type: integer
       lng:
-        example: 51.1694
         type: number
       my_booking:
-        $ref: '#/definitions/schemas.HouseBooking'
+        $ref: '#/definitions/schema.HouseBooking'
       name_en:
-        example: Beach House
         type: string
       name_kz:
         type: string
@@ -784,39 +781,32 @@ definitions:
       owner_full_name:
         type: string
       owner_id:
-        example: 1
         type: integer
       phone_number:
         type: string
       price:
-        example: 50000
         type: integer
       priority:
-        example: 0
         type: integer
       promotion:
-        example: false
         type: boolean
       rooms_qty:
-        example: 3
         type: integer
       slug:
-        example: beach-house
         type: string
       type_id:
-        example: 1
         type: integer
       updated_at:
         type: string
     type: object
-  schemas.HouseDetailStats:
+  schema.HouseDetailStats:
     properties:
       house_id:
         example: 1
         type: integer
       likes_per_day:
         items:
-          $ref: '#/definitions/schemas.LikesOverTime'
+          $ref: '#/definitions/schema.LikesOverTime'
         type: array
       name_en:
         example: Beach House
@@ -827,15 +817,15 @@ definitions:
         type: string
       recent_bookings:
         items:
-          $ref: '#/definitions/schemas.BookingInfo'
+          $ref: '#/definitions/schema.BookingInfo'
         type: array
       recent_likers:
         items:
-          $ref: '#/definitions/schemas.LikerInfo'
+          $ref: '#/definitions/schema.LikerInfo'
         type: array
       recent_viewers:
         items:
-          $ref: '#/definitions/schemas.ViewerInfo'
+          $ref: '#/definitions/schema.ViewerInfo'
         type: array
       slug:
         type: string
@@ -853,10 +843,10 @@ definitions:
         type: integer
       views_per_day:
         items:
-          $ref: '#/definitions/schemas.LikesOverTime'
+          $ref: '#/definitions/schema.LikesOverTime'
         type: array
     type: object
-  schemas.HouseLikeResponse:
+  schema.HouseLikeResponse:
     properties:
       like_count:
         example: 5
@@ -865,69 +855,53 @@ definitions:
         example: true
         type: boolean
     type: object
-  schemas.HouseListItem:
+  schema.HouseListItem:
     properties:
       address_en:
-        example: 123 Beach Rd
         type: string
       address_kz:
         type: string
       address_ru:
         type: string
       best_house:
-        example: false
         type: boolean
       country_city_name_en:
-        example: Kazakhstan, Astana
         type: string
       country_city_name_kz:
-        example: Қазақстан, Астана
         type: string
       country_city_name_ru:
-        example: Казахстан, Астана
         type: string
       guests_with_pets:
-        example: false
         type: boolean
       id:
         example: 1
         type: integer
       images:
         items:
-          $ref: '#/definitions/schemas.Image'
+          $ref: '#/definitions/schema.Image'
         type: array
       is_liked:
-        example: false
         type: boolean
       like_count:
-        example: 5
         type: integer
       name_en:
-        example: Beach House
         type: string
       name_kz:
-        example: Жағажай үйі
         type: string
       name_ru:
-        example: Пляжный дом
         type: string
       owner_full_name:
-        example: John Doe
         type: string
       price:
-        example: 50000
         type: integer
       priority:
-        example: 0
         type: integer
       promotion:
-        example: false
         type: boolean
       slug:
-        example: beach-house
         type: string
     type: object
-  schemas.HouseStatsItem:
+  schema.HouseStatsItem:
     properties:
       id:
         example: 1
@@ -952,7 +926,7 @@ definitions:
         example: 250
         type: integer
     type: object
-  schemas.HouseUpdateRequest:
+  schema.HouseUpdateRequest:
     description: Request body for updating a house (all fields optional)
     properties:
       address_en:
@@ -971,7 +945,6 @@ definitions:
         minimum: 0
         type: integer
       best_house:
-        example: false
         type: boolean
       city_id:
         type: integer
@@ -996,19 +969,14 @@ definitions:
         minimum: 0
         type: integer
       guests_with_pets:
-        example: false
         type: boolean
       is_active:
-        example: true
         type: boolean
       lat:
-        example: 71.4491
         type: number
       lng:
-        example: 51.1694
         type: number
       name_en:
-        example: Beach House
         maxLength: 255
         type: string
       name_kz:
@@ -1021,14 +989,12 @@ definitions:
         maxLength: 20
         type: string
       price:
-        example: 50000
         minimum: 0
         type: integer
       priority:
         minimum: 0
         type: integer
       promotion:
-        example: false
         type: boolean
       rooms_qty:
         minimum: 0
@@ -1037,10 +1003,9 @@ definitions:
         maxLength: 255
         type: string
       type_id:
-        example: 1
         type: integer
     type: object
-  schemas.Image:
+  schema.Image:
     properties:
       house_id:
         example: 1
@@ -1061,7 +1026,7 @@ definitions:
         example: https://bucket.s3.eu-central-1.amazonaws.com/houses/thumbnail/1_123.webp
         type: string
     type: object
-  schemas.Inquiry:
+  schema.Inquiry:
     properties:
       email:
         example: guest@example.com
@@ -1080,7 +1045,7 @@ definitions:
         example: I have a question about booking
         type: string
     type: object
-  schemas.InquiryCreateRequest:
+  schema.InquiryCreateRequest:
     description: Request body for creating an inquiry
     properties:
       email:
@@ -1102,7 +1067,7 @@ definitions:
     - email
     - text
     type: object
-  schemas.InquiryUpdateRequest:
+  schema.InquiryUpdateRequest:
     description: Request body for updating an inquiry (all fields optional)
     properties:
       email:
@@ -1119,7 +1084,7 @@ definitions:
       text:
         type: string
     type: object
-  schemas.LikerInfo:
+  schema.LikerInfo:
     properties:
       email:
         type: string
@@ -1132,7 +1097,7 @@ definitions:
       user_id:
         type: integer
     type: object
-  schemas.LikesOverTime:
+  schema.LikesOverTime:
     properties:
       count:
         example: 5
@@ -1141,61 +1106,81 @@ definitions:
         example: "2026-03-25"
         type: string
     type: object
-  schemas.MessageResponse:
-    properties:
-      message:
-        example: operation completed
-        type: string
-    type: object
-  schemas.PaginatedResponse:
-    properties:
-      data: {}
-      page:
-        example: 1
-        type: integer
-      page_size:
-        example: 10
-        type: integer
-      total:
-        example: 100
-        type: integer
-      total_pages:
-        example: 10
-        type: integer
-    type: object
-  schemas.RefreshRequest:
+  schema.RefreshRequest:
     properties:
       refresh_token:
         type: string
     required:
     - refresh_token
     type: object
-  schemas.SlugCheckResponse:
+  schema.SlugCheckResponse:
     properties:
       available:
-        example: true
         type: boolean
       slug:
-        example: beach-house
         type: string
     type: object
-  schemas.TypeResponse:
+  schema.TypeCreateRequest:
+    description: Request body for creating a type
     properties:
-      icon:
-        example: https://s3.amazonaws.com/icon.png
+      is_active:
+        example: true
+        type: boolean
+      name_en:
+        example: Apartment
+        maxLength: 255
         type: string
+      name_kz:
+        example: Пәтер
+        maxLength: 255
+        type: string
+      name_ru:
+        example: Квартира
+        maxLength: 255
+        type: string
+    required:
+    - name_en
+    - name_kz
+    - name_ru
+    type: object
+  schema.TypeResponse:
+    properties:
       id:
         example: 1
         type: integer
       is_active:
         example: true
         type: boolean
-      name:
+      name_en:
+        example: Apartment
+        type: string
+      name_kz:
+        example: Пәтер
+        type: string
+      name_ru:
+        example: Квартира
+        type: string
+    type: object
+  schema.TypeUpdateRequest:
+    description: Request body for updating a type (all fields optional)
+    properties:
+      is_active:
+        example: true
+        type: boolean
+      name_en:
+        example: Apartment
+        maxLength: 255
+        type: string
+      name_kz:
+        example: Пәтер
+        maxLength: 255
+        type: string
+      name_ru:
         example: Квартира
         maxLength: 255
         type: string
     type: object
-  schemas.UserCreateRequest:
+  schema.UserCreateRequest:
     description: Request body for user registration
     properties:
       date_of_birth:
@@ -1232,7 +1217,7 @@ definitions:
     - email
     - password
     type: object
-  schemas.UserLoginRequest:
+  schema.UserLoginRequest:
     description: Request body for user login
     properties:
       email:
@@ -1248,7 +1233,7 @@ definitions:
     required:
     - password
     type: object
-  schemas.UserUpdateRequest:
+  schema.UserUpdateRequest:
     description: Request body for updating user profile
     properties:
       date_of_birth:
@@ -1267,7 +1252,7 @@ definitions:
         maxLength: 128
         type: string
     type: object
-  schemas.ViewerInfo:
+  schema.ViewerInfo:
     properties:
       email:
         type: string
@@ -1281,6 +1266,34 @@ definitions:
         type: integer
       viewed_at:
         type: string
+    type: object
+  shared.ErrorResponse:
+    properties:
+      error:
+        example: validation failed
+        type: string
+    type: object
+  shared.MessageResponse:
+    properties:
+      message:
+        example: operation completed
+        type: string
+    type: object
+  shared.PaginatedResponse:
+    properties:
+      data: {}
+      page:
+        example: 1
+        type: integer
+      page_size:
+        example: 10
+        type: integer
+      total:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -1299,22 +1312,22 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/schemas.UserLoginRequest'
+          $ref: '#/definitions/schema.UserLoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.AuthResponse'
+            $ref: '#/definitions/schema.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Login user
       tags:
       - Auth
@@ -1326,7 +1339,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
       security:
       - ApiKeyAuth: []
       summary: Logout user
@@ -1340,11 +1353,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.AuthResponse'
+            $ref: '#/definitions/schema.AuthResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get current authenticated user
@@ -1359,26 +1372,26 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/schemas.UserUpdateRequest'
+          $ref: '#/definitions/schema.UserUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.AuthUser'
+            $ref: '#/definitions/schema.AuthUser'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update current user profile
@@ -1393,19 +1406,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/schema.AuthResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete user avatar
@@ -1427,19 +1440,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/schema.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Upload user avatar
@@ -1455,26 +1468,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/schemas.ChangePasswordRequest'
+          $ref: '#/definitions/schema.ChangePasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Change user password
@@ -1490,18 +1503,18 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/schemas.RefreshRequest'
+          $ref: '#/definitions/schema.RefreshRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.AuthResponse'
+            $ref: '#/definitions/schema.AuthResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Refresh access token
       tags:
       - Auth
@@ -1515,26 +1528,26 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/schemas.UserCreateRequest'
+          $ref: '#/definitions/schema.UserCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.AuthResponse'
+            $ref: '#/definitions/schema.AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Register a new user
       tags:
       - Auth
@@ -1548,16 +1561,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.BookingResponse'
+              $ref: '#/definitions/schema.BookingResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get my bookings
@@ -1573,30 +1586,30 @@ paths:
         name: booking
         required: true
         schema:
-          $ref: '#/definitions/schemas.BookingCreateRequest'
+          $ref: '#/definitions/schema.BookingCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.BookingResponse'
+            $ref: '#/definitions/schema.BookingResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a booking
@@ -1617,15 +1630,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.BookingResponse'
+            $ref: '#/definitions/schema.BookingResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get booking by ID
@@ -1647,26 +1660,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/schemas.BookingUpdateStatusRequest'
+          $ref: '#/definitions/schema.BookingUpdateStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update booking status
@@ -1682,16 +1695,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.BookingResponse'
+              $ref: '#/definitions/schema.BookingResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get bookings for my houses
@@ -1699,7 +1712,6 @@ paths:
       - Bookings
   /categories:
     get:
-      description: Returns a list of active categories
       produces:
       - application/json
       responses:
@@ -1707,58 +1719,40 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.CategoryPaginate'
+              $ref: '#/definitions/schema.CategoryPaginate'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all active categories
       tags:
       - Categories
     post:
       consumes:
-      - multipart/form-data
-      description: Creates a new category
+      - application/json
       parameters:
-      - description: Name KZ
-        in: formData
-        name: name_kz
+      - description: Category
+        in: body
+        name: request
         required: true
-        type: string
-      - description: Name RU
-        in: formData
-        name: name_ru
-        required: true
-        type: string
-      - description: Name EN
-        in: formData
-        name: name_en
-        required: true
-        type: string
-      - description: Is active
-        in: formData
-        name: is_active
-        type: boolean
-      - description: Category icon
-        in: formData
-        name: icon
-        type: file
+        schema:
+          $ref: '#/definitions/schema.CategoryCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Category'
+            $ref: '#/definitions/model.Category'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create category
@@ -1778,11 +1772,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete category
@@ -1801,58 +1795,44 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Category'
+            $ref: '#/definitions/model.Category'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get category
       tags:
       - Categories
     patch:
       consumes:
-      - multipart/form-data
+      - application/json
       parameters:
       - description: Category ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Name KZ
-        in: formData
-        name: name_kz
-        type: string
-      - description: Name RU
-        in: formData
-        name: name_ru
-        type: string
-      - description: Name EN
-        in: formData
-        name: name_en
-        type: string
-      - description: Is active
-        in: formData
-        name: is_active
-        type: boolean
-      - description: Icon
-        in: formData
-        name: icon
-        type: file
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.CategoryUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Category'
+            $ref: '#/definitions/model.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update category
@@ -1867,12 +1847,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.City'
+              $ref: '#/definitions/schema.City'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all cities
       tags:
       - Cities
@@ -1885,22 +1865,22 @@ paths:
         name: city
         required: true
         schema:
-          $ref: '#/definitions/schemas.CityCreateRequest'
+          $ref: '#/definitions/schema.CityCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.City'
+            $ref: '#/definitions/schema.City'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a city
@@ -1920,11 +1900,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a city
@@ -1943,11 +1923,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.City'
+            $ref: '#/definitions/schema.City'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get city by ID
       tags:
       - Cities
@@ -1965,22 +1945,22 @@ paths:
         name: city
         required: true
         schema:
-          $ref: '#/definitions/schemas.CityUpdateRequest'
+          $ref: '#/definitions/schema.CityUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.City'
+            $ref: '#/definitions/schema.City'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a city
@@ -1995,12 +1975,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.Country'
+              $ref: '#/definitions/schema.Country'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all countries
       tags:
       - Countries
@@ -2013,22 +1993,22 @@ paths:
         name: country
         required: true
         schema:
-          $ref: '#/definitions/schemas.CountryCreateRequest'
+          $ref: '#/definitions/schema.CountryCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.Country'
+            $ref: '#/definitions/schema.Country'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a country
@@ -2048,11 +2028,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a country
@@ -2071,11 +2051,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.Country'
+            $ref: '#/definitions/schema.Country'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get country by ID
       tags:
       - Countries
@@ -2093,22 +2073,22 @@ paths:
         name: country
         required: true
         schema:
-          $ref: '#/definitions/schemas.CountryUpdateRequest'
+          $ref: '#/definitions/schema.CountryUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.Country'
+            $ref: '#/definitions/schema.Country'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a country
@@ -2123,12 +2103,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.FAQ'
+              $ref: '#/definitions/schema.FAQ'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all FAQs
       tags:
       - FAQ
@@ -2141,22 +2121,22 @@ paths:
         name: faq
         required: true
         schema:
-          $ref: '#/definitions/schemas.FAQCreateRequest'
+          $ref: '#/definitions/schema.FAQCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.FAQ'
+            $ref: '#/definitions/schema.FAQ'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a FAQ
@@ -2176,11 +2156,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a FAQ
@@ -2199,11 +2179,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.FAQ'
+            $ref: '#/definitions/schema.FAQ'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get FAQ by ID
       tags:
       - FAQ
@@ -2221,22 +2201,22 @@ paths:
         name: faq
         required: true
         schema:
-          $ref: '#/definitions/schemas.FAQUpdateRequest'
+          $ref: '#/definitions/schema.FAQUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.FAQ'
+            $ref: '#/definitions/schema.FAQ'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a FAQ
@@ -2271,98 +2251,49 @@ paths:
         in: query
         name: page_size
         type: integer
-      - description: Minimum price
-        in: query
-        name: min_price
-        type: integer
-      - description: Maximum price
-        in: query
-        name: max_price
-        type: integer
-      - description: Minimum guest capacity
-        in: query
-        name: guest_count
-        type: integer
-      - description: Minimum rooms
-        in: query
-        name: rooms_qty
-        type: integer
-      - description: Minimum bedrooms
-        in: query
-        name: bedroom_qty
-        type: integer
-      - description: Minimum beds
-        in: query
-        name: bed_qty
-        type: integer
-      - description: Minimum bathrooms
-        in: query
-        name: bath_qty
-        type: integer
-      - description: Allows pets
-        in: query
-        name: guests_with_pets
-        type: boolean
-      - description: Category ID
-        in: query
-        name: category
-        type: integer
-      - description: House type ID
-        in: query
-        name: house_type
-        type: integer
-      - description: Country ID
-        in: query
-        name: country
-        type: integer
-      - description: City ID
-        in: query
-        name: city
-        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.PaginatedResponse'
+            $ref: '#/definitions/shared.PaginatedResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all houses
       tags:
       - Houses
     post:
       consumes:
       - application/json
-      description: Creates a new house. Auth required.
       parameters:
       - description: House data
         in: body
         name: house
         required: true
         schema:
-          $ref: '#/definitions/schemas.HouseCreateRequest'
+          $ref: '#/definitions/schema.HouseCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.House'
+            $ref: '#/definitions/model.House'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new house
@@ -2370,7 +2301,6 @@ paths:
       - Houses
   /houses/{slug}:
     delete:
-      description: Deletes a house by slug. Auth required.
       parameters:
       - description: House slug
         in: path
@@ -2383,23 +2313,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete house
       tags:
       - Houses
     get:
-      description: Returns a single house by slug with is_liked, country/city names,
-        owner name
       parameters:
       - description: House slug
         in: path
@@ -2412,18 +2340,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.HouseDetailResponse'
+            $ref: '#/definitions/schema.HouseDetailResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get house by slug
       tags:
       - Houses
     patch:
       consumes:
       - application/json
-      description: Updates house data. Auth required.
       parameters:
       - description: House slug
         in: path
@@ -2435,26 +2362,26 @@ paths:
         name: house
         required: true
         schema:
-          $ref: '#/definitions/schemas.HouseUpdateRequest'
+          $ref: '#/definitions/schema.HouseUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.House'
+            $ref: '#/definitions/model.House'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update house
@@ -2464,7 +2391,6 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Upload multiple images for a house (max 15 images per house)
       parameters:
       - description: House slug
         in: path
@@ -2485,19 +2411,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Upload house images
@@ -2517,19 +2443,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.HouseLikeResponse'
+            $ref: '#/definitions/schema.HouseLikeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Unlike a house
@@ -2548,15 +2474,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.HouseLikeResponse'
+            $ref: '#/definitions/schema.HouseLikeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Check if user liked a house
@@ -2575,19 +2501,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.HouseLikeResponse'
+            $ref: '#/definitions/schema.HouseLikeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Like a house
@@ -2595,7 +2521,6 @@ paths:
       - Houses
   /houses/check-slug:
     get:
-      description: Checks if a house slug is available for use
       parameters:
       - description: Slug to check
         in: query
@@ -2608,17 +2533,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.SlugCheckResponse'
+            $ref: '#/definitions/schema.SlugCheckResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Check house slug availability
       tags:
       - Houses
   /houses/images/{image_id}:
     delete:
-      description: Deletes image from database and AWS S3
       parameters:
       - description: Image ID
         in: path
@@ -2631,19 +2555,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete house image
@@ -2658,16 +2582,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.HouseListItem'
+              $ref: '#/definitions/schema.HouseListItem'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get houses liked by current user
@@ -2682,12 +2606,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.Inquiry'
+              $ref: '#/definitions/schema.Inquiry'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all inquiries
       tags:
       - Inquiry
@@ -2700,22 +2624,22 @@ paths:
         name: inquiry
         required: true
         schema:
-          $ref: '#/definitions/schemas.InquiryCreateRequest'
+          $ref: '#/definitions/schema.InquiryCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.Inquiry'
+            $ref: '#/definitions/schema.Inquiry'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create an inquiry
@@ -2735,11 +2659,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete an inquiry
@@ -2758,11 +2682,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.Inquiry'
+            $ref: '#/definitions/schema.Inquiry'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get inquiry by ID
       tags:
       - Inquiry
@@ -2780,22 +2704,22 @@ paths:
         name: inquiry
         required: true
         schema:
-          $ref: '#/definitions/schemas.InquiryUpdateRequest'
+          $ref: '#/definitions/schema.InquiryUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.Inquiry'
+            $ref: '#/definitions/schema.Inquiry'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update an inquiry
@@ -2803,33 +2727,21 @@ paths:
       - Inquiry
   /my-houses:
     get:
-      description: Returns paginated houses owned by the authenticated user
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: page_size
-        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.PaginatedResponse'
+            $ref: '#/definitions/shared.PaginatedResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get current user's houses
@@ -2837,7 +2749,6 @@ paths:
       - Houses
   /stats/charts:
     get:
-      description: Returns top by views, top by likes, likes over time, price distribution
       parameters:
       - default: 30
         description: Days for likes chart
@@ -2855,11 +2766,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Chart data for owner dashboard
@@ -2867,22 +2778,21 @@ paths:
       - Stats
   /stats/dashboard:
     get:
-      description: Returns overall statistics for the authenticated user's houses
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.DashboardStats'
+            $ref: '#/definitions/schema.DashboardStats'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Owner dashboard stats
@@ -2890,7 +2800,6 @@ paths:
       - Stats
   /stats/houses:
     get:
-      description: Returns views, likes, price for each house owned by user
       produces:
       - application/json
       responses:
@@ -2898,16 +2807,16 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.HouseStatsItem'
+              $ref: '#/definitions/schema.HouseStatsItem'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Per-house statistics
@@ -2915,8 +2824,6 @@ paths:
       - Stats
   /stats/houses/{slug}:
     get:
-      description: Returns viewers, likers, bookings, views/likes per day charts for
-        a house owned by current user
       parameters:
       - description: House slug
         in: path
@@ -2929,19 +2836,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.HouseDetailStats'
+            $ref: '#/definitions/schema.HouseDetailStats'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Detailed stats for a single house
@@ -2956,47 +2863,40 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/schemas.TypeResponse'
+              $ref: '#/definitions/schema.TypeResponse'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get all types
       tags:
       - Types
     post:
       consumes:
-      - multipart/form-data
+      - application/json
       parameters:
-      - description: Name
-        in: formData
-        name: name
+      - description: Type
+        in: body
+        name: request
         required: true
-        type: string
-      - description: Is Active
-        in: formData
-        name: is_active
-        type: boolean
-      - description: Icon
-        in: formData
-        name: icon
-        type: file
+        schema:
+          $ref: '#/definitions/schema.TypeCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/schemas.TypeResponse'
+            $ref: '#/definitions/schema.TypeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a type
@@ -3016,11 +2916,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.MessageResponse'
+            $ref: '#/definitions/shared.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a type
@@ -3039,46 +2939,44 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.TypeResponse'
+            $ref: '#/definitions/schema.TypeResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       summary: Get type by ID
       tags:
       - Types
     patch:
       consumes:
-      - multipart/form-data
+      - application/json
       parameters:
       - description: Type ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Name
-        in: formData
-        name: name
-        type: string
-      - description: Is Active
-        in: formData
-        name: is_active
-        type: boolean
-      - description: Icon
-        in: formData
-        name: icon
-        type: file
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.TypeUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/schemas.TypeResponse'
+            $ref: '#/definitions/schema.TypeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/schemas.ErrorResponse'
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a type

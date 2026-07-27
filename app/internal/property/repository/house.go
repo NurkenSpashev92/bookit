@@ -348,8 +348,14 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 		return house, fmt.Errorf("failed to check slug: %w", err)
 	}
 	if exists {
-		return house, fmt.Errorf("slug '%s' already exists", slugValue)
+		return house, fmt.Errorf("%w: %s", model.ErrSlugExists, slugValue)
 	}
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return house, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	query := `INSERT INTO houses (
 			name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
@@ -363,7 +369,7 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 			guests_with_pets, best_house, promotion, district_en, district_kz, district_ru, phone_number,
 			created_at, updated_at
 	`
-	if err := r.db.QueryRow(ctx,
+	if err := tx.QueryRow(ctx,
 		query,
 		h.NameEN, h.NameKZ, h.NameRU, slugValue, h.Price.Int(), h.RoomsQty.Int(), h.GuestQty.Int(), h.BedroomQty.Int(), h.BathQty.IntPtr(),
 		h.DescriptionEN, h.DescriptionKZ, h.DescriptionRU, h.AddressEN, h.AddressKZ, h.AddressRU,
@@ -395,7 +401,64 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 		return house, err
 	}
 
-	return house, err
+	if err := linkHouseCategories(ctx, tx, house.ID, h.CategoryIDs); err != nil {
+		return model.House{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return model.House{}, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	house.CategoryIDs = uniqueInts(h.CategoryIDs)
+
+	return house, nil
+}
+
+// linkHouseCategories replaces house-category links inside the caller transaction.
+func linkHouseCategories(ctx context.Context, tx pgx.Tx, houseID int, categoryIDs []int) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM house_category WHERE house_id = $1`, houseID); err != nil {
+		return fmt.Errorf("failed to reset categories: %w", err)
+	}
+
+	ids := uniqueInts(categoryIDs)
+	if len(ids) == 0 {
+		return nil
+	}
+
+	_, err := tx.Exec(ctx, `
+		INSERT INTO house_category (house_id, category_id)
+		SELECT $1, unnest($2::int[])
+		ON CONFLICT (house_id, category_id) DO NOTHING`,
+		houseID, ids,
+	)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.ConstraintName == "house_category_category_id_fkey" {
+			return model.ErrCategoryNotFound
+		}
+		return fmt.Errorf("failed to link categories: %w", err)
+	}
+
+	return nil
+}
+
+func uniqueInts(values []int) []int {
+	if len(values) == 0 {
+		return nil
+	}
+
+	seen := make(map[int]struct{}, len(values))
+	unique := make([]int, 0, len(values))
+
+	for _, value := range values {
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		unique = append(unique, value)
+	}
+
+	return unique
 }
 
 func (r *HouseRepository) getForUpdate(ctx context.Context, slug string) (model.House, error) {
@@ -444,7 +507,7 @@ func (r *HouseRepository) Update(ctx context.Context, slug string, h schema.Hous
 		return house, fmt.Errorf("failed to check slug: %w", err)
 	}
 	if exists {
-		return house, fmt.Errorf("slug '%s' already exists", slugValue)
+		return house, fmt.Errorf("%w: %s", model.ErrSlugExists, slugValue)
 	}
 
 	query := `

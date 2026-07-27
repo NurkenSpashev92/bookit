@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/nurkenspashev92/bookit/internal/identity/model"
+	"github.com/nurkenspashev92/bookit/internal/identity/schema"
 	"github.com/nurkenspashev92/bookit/internal/identity/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 )
@@ -26,7 +27,7 @@ func NewAvatarHandler(avatarService *service.AvatarService) *AvatarHandler {
 // @Accept multipart/form-data
 // @Produce json
 // @Param avatar formData file true "Avatar image"
-// @Success 200 {object} shared.MessageResponse
+// @Success 200 {object} schema.AuthResponse
 // @Failure 400 {object} shared.ErrorResponse
 // @Failure 401 {object} shared.ErrorResponse
 // @Failure 500 {object} shared.ErrorResponse
@@ -43,11 +44,12 @@ func (h *AvatarHandler) Upload(c fiber.Ctx) error {
 		return shared.FailMsg(c, http.StatusBadRequest, "avatar file is required")
 	}
 
-	if _, err := h.avatarService.Upload(c.Context(), user.ID, file); err != nil {
+	authUser, err := h.avatarService.Upload(c.Context(), user.ID, file)
+	if err != nil {
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "avatar uploaded"})
+	return c.JSON(schema.AuthResponse{User: authUser})
 }
 
 // Delete godoc
@@ -55,7 +57,7 @@ func (h *AvatarHandler) Upload(c fiber.Ctx) error {
 // @Description Remove the authenticated user's avatar
 // @Tags Auth
 // @Produce json
-// @Success 200 {object} shared.MessageResponse
+// @Success 200 {object} schema.AuthResponse
 // @Failure 401 {object} shared.ErrorResponse
 // @Failure 404 {object} shared.ErrorResponse
 // @Failure 500 {object} shared.ErrorResponse
@@ -67,12 +69,13 @@ func (h *AvatarHandler) Delete(c fiber.Ctx) error {
 		return shared.FailMsg(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
-	if err := h.avatarService.Delete(c.Context(), user.ID); err != nil {
+	authUser, err := h.avatarService.Delete(c.Context(), user.ID)
+	if err != nil {
 		if errors.Is(err, service.ErrAvatarNotFound) {
 			return shared.Fail(c, http.StatusNotFound, err)
 		}
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "avatar deleted"})
+	return c.JSON(schema.AuthResponse{User: authUser})
 }

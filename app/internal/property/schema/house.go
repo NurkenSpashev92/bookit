@@ -69,6 +69,7 @@ type HouseCreateRequest struct {
 	DistrictKZ     string              `json:"district_kz" form:"district_kz" swaggertype:"string" maxLength:"255"`
 	DistrictRU     string              `json:"district_ru" form:"district_ru" swaggertype:"string" maxLength:"255"`
 	PhoneNumber    string              `json:"phone_number" form:"phone_number" swaggertype:"string" maxLength:"20"`
+	CategoryIDs    []int               `json:"category_ids" form:"category_ids" validate:"required"`
 }
 
 func (r HouseCreateRequest) Validate() error {
@@ -97,6 +98,7 @@ func (r HouseCreateRequest) Validate() error {
 	v.Required("address_ru", r.AddressRU)
 	v.MaxLen("address_ru", r.AddressRU, 255)
 	v.RequiredFlexInt("type_id", r.TypeID)
+	v.RequiredInts("category_ids", r.CategoryIDs)
 	v.MaxLen("district_en", r.DistrictEN, 255)
 	v.MaxLen("district_kz", r.DistrictKZ, 255)
 	v.MaxLen("district_ru", r.DistrictRU, 255)

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -59,74 +60,60 @@ func (h *CategoryHandler) GetByID(c fiber.Ctx) error {
 // Create godoc
 // @Summary      Create category
 // @Tags         Categories
-// @Accept       multipart/form-data
+// @Accept       json
 // @Produce      json
-// @Param        name_kz   formData string true "Name KZ"
-// @Param        name_ru   formData string true "Name RU"
-// @Param        name_en   formData string true "Name EN"
-// @Param        is_active formData bool   false "Is active"
-// @Param        icon      formData file   false "Category icon"
+// @Param        request body schema.CategoryCreateRequest true "Category"
 // @Success      201   {object}  model.Category
 // @Failure      400   {object}  shared.ErrorResponse
 // @Failure      500   {object}  shared.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /categories [post]
 func (h *CategoryHandler) Create(c fiber.Ctx) error {
-	nameKz := c.FormValue("name_kz")
-	nameRu := c.FormValue("name_ru")
-	nameEn := c.FormValue("name_en")
-	isActiveStr := c.FormValue("is_active")
+	var req schema.CategoryCreateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
+	}
 
-	createReq := schema.CategoryCreateRequest{NameKz: nameKz, NameRu: nameRu, NameEn: nameEn}
-	if err := createReq.Validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
-	isActive := true
-	if isActiveStr != "" {
-		isActive = isActiveStr == "true"
-	}
-
-	file, _ := c.FormFile("icon")
-
-	category, err := h.categoryService.Create(c.Context(), nameKz, nameRu, nameEn, isActive, file)
+	category, err := h.categoryService.Create(c.Context(), req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(shared.ErrorResponse{Error: "failed to create category: " + err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(category)
+	return c.Status(http.StatusCreated).JSON(category)
 }
 
 // Update godoc
 // @Summary Update category
 // @Tags Categories
-// @Accept multipart/form-data
+// @Accept json
 // @Produce json
 // @Param id path int true "Category ID"
-// @Param name_kz formData string false "Name KZ"
-// @Param name_ru formData string false "Name RU"
-// @Param name_en formData string false "Name EN"
-// @Param is_active formData bool false "Is active"
-// @Param icon formData file false "Icon"
+// @Param request body schema.CategoryUpdateRequest true "Fields to update"
 // @Success 200 {object} model.Category
+// @Failure 400 {object} shared.ErrorResponse
 // @Failure 404 {object} shared.ErrorResponse
-// @Failure 500 {object} shared.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router /categories/{id} [patch]
 func (h *CategoryHandler) Update(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(shared.ErrorResponse{Error: "invalid id: " + err.Error()})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	var req schema.CategoryUpdateRequest
-	if err := c.Bind().Form(&req); err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid form")
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
 	}
 
-	file, _ := c.FormFile("icon")
+	if err := req.Validate(); err != nil {
+		return shared.Fail(c, http.StatusBadRequest, err)
+	}
 
-	category, err := h.categoryService.Update(c.Context(), id, req, file)
+	category, err := h.categoryService.Update(c.Context(), id, req)
 	if err != nil {
 		return shared.FailMsg(c, http.StatusNotFound, "category not found")
 	}

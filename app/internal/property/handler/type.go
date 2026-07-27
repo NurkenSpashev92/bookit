@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -56,33 +57,25 @@ func (h *TypeHandler) GetByID(c fiber.Ctx) error {
 // Create godoc
 // @Summary Create a type
 // @Tags Types
-// @Accept multipart/form-data
+// @Accept json
 // @Produce json
-// @Param name formData string true "Name"
-// @Param is_active formData bool false "Is Active"
-// @Param icon formData file false "Icon"
+// @Param request body schema.TypeCreateRequest true "Type"
 // @Success 201 {object} schema.TypeResponse
 // @Failure 400 {object} shared.ErrorResponse
 // @Failure 500 {object} shared.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router /types [post]
 func (h *TypeHandler) Create(c fiber.Ctx) error {
-	name := c.FormValue("name")
-	isActiveStr := c.FormValue("is_active")
+	var req schema.TypeCreateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
+	}
 
-	createReq := schema.TypeCreateRequest{Name: name}
-	if err := createReq.Validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
-	isActive := true
-	if isActiveStr != "" {
-		isActive = isActiveStr == "true"
-	}
-
-	file, _ := c.FormFile("icon")
-
-	created, err := h.typeService.Create(c.Context(), name, isActive, file)
+	created, err := h.typeService.Create(c.Context(), req)
 	if err != nil {
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
@@ -93,35 +86,30 @@ func (h *TypeHandler) Create(c fiber.Ctx) error {
 // Update godoc
 // @Summary Update a type
 // @Tags Types
-// @Accept multipart/form-data
+// @Accept json
 // @Produce json
 // @Param id path int true "Type ID"
-// @Param name formData string false "Name"
-// @Param is_active formData bool false "Is Active"
-// @Param icon formData file false "Icon"
+// @Param request body schema.TypeUpdateRequest true "Fields to update"
 // @Success 200 {object} schema.TypeResponse
+// @Failure 400 {object} shared.ErrorResponse
 // @Failure 404 {object} shared.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router /types/{id} [patch]
 func (h *TypeHandler) Update(c fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 
-	var name *string
-	if n := c.FormValue("name"); n != "" {
-		name = &n
+	var req schema.TypeUpdateRequest
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
 	}
 
-	var isActive *bool
-	if ia := c.FormValue("is_active"); ia != "" {
-		v := ia == "true"
-		isActive = &v
+	if err := req.Validate(); err != nil {
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
-	file, _ := c.FormFile("icon")
-
-	updated, err := h.typeService.Update(c.Context(), id, name, isActive, file)
+	updated, err := h.typeService.Update(c.Context(), id, req)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.FailMsg(c, http.StatusNotFound, "type not found")
 	}
 
 	return c.JSON(updated)

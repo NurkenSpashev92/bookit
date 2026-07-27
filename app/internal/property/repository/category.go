@@ -21,7 +21,7 @@ func NewCategoryRepository(db *pgxpool.Pool) *CategoryRepository {
 
 func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.CategoryPaginate, error) {
 	query := `
-		SELECT id, name_kz, name_ru, name_en, icon
+		SELECT id, name_kz, name_ru, name_en, is_active
 		FROM categories
 		WHERE is_active = TRUE
 	`
@@ -36,12 +36,10 @@ func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.Catego
 
 	for rows.Next() {
 		var c schema.CategoryPaginate
-		var icon *string
-		err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &icon)
+		err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &c.IsActive)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		c.Icon = icon
 		categories = append(categories, c)
 	}
 
@@ -56,7 +54,6 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int) (model.Categor
 			name_ru,
 			name_en,
 			is_active,
-			icon,
 			created_at,
 			updated_at
 		FROM categories
@@ -71,7 +68,6 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int) (model.Categor
 		&category.NameRu,
 		&category.NameEn,
 		&category.IsActive,
-		&category.Icon,
 		&category.CreatedAt,
 		&category.UpdatedAt,
 	)
@@ -81,9 +77,9 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int) (model.Categor
 
 func (r *CategoryRepository) CreateCategory(ctx context.Context, req schema.CategoryCreateRequest) (model.Category, error) {
 	query := `
-		INSERT INTO categories (name_kz, name_ru, name_en, icon, is_active)
-		VALUES ($1, $2, $3, $4, COALESCE($5, TRUE))
-		RETURNING id, name_kz, name_ru, name_en, is_active, icon, created_at, updated_at
+		INSERT INTO categories (name_kz, name_ru, name_en, is_active)
+		VALUES ($1, $2, $3, COALESCE($4, TRUE))
+		RETURNING id, name_kz, name_ru, name_en, is_active, created_at, updated_at
 	`
 
 	var category model.Category
@@ -94,7 +90,6 @@ func (r *CategoryRepository) CreateCategory(ctx context.Context, req schema.Cate
 		req.NameKz,
 		req.NameRu,
 		req.NameEn,
-		req.Icon,
 		req.IsActive,
 	).Scan(
 		&category.ID,
@@ -102,7 +97,6 @@ func (r *CategoryRepository) CreateCategory(ctx context.Context, req schema.Cate
 		&category.NameRu,
 		&category.NameEn,
 		&category.IsActive,
-		&category.Icon,
 		&category.CreatedAt,
 		&category.UpdatedAt,
 	)
@@ -113,12 +107,7 @@ func (r *CategoryRepository) CreateCategory(ctx context.Context, req schema.Cate
 	return category, nil
 }
 
-func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.CategoryUpdateRequest, icon *string) (model.Category, *string, error) {
-	old, err := r.GetByID(ctx, id)
-	if err != nil {
-		return model.Category{}, nil, err
-	}
-
+func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.CategoryUpdateRequest) (model.Category, error) {
 	query := `
 		UPDATE categories
 		SET
@@ -126,22 +115,20 @@ func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.Cate
 			name_ru = COALESCE($2, name_ru),
 			name_en = COALESCE($3, name_en),
 			is_active = COALESCE($4, is_active),
-			icon = COALESCE($5, icon),
 			updated_at = NOW()
-		WHERE id = $6
-		RETURNING id, name_kz, name_ru, name_en, is_active, icon, created_at, updated_at
+		WHERE id = $5
+		RETURNING id, name_kz, name_ru, name_en, is_active, created_at, updated_at
 	`
 
 	var category model.Category
 
-	err = r.db.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		query,
 		req.NameKz,
 		req.NameRu,
 		req.NameEn,
 		req.IsActive,
-		icon,
 		id,
 	).Scan(
 		&category.ID,
@@ -149,38 +136,26 @@ func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.Cate
 		&category.NameRu,
 		&category.NameEn,
 		&category.IsActive,
-		&category.Icon,
 		&category.CreatedAt,
 		&category.UpdatedAt,
 	)
 
-	return category, old.Icon, err
+	return category, err
 }
 
-func (r *CategoryRepository) Delete(ctx context.Context, id int) (*string, error) {
-	var icon *string
-
-	err := r.db.QueryRow(ctx,
-		`SELECT icon FROM categories WHERE id = $1`,
-		id,
-	).Scan(&icon)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (r *CategoryRepository) Delete(ctx context.Context, id int) error {
 	cmd, err := r.db.Exec(ctx,
 		`DELETE FROM categories WHERE id = $1`,
 		id,
 	)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if cmd.RowsAffected() == 0 {
-		return nil, pgx.ErrNoRows
+		return pgx.ErrNoRows
 	}
 
-	return icon, nil
+	return nil
 }

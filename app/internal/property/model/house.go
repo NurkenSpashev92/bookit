@@ -38,6 +38,7 @@ type House struct {
 	DistrictRU     string    `json:"district_ru,omitempty"`
 	PhoneNumber    string    `json:"phone_number,omitempty"`
 	LikeCount      int       `json:"like_count"`
+	CategoryIDs    []int     `json:"category_ids,omitempty"`
 	Images         []Image   `json:"images,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`

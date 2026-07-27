@@ -152,8 +152,11 @@ func (h *HouseHandler) Create(c fiber.Ctx) error {
 
 	house, err := h.houseService.Create(c.Context(), req, user.ID)
 	if err != nil {
-		if errors.Is(err, service.ErrSlugExists) {
+		switch {
+		case errors.Is(err, service.ErrSlugExists):
 			return shared.FailMsg(c, http.StatusConflict, "slug already exists")
+		case errors.Is(err, service.ErrCategoryNotFound):
+			return shared.Fail(c, http.StatusBadRequest, err)
 		}
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
@@ -190,6 +193,12 @@ func (h *HouseHandler) Update(c fiber.Ctx) error {
 
 	house, err := h.houseService.Update(c.Context(), slug, req)
 	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrSlugExists):
+			return shared.FailMsg(c, http.StatusConflict, "slug already exists")
+		case errors.Is(err, service.ErrHouseNotFound):
+			return shared.FailMsg(c, http.StatusNotFound, "house not found")
+		}
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 

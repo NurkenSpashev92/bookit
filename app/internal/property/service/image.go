@@ -15,7 +15,12 @@ import (
 	"github.com/nurkenspashev92/bookit/pkg/imageproc"
 )
 
-const maxHouseImages = 15
+const (
+	maxHouseImages = 15
+	// maxImageSize caps a single upload before compression; the whole request is
+	// additionally capped by the server body limit.
+	maxImageSize = 5 * 1024 * 1024
+)
 
 type HouseImageRepository interface {
 	GetHouseIDBySlug(ctx context.Context, slug string) (int, error)
@@ -60,6 +65,12 @@ func (s *ImageService) UploadHouseImages(ctx context.Context, slug string, files
 
 	if count+len(files) > maxHouseImages {
 		return ErrMaxImagesExceeded
+	}
+
+	for _, file := range files {
+		if file.Size > maxImageSize {
+			return fmt.Errorf("%w: %s", ErrImageTooLarge, file.Filename)
+		}
 	}
 
 	type processed struct {

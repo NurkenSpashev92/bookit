@@ -56,6 +56,7 @@ type Services struct {
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
 	app.Use(middleware.CorsHandler)
 	app.Use(initializers.NewLogger())
+	app.Use(middleware.RecoverPanic())
 
 	app.Use(middleware.ResponseCache(middleware.ResponseCacheConfig{
 		Cache:  svc.Cache,

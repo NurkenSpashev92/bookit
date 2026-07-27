@@ -44,6 +44,12 @@ func (v *Validator) RequiredFlexInt(field string, value FlexInt) {
 	}
 }
 
+func (v *Validator) RequiredInts(field string, values []int) {
+	if len(values) == 0 {
+		v.Errs = append(v.Errs, fmt.Sprintf("%s is required", field))
+	}
+}
+
 func (v *Validator) MaxLen(field, value string, max int) {
 	if utf8.RuneCountInString(value) > max {
 		v.Errs = append(v.Errs, fmt.Sprintf("%s must be at most %d characters", field, max))

@@ -52,7 +52,8 @@ func (h *ImageHandler) Upload(c fiber.Ctx) error {
 	}
 
 	if err := h.imageService.UploadHouseImages(c.Context(), slug, files); err != nil {
-		if errors.Is(err, service.ErrMaxImagesExceeded) {
+		switch {
+		case errors.Is(err, service.ErrMaxImagesExceeded), errors.Is(err, service.ErrImageTooLarge):
 			return shared.Fail(c, http.StatusBadRequest, err)
 		}
 		return shared.Fail(c, http.StatusInternalServerError, err)
