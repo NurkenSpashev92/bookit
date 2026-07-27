@@ -22,12 +22,17 @@ import (
 )
 
 const (
-	totalHouses = 100
-	imagesDir   = "img"
+	totalHouses    = 100
+	housesPerOwner = 2
+	imagesDir      = "img"
+
+	defaultPassword = "1q2w3e4r"
 
 	adminEmail     = "admin@bookit.kz"
-	adminPassword  = "1q2w3e4r"
 	adminFirstName = "admin"
+
+	ownerEmailFormat = "owner%d@bookit.kz"
+	ownerNameFormat  = "owner%d"
 )
 
 var (
@@ -111,8 +116,13 @@ func main() {
 	}
 	log.Printf("Loaded %d image files", len(imageFiles))
 
-	ownerID, err := ensureAdmin(ctx, conn)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 	if err != nil {
+		log.Fatalf("failed to hash default password: %v", err)
+	}
+	passwordHash := string(hashed)
+
+	if _, err := ensureAdmin(ctx, conn, passwordHash); err != nil {
 		log.Fatalf("failed to ensure admin user: %v", err)
 	}
 
@@ -130,7 +140,16 @@ func main() {
 		countryID = &cnid
 	}
 
+	var ownerID int
+
 	for i := 0; i < totalHouses; i++ {
+		if i%housesPerOwner == 0 {
+			ownerID, err = ensureOwner(ctx, conn, i/housesPerOwner+1, passwordHash)
+			if err != nil {
+				log.Fatalf("failed to ensure owner: %v", err)
+			}
+		}
+
 		nameEN := fmt.Sprintf("%s %d", pick(namesEN), i+1)
 		nameKZ := fmt.Sprintf("%s %d", pick(namesKZ), i+1)
 		nameRU := fmt.Sprintf("%s %d", pick(namesRU), i+1)
@@ -209,58 +228,77 @@ func main() {
 	log.Println("Seeding complete!")
 }
 
-func ensureAdmin(ctx context.Context, conn *pgxpool.Pool) (int, error) {
+func upsertUser(
+	ctx context.Context, conn *pgxpool.Pool, email, firstName, passwordHash string, isSuperuser bool,
+) (int, bool, error) {
 	var id int
-	var isSuperuser, isActive bool
 
-	err := conn.QueryRow(ctx,
-		`SELECT id, is_superuser, is_active FROM users WHERE email = $1`, adminEmail,
-	).Scan(&id, &isSuperuser, &isActive)
-
+	err := conn.QueryRow(ctx, `SELECT id FROM users WHERE email = $1 LIMIT 1`, email).Scan(&id)
 	switch {
 	case err == nil:
-		if isSuperuser && isActive {
-			log.Printf("Admin '%s' already exists (id=%d)", adminEmail, id)
-			return id, nil
-		}
-		if _, err := conn.Exec(ctx,
-			`UPDATE users SET is_superuser = TRUE, is_active = TRUE, updated_at = NOW() WHERE id = $1`, id,
-		); err != nil {
-			return 0, fmt.Errorf("promote to superuser: %w", err)
-		}
-		log.Printf("Admin '%s' promoted to superuser (id=%d)", adminEmail, id)
-		return id, nil
-
+		return id, false, nil
 	case errors.Is(err, pgx.ErrNoRows):
 		// создаём ниже
-
 	default:
-		return 0, fmt.Errorf("lookup admin: %w", err)
+		return 0, false, fmt.Errorf("lookup user %q: %w", email, err)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return 0, fmt.Errorf("hash admin password: %w", err)
-	}
-
-	err = conn.QueryRow(ctx, `
+	if err := conn.QueryRow(ctx, `
 		INSERT INTO users (
 			email, first_name, last_name, middle_name, password,
 			is_superuser, is_active, date_joined, created_at, updated_at
-		) VALUES ($1, $2, '', '', $3, TRUE, TRUE, NOW(), NOW(), NOW())
+		) VALUES ($1, $2, '', '', $3, $4, TRUE, NOW(), NOW(), NOW())
 		RETURNING id`,
-		adminEmail, adminFirstName, string(hashedPassword),
-	).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("create admin: %w", err)
+		email, firstName, passwordHash, isSuperuser,
+	).Scan(&id); err != nil {
+		return 0, false, fmt.Errorf("create user %q: %w", email, err)
 	}
 
-	log.Printf("Admin '%s' created (id=%d, password=%s)", adminEmail, id, adminPassword)
+	return id, true, nil
+}
+
+func ensureAdmin(ctx context.Context, conn *pgxpool.Pool, passwordHash string) (int, error) {
+	id, created, err := upsertUser(ctx, conn, adminEmail, adminFirstName, passwordHash, true)
+	if err != nil {
+		return 0, err
+	}
+
+	if created {
+		log.Printf("Admin '%s' created (id=%d, password=%s)", adminEmail, id, defaultPassword)
+		return id, nil
+	}
+
+	tag, err := conn.Exec(ctx, `
+		UPDATE users SET is_superuser = TRUE, is_active = TRUE, updated_at = NOW()
+		WHERE id = $1 AND (is_superuser = FALSE OR is_active = FALSE)`, id)
+	if err != nil {
+		return 0, fmt.Errorf("promote admin to superuser: %w", err)
+	}
+
+	if tag.RowsAffected() > 0 {
+		log.Printf("Admin '%s' promoted to superuser (id=%d)", adminEmail, id)
+	} else {
+		log.Printf("Admin '%s' already exists (id=%d)", adminEmail, id)
+	}
+
 	return id, nil
 }
 
-// ensureTypes возвращает id типов жилья, создавая недостающие. Уникального
-// индекса по name в таблице нет, поэтому дубликаты отсекаются поиском по имени.
+func ensureOwner(ctx context.Context, conn *pgxpool.Pool, index int, passwordHash string) (int, error) {
+	email := fmt.Sprintf(ownerEmailFormat, index)
+
+	id, created, err := upsertUser(ctx, conn, email, fmt.Sprintf(ownerNameFormat, index), passwordHash, false)
+	if err != nil {
+		return 0, err
+	}
+
+	if created {
+		log.Printf("Owner '%s' created (id=%d)", email, id)
+	}
+
+	return id, nil
+}
+
 func ensureTypes(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
 	ids := make([]int, 0, len(defaultTypes))
 
