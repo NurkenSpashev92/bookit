@@ -1,7 +1,7 @@
 services:
   app:
     image: golang:latest
-    container_name: bookit-app-dev
+    container_name: app
     working_dir: /app
     volumes:
       - ./app:/app
@@ -18,7 +18,6 @@ services:
       sh -c "
       go install github.com/swaggo/swag/cmd/swag@latest &&
       go install github.com/air-verse/air@latest &&
-      go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest &&
       air
       "
 

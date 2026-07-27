@@ -2,6 +2,9 @@ APP_NAME=app
 COMPOSE=docker compose
 ENV_FILE=.env
 
+-include $(ENV_FILE)
+export
+
 # читаем DEBUG из .env
 DEBUG := $(shell grep -E '^DEBUG=' $(ENV_FILE) | cut -d '=' -f2 | tr '[:upper:]' '[:lower:]')
 
@@ -14,17 +17,8 @@ else
 	MODE=PROD
 endif
 
-# Migrations: a one-shot migrate/migrate container on the bookit_default network
-# avoids depending on whether the app image happens to ship the migrate binary.
-MIGRATIONS_DIR := $(CURDIR)/app/migrations
-MIGRATE_NET := bookit_default
-MIGRATE_IMG := migrate/migrate
-MIGRATE_DB_URL := postgresql://$(shell grep -E '^POSTGRES_USER=' $(ENV_FILE) | cut -d '=' -f2):$(shell grep -E '^POSTGRES_PASSWORD=' $(ENV_FILE) | cut -d '=' -f2)@$(shell grep -E '^POSTGRES_HOST=' $(ENV_FILE) | cut -d '=' -f2):5432/$(shell grep -E '^POSTGRES_DB=' $(ENV_FILE) | cut -d '=' -f2)?sslmode=disable
-MIGRATE_RUN := docker run --rm --network $(MIGRATE_NET) -v $(MIGRATIONS_DIR):/migrations $(MIGRATE_IMG) \
-	-path /migrations -database "$(MIGRATE_DB_URL)"
-
 .PHONY: help up down build restart logs ps app postgres clean prune install mode test test-v test-cover \
-        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop
+        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action
 
 help:
 	@echo ""
@@ -32,7 +26,7 @@ help:
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make install          🚀 Deploy project"
-	@echo "  make up               🚀 Start containers"
+	@echo "  make start            🚀 Start containers"
 	@echo "  make down             🛑 Stop containers"
 	@echo "  make build            🔨 Build containers"
 	@echo "  make restart          🔄 Restart containers"
@@ -58,9 +52,13 @@ help:
 mode:
 	@echo "Running in $(MODE) mode (DEBUG=$(DEBUG))"
 
-install: build up
+install:
+	$(COMPOSE) $(COMPOSE_FILES) build
+	$(COMPOSE) $(COMPOSE_FILES) up -d postgres_db
+	$(MAKE) migrate-up
+	$(COMPOSE) $(COMPOSE_FILES) up -d
 
-up:
+start:
 	$(COMPOSE) $(COMPOSE_FILES) up -d
 
 down:
@@ -94,33 +92,39 @@ test-v:
 test-cover:
 	cd app && go test ./test/... -count=1 -coverprofile=coverage.out && go tool cover -func=coverage.out
 
-# ----- migrations -----
+# ----- migrations (через отдельный контейнер `migrate`) -----
 
 migrate-up:
-	$(MIGRATE_RUN) up
+	@$(MAKE) migrate-action action=up
 
 migrate-down:
-	$(MIGRATE_RUN) down 1
+	@$(MAKE) migrate-action action="down 1"
 
 migrate-version:
-	$(MIGRATE_RUN) version
+	@$(MAKE) migrate-action action=version
 
 migrate-force:
 	@if [ -z "$(V)" ]; then echo "Usage: make migrate-force V=<version>"; exit 1; fi
-	$(MIGRATE_RUN) force $(V)
-
-migrate-create:
-	@if [ -z "$(NAME)" ]; then echo "Usage: make migrate-create NAME=add_something"; exit 1; fi
-	docker run --rm -v $(MIGRATIONS_DIR):/migrations $(MIGRATE_IMG) \
-		create -ext sql -dir /migrations -seq $(NAME)
+	@$(MAKE) migrate-action action="force $(V)"
 
 migrate-drop:
 	@echo "⚠️  This will DROP all tables. Press Ctrl+C in 5s to cancel..."
 	@sleep 5
-	$(MIGRATE_RUN) drop -f
+	@$(MAKE) migrate-action action="drop -f"
+
+migrate-create:
+	@if [ -z "$(NAME)" ]; then echo "Usage: make migrate-create NAME=add_something"; exit 1; fi
+	@$(COMPOSE) $(COMPOSE_FILES) run --rm --no-deps migrate \
+		create -ext sql -dir /migrations -seq $(NAME)
+
+migrate-action:
+	@$(COMPOSE) $(COMPOSE_FILES) run --rm migrate \
+		-path /migrations \
+		-database postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)?sslmode=disable \
+		$(action)
 
 clean:
 	$(COMPOSE) $(COMPOSE_FILES) down -v --remove-orphans
 
 prune:
-	docker system prune -af --volumes
+	@docker system prune -af --volumes

@@ -2,7 +2,7 @@ services:
   postgres_db:
     image: postgres:latest
     restart: unless-stopped
-    container_name: postgres
+    container_name: postgres_db
     env_file:
       - .env
     ports:
@@ -37,5 +37,17 @@ services:
         - ./redis:/data
     ports:
         - "6379:6379"
+
+  migrate:
+    image: migrate/migrate:v4.19.1
+    profiles: ["tools"]
+    env_file:
+      - .env
+    volumes:
+      - ./app/migrations:/migrations
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
