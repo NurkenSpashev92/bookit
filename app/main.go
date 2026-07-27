@@ -15,11 +15,10 @@ import (
 // @host localhost:8080
 // @BasePath /api/v1
 func main() {
-	log := logger.Init(configs.NewLogConfig())
+	logger.Init(configs.NewLogConfig())
 
 	app := &apiserver.ApiApp{
-		App:    fiber.New(initializers.NewFiberConfig()),
-		Logger: log,
+		App: fiber.New(initializers.NewFiberConfig()),
 	}
 	app.Run()
 }

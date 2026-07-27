@@ -1,108 +1,55 @@
 package middleware
 
 import (
-	"encoding/binary"
-	"encoding/hex"
-	"errors"
-	"log/slog"
-	"math/rand/v2"
 	"net/http"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
-
-	"github.com/nurkenspashev92/bookit/pkg/logger"
+	fiberlog "github.com/gofiber/fiber/v3/log"
+	fiberlogger "github.com/gofiber/fiber/v3/middleware/logger"
 )
 
-const HeaderRequestID = "X-Request-ID"
-
-const maxInboundRequestIDLen = 64
-
 type RequestLoggerConfig struct {
-	Logger     *slog.Logger
 	QuietPaths map[string]struct{}
 }
 
 func RequestLogger(cfg RequestLoggerConfig) fiber.Handler {
-	root := cfg.Logger
-	if root == nil {
-		root = slog.Default()
-	}
+	return fiberlogger.New(fiberlogger.Config{
+		LoggerFunc: func(c fiber.Ctx, data *fiberlogger.Data, _ *fiberlogger.Config) error {
+			status := c.Response().StatusCode()
 
-	return func(c fiber.Ctx) error {
-		start := time.Now()
+			fields := []any{
+				"method", c.Method(),
+				"path", c.Path(),
+				"status", status,
+				"latency_ms", data.Stop.Sub(data.Start).Milliseconds(),
+				"ip", c.IP(),
+				"bytes", len(c.Response().Body()),
+			}
 
-		requestID := resolveRequestID(c)
-		c.Set(HeaderRequestID, requestID)
+			if query := string(c.Request().URI().QueryString()); query != "" {
+				fields = append(fields, "query", query)
+			}
 
-		log := root.With(slog.String(logger.KeyRequestID, requestID))
+			if data.ChainErr != nil {
+				fields = append(fields, "error", data.ChainErr)
+			}
 
-		ctx := logger.WithRequestID(c.Context(), requestID)
-		c.SetContext(logger.WithContext(ctx, log))
+			log := fiberlog.WithContext(c.Context())
 
-		err := c.Next()
+			switch {
+			case status >= http.StatusInternalServerError:
+				log.Errorw("request", fields...)
+			case status >= http.StatusBadRequest:
+				log.Warnw("request", fields...)
+			default:
+				if _, quiet := cfg.QuietPaths[c.Path()]; quiet {
+					log.Debugw("request", fields...)
+				} else {
+					log.Infow("request", fields...)
+				}
+			}
 
-		status := responseStatus(c, err)
-
-		attrs := []any{
-			slog.String("method", c.Method()),
-			slog.String("path", c.Path()),
-			slog.Int("status", status),
-			slog.Int64("latency_ms", time.Since(start).Milliseconds()),
-			slog.String("ip", c.IP()),
-			slog.Int("bytes", len(c.Response().Body())),
-		}
-
-		if query := string(c.Request().URI().QueryString()); query != "" {
-			attrs = append(attrs, slog.String("query", query))
-		}
-
-		if err != nil {
-			attrs = append(attrs, logger.Err(err))
-		}
-
-		log.Log(c.Context(), levelFor(c.Path(), status, cfg.QuietPaths), "request", attrs...)
-
-		return err
-	}
-}
-
-func resolveRequestID(c fiber.Ctx) string {
-	if id := c.Get(HeaderRequestID); id != "" && len(id) <= maxInboundRequestIDLen {
-		return id
-	}
-
-	var buf [16]byte
-	binary.LittleEndian.PutUint64(buf[:8], rand.Uint64())
-	binary.LittleEndian.PutUint64(buf[8:], rand.Uint64())
-
-	return hex.EncodeToString(buf[:])
-}
-
-func responseStatus(c fiber.Ctx, err error) int {
-	if err == nil {
-		return c.Response().StatusCode()
-	}
-
-	var fiberErr *fiber.Error
-	if errors.As(err, &fiberErr) {
-		return fiberErr.Code
-	}
-
-	return http.StatusInternalServerError
-}
-
-func levelFor(path string, status int, quiet map[string]struct{}) slog.Level {
-	switch {
-	case status >= http.StatusInternalServerError:
-		return slog.LevelError
-	case status >= http.StatusBadRequest:
-		return slog.LevelWarn
-	default:
-		if _, ok := quiet[path]; ok {
-			return slog.LevelDebug
-		}
-
-		return slog.LevelInfo
-	}
+			return nil
+		},
+	})
 }

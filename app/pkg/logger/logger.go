@@ -1,55 +1,35 @@
 package logger
 
 import (
-	"io"
-	"log/slog"
 	"os"
 	"strings"
-)
 
-const (
-	FormatJSON = "json"
-	FormatText = "text"
+	fiberlog "github.com/gofiber/fiber/v3/log"
 )
 
 type Config struct {
-	Level     string
-	Format    string
-	AddSource bool
+	Level string
 }
 
-func New(cfg Config, w io.Writer) *slog.Logger {
-	opts := &slog.HandlerOptions{
-		Level:     ParseLevel(cfg.Level),
-		AddSource: cfg.AddSource,
-	}
-
-	var handler slog.Handler
-	if strings.EqualFold(cfg.Format, FormatText) {
-		handler = slog.NewTextHandler(w, opts)
-	} else {
-		handler = slog.NewJSONHandler(w, opts)
-	}
-
-	return slog.New(handler)
+func Init(cfg Config) {
+	fiberlog.SetLevel(ParseLevel(cfg.Level))
+	fiberlog.SetOutput(os.Stdout)
+	fiberlog.MustSetContextTemplate(fiberlog.ContextConfig{Format: fiberlog.RequestIDFormat})
 }
 
-func Init(cfg Config) *slog.Logger {
-	log := New(cfg, os.Stdout)
-	slog.SetDefault(log)
-
-	return log
-}
-
-func ParseLevel(level string) slog.Level {
+func ParseLevel(level string) fiberlog.Level {
 	switch strings.ToLower(strings.TrimSpace(level)) {
+	case "trace":
+		return fiberlog.LevelTrace
 	case "debug":
-		return slog.LevelDebug
+		return fiberlog.LevelDebug
 	case "warn", "warning":
-		return slog.LevelWarn
+		return fiberlog.LevelWarn
 	case "error":
-		return slog.LevelError
+		return fiberlog.LevelError
+	case "fatal":
+		return fiberlog.LevelFatal
 	default:
-		return slog.LevelInfo
+		return fiberlog.LevelInfo
 	}
 }

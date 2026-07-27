@@ -2,48 +2,51 @@ package middleware
 
 import (
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 )
 
-func CorsHandler(c fiber.Ctx) error {
-	origin := c.Get("Origin")
-	if origin == "" {
-		return c.Next()
-	}
+const corsMaxAge = 86400
 
-	allowedOrigins := getAllowedOrigins()
+func Cors() fiber.Handler {
+	origins := allowedOrigins()
 
-	allowed := false
-	for _, o := range allowedOrigins {
-		if o == origin || o == "*" {
-			allowed = true
-			break
-		}
-	}
-
-	if !allowed {
-		return c.Next()
-	}
-
-	c.Set("Access-Control-Allow-Origin", origin)
-	c.Set("Access-Control-Allow-Credentials", "true")
-	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-	c.Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization")
-	c.Set("Access-Control-Max-Age", "86400")
-
-	if c.Method() == fiber.MethodOptions {
-		return c.SendStatus(fiber.StatusNoContent)
-	}
-
-	return c.Next()
+	return cors.New(cors.Config{
+		AllowOrigins:     origins,
+		AllowCredentials: !slices.Contains(origins, "*"),
+		AllowMethods: []string{
+			fiber.MethodGet,
+			fiber.MethodPost,
+			fiber.MethodPut,
+			fiber.MethodPatch,
+			fiber.MethodDelete,
+			fiber.MethodOptions,
+		},
+		AllowHeaders: []string{
+			fiber.HeaderAccept,
+			fiber.HeaderContentType,
+			fiber.HeaderAuthorization,
+		},
+		MaxAge: corsMaxAge,
+	})
 }
 
-func getAllowedOrigins() []string {
+func allowedOrigins() []string {
 	origins := os.Getenv("CORS_ORIGINS")
 	if origins == "" {
 		return []string{"http://localhost:3000", "http://localhost:5173"}
 	}
-	return strings.Split(origins, ",")
+
+	parts := strings.Split(origins, ",")
+	trimmed := make([]string, 0, len(parts))
+	for _, origin := range parts {
+		if origin = strings.TrimSpace(origin); origin != "" {
+			trimmed = append(trimmed, origin)
+		}
+	}
+
+	return trimmed
 }

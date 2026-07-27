@@ -1,9 +1,15 @@
 package shared
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/paginate"
+)
+
+const (
+	PageSizeKey     = "page_size"
+	DefaultPage     = 1
+	DefaultPageSize = 10
+	MaxPageSize     = 100
 )
 
 type PaginatedResponse struct {
@@ -14,29 +20,37 @@ type PaginatedResponse struct {
 	TotalPages int         `json:"total_pages" example:"10"`
 }
 
-type PaginationParams struct {
-	Page     int
-	PageSize int
-	Offset   int
+func PaginationConfig() paginate.Config {
+	return paginate.Config{
+		LimitKey:     PageSizeKey,
+		DefaultPage:  DefaultPage,
+		DefaultLimit: DefaultPageSize,
+		MaxLimit:     MaxPageSize,
+	}
 }
 
-func ParsePagination(c fiber.Ctx) PaginationParams {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	pageSize, _ := strconv.Atoi(c.Query("page_size", "10"))
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10
-	}
-	if pageSize > 100 {
-		pageSize = 100
+func Page(c fiber.Ctx) *paginate.PageInfo {
+	if page, ok := paginate.FromContext(c); ok {
+		return page
 	}
 
-	return PaginationParams{
-		Page:     page,
-		PageSize: pageSize,
-		Offset:   (page - 1) * pageSize,
+	return paginate.NewPageInfo(DefaultPage, DefaultPageSize, 0, nil)
+}
+
+func Paginated(data interface{}, total int, page *paginate.PageInfo) PaginatedResponse {
+	totalPages := 0
+	if page.Limit > 0 {
+		totalPages = total / page.Limit
+		if total%page.Limit > 0 {
+			totalPages++
+		}
+	}
+
+	return PaginatedResponse{
+		Data:       data,
+		Total:      total,
+		Page:       page.Page,
+		PageSize:   page.Limit,
+		TotalPages: totalPages,
 	}
 }

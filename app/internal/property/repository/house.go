@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,7 +17,6 @@ import (
 	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
-	"github.com/nurkenspashev92/bookit/pkg/logger"
 	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
@@ -335,9 +334,9 @@ func (r *HouseRepository) RecordView(ctx context.Context, slug string, userID *i
 		WHERE id IN (SELECT id FROM target)`
 
 	if _, err := r.db.Exec(ctx, query, slug, userID, ip); err != nil {
-		logger.FromContext(ctx).ErrorContext(ctx, "failed to record house view",
-			slog.String("slug", slug),
-			logger.Err(err),
+		log.WithContext(ctx).Errorw("failed to record house view",
+			"slug", slug,
+			"error", err,
 		)
 	}
 }

@@ -3,7 +3,6 @@ package apiserver
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	fiberlog "github.com/gofiber/fiber/v3/log"
 
 	"github.com/nurkenspashev92/bookit/cmd/router"
 	"github.com/nurkenspashev92/bookit/configs"
@@ -32,20 +32,14 @@ import (
 	propertyrepo "github.com/nurkenspashev92/bookit/internal/property/repository"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
-	"github.com/nurkenspashev92/bookit/pkg/logger"
 	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type ApiApp struct {
 	*fiber.App
-	Logger *slog.Logger
 }
 
 func (app *ApiApp) Run() {
-	if app.Logger == nil {
-		app.Logger = slog.Default()
-	}
-
 	done := make(chan bool, 1)
 	cfgDb := configs.NewDBConfig()
 	cfgAws := configs.NewAwsConfig()
@@ -53,8 +47,7 @@ func (app *ApiApp) Run() {
 
 	database, err := store.NewPostgresDb(cfgDb)
 	if err != nil {
-		app.Logger.Error("failed to initialize the database", logger.Err(err))
-		os.Exit(1)
+		fiberlog.Fatalw("failed to initialize the database", "error", err)
 	}
 	defer database.Close()
 
@@ -65,8 +58,7 @@ func (app *ApiApp) Run() {
 		cfgAws.S3Bucket,
 	)
 	if err != nil {
-		app.Logger.Error("failed to initialize S3 client", logger.Err(err))
-		os.Exit(1)
+		fiberlog.Fatalw("failed to initialize S3 client", "error", err)
 	}
 
 	db := database.Conn
@@ -84,8 +76,7 @@ func (app *ApiApp) Run() {
 
 	houseCache, err := initializers.NewCache(configs.NewCacheConfig(), configs.NewRedisConfig())
 	if err != nil {
-		app.Logger.Error("failed to connect to Redis", logger.Err(err))
-		os.Exit(1)
+		fiberlog.Fatalw("failed to connect to Redis", "error", err)
 	}
 	defer houseCache.Close()
 
@@ -108,7 +99,6 @@ func (app *ApiApp) Run() {
 	inquiryService := contentsvc.NewInquiryService(inquiryRepo)
 
 	svc := &router.Services{
-		Logger:    app.Logger,
 		Cache:     houseCache,
 		User:      userService,
 		JWT:       jwtService,
@@ -130,16 +120,16 @@ func (app *ApiApp) Run() {
 
 	if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "" {
 		go func() {
-			app.Logger.Info("pprof listening", slog.String("addr", "0.0.0.0:"+pprofPort))
+			fiberlog.Infow("pprof listening", "addr", "0.0.0.0:"+pprofPort)
 			if err := http.ListenAndServe("0.0.0.0:"+pprofPort, nil); err != nil {
-				app.Logger.Error("pprof server stopped", logger.Err(err))
+				fiberlog.Errorw("pprof server stopped", "error", err)
 			}
 		}()
 	}
 
 	go func() {
 		appPort := os.Getenv("APP_PORT")
-		app.Logger.Info("http server starting", slog.String("addr", "0.0.0.0:"+appPort))
+		fiberlog.Infow("http server starting", "addr", "0.0.0.0:"+appPort)
 
 		err := app.Listen("0.0.0.0:" + appPort)
 		if err != nil {
@@ -149,7 +139,7 @@ func (app *ApiApp) Run() {
 
 	go app.Shutdown(done)
 	<-done
-	app.Logger.Info("graceful shutdown complete")
+	fiberlog.Info("graceful shutdown complete")
 }
 
 func (app *ApiApp) Shutdown(done chan<- bool) {
@@ -157,16 +147,16 @@ func (app *ApiApp) Shutdown(done chan<- bool) {
 	defer stop()
 
 	<-ctx.Done()
-	app.Logger.Info("shutting down gracefully, press Ctrl+C again to force")
+	fiberlog.Info("shutting down gracefully, press Ctrl+C again to force")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := app.ShutdownWithContext(ctx); err != nil {
-		app.Logger.Error("server forced to shutdown", logger.Err(err))
+		fiberlog.Errorw("server forced to shutdown", "error", err)
 	}
 
-	app.Logger.Info("server exiting")
+	fiberlog.Info("server exiting")
 
 	done <- true
 }

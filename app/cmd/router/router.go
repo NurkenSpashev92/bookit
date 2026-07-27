@@ -1,13 +1,15 @@
 package router
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/Flussen/swagger-fiber-v3"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/etag"
+	"github.com/gofiber/fiber/v3/middleware/paginate"
+	"github.com/gofiber/fiber/v3/middleware/requestid"
+	"github.com/gofiber/fiber/v3/middleware/timeout"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	_ "github.com/nurkenspashev92/bookit/docs"
@@ -26,6 +28,7 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/platform/healthcheck"
 	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
@@ -40,7 +43,6 @@ var quietLogPaths = map[string]struct{}{
 }
 
 type Services struct {
-	Logger    *slog.Logger
 	Cache     *cache.Cache
 	User      *identitysvc.UserService
 	JWT       *identitysvc.JWTService
@@ -59,9 +61,9 @@ type Services struct {
 }
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
-	app.Use(middleware.CorsHandler)
+	app.Use(middleware.Cors())
+	app.Use(requestid.New())
 	app.Use(middleware.RequestLogger(middleware.RequestLoggerConfig{
-		Logger:     svc.Logger,
 		QuietPaths: quietLogPaths,
 	}))
 	app.Use(middleware.RecoverPanic())
@@ -74,6 +76,8 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 
 	app.Use(etag.New())
+
+	app.Use(paginate.New(shared.PaginationConfig()))
 
 	authHandler := identityh.NewAuthHandler(svc.User)
 	houseHandler := propertyh.NewHouseHandler(svc.House)
@@ -103,8 +107,8 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 			auth.Patch("/me/password", middleware.AuthRequired(svc.JWT), authHandler.ChangePassword)
 			auth.Post("/me/avatar",
 				middleware.AuthRequired(svc.JWT),
-				middleware.UploadLimits(10*1024*1024, 30*time.Second),
-				avatarHandler.Upload,
+				middleware.UploadLimits(10*1024*1024),
+				timeout.New(avatarHandler.Upload, timeout.Config{Timeout: 30 * time.Second}),
 			)
 			auth.Delete("/me/avatar", middleware.AuthRequired(svc.JWT), avatarHandler.Delete)
 		}
@@ -201,8 +205,8 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 
 			houses.Post("/:slug/images",
 				middleware.AuthRequired(svc.JWT),
-				middleware.UploadLimits(50*1024*1024, 2*time.Minute),
-				imageHandler.Upload,
+				middleware.UploadLimits(50*1024*1024),
+				timeout.New(imageHandler.Upload, timeout.Config{Timeout: 2 * time.Minute}),
 			)
 		}
 	}

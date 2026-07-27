@@ -37,10 +37,10 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 		userID = user.ID
 	}
 
-	p := shared.ParsePagination(c)
+	page := shared.Page(c)
 	filter := schema.ParseHouseFilter(c)
 
-	houses, total, err := h.houseService.GetAllPaginated(c.Context(), userID, filter, p.PageSize, p.Offset)
+	houses, total, err := h.houseService.GetAllPaginated(c.Context(), userID, filter, page.Limit, page.Start())
 	if err != nil {
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
@@ -49,18 +49,7 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 		houses = []schema.HouseListItem{}
 	}
 
-	totalPages := total / p.PageSize
-	if total%p.PageSize > 0 {
-		totalPages++
-	}
-
-	return c.JSON(shared.PaginatedResponse{
-		Data:       houses,
-		Total:      total,
-		Page:       p.Page,
-		PageSize:   p.PageSize,
-		TotalPages: totalPages,
-	})
+	return c.JSON(shared.Paginated(houses, total, page))
 }
 
 // MyHouses godoc
@@ -75,9 +64,9 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
 	user := c.Locals("user").(identitymodel.User)
 
-	p := shared.ParsePagination(c)
+	page := shared.Page(c)
 
-	houses, total, err := h.houseService.GetMyHouses(c.Context(), user.ID, p.PageSize, p.Offset)
+	houses, total, err := h.houseService.GetMyHouses(c.Context(), user.ID, page.Limit, page.Start())
 	if err != nil {
 		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
@@ -86,18 +75,7 @@ func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
 		houses = []schema.HouseListItem{}
 	}
 
-	totalPages := total / p.PageSize
-	if total%p.PageSize > 0 {
-		totalPages++
-	}
-
-	return c.JSON(shared.PaginatedResponse{
-		Data:       houses,
-		Total:      total,
-		Page:       p.Page,
-		PageSize:   p.PageSize,
-		TotalPages: totalPages,
-	})
+	return c.JSON(shared.Paginated(houses, total, page))
 }
 
 // GetBySlug godoc

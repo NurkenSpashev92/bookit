@@ -1,21 +1,19 @@
 package shared
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/gofiber/fiber/v3"
-
-	"github.com/nurkenspashev92/bookit/pkg/logger"
+	fiberlog "github.com/gofiber/fiber/v3/log"
 )
 
 func Fail(c fiber.Ctx, status int, err error) error {
 	if status >= http.StatusInternalServerError {
-		logger.FromContext(c.Context()).ErrorContext(c.Context(), "request failed",
-			slog.String("method", c.Method()),
-			slog.String("path", c.Path()),
-			slog.Int("status", status),
-			logger.Err(err),
+		fiberlog.WithContext(c.Context()).Errorw("request failed",
+			"method", c.Method(),
+			"path", c.Path(),
+			"status", status,
+			"error", err,
 		)
 
 		return c.Status(status).JSON(ErrorResponse{Error: internalErrorMessage})

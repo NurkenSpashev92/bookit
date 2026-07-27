@@ -6,8 +6,6 @@ import (
 
 func NewLogConfig() logger.Config {
 	return logger.Config{
-		Level:     getEnv("LOG_LEVEL", "info"),
-		Format:    getEnv("LOG_FORMAT", logger.FormatJSON),
-		AddSource: getEnv("LOG_SOURCE", "false") == "true",
+		Level: getEnv("LOG_LEVEL", "info"),
 	}
 }

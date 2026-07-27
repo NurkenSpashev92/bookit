@@ -2,6 +2,7 @@ package healthcheck
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/healthcheck"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,17 +15,10 @@ import (
 // @Failure      503  {object}  interface{}
 // @Router       /healthcheck [get]
 func HealthCheck(db *pgxpool.Pool) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		if err := db.Ping(c.Context()); err != nil {
-			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-				"status":  "fail",
-				"message": "database not reachable",
-			})
-		}
-
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"status":  "ok",
-			"message": "success",
-		})
-	}
+	return healthcheck.New(healthcheck.Config{
+		Probe: func(c fiber.Ctx) bool {
+			return db.Ping(c.Context()) == nil
+		},
+		ResponseFormat: healthcheck.FormatJSON,
+	})
 }
