@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// FlexFloat64 accepts JSON number (43.12), string ("43.12"), empty string (""), or null.
-// Empty/non-numeric strings are treated as 0 (zero value).
-// Marshals always as a JSON number.
 type FlexFloat64 float64
 
 func (f *FlexFloat64) UnmarshalJSON(data []byte) error {

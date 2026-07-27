@@ -10,7 +10,6 @@ func AuthRequired(jwtService *identitysvc.JWTService) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		token := c.Cookies("access_token")
 		if token == "" {
-			// Fallback: check old "jwt" cookie for backward compat
 			token = c.Cookies("jwt")
 		}
 		if token == "" {

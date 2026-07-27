@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"strings"
+	"time"
 
 	"github.com/gosimple/slug"
 	"golang.org/x/sync/singleflight"
@@ -13,7 +13,6 @@ import (
 	"github.com/nurkenspashev92/bookit/pkg/cache"
 )
 
-// HouseRepository describes the persistence contract HouseService depends on.
 type HouseRepository interface {
 	GetAllPaginated(ctx context.Context, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error)
 	GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schema.HouseListItem, int, error)
@@ -25,12 +24,18 @@ type HouseRepository interface {
 	SlugExists(ctx context.Context, slug string) (bool, error)
 }
 
+const (
+	maxConcurrentViewWrites = 32
+	viewWriteTimeout        = 5 * time.Second
+)
+
 type HouseService struct {
 	repository     HouseRepository
 	likeRepository port.LikeChecker
 	bookingRepo    port.BookingChecker
 	cache          *cache.Cache
 	sf             singleflight.Group
+	viewSlots      chan struct{}
 }
 
 func NewHouseService(repo HouseRepository, likeRepo port.LikeChecker, bookingRepo port.BookingChecker, c *cache.Cache) *HouseService {
@@ -39,13 +44,30 @@ func NewHouseService(repo HouseRepository, likeRepo port.LikeChecker, bookingRep
 		likeRepository: likeRepo,
 		bookingRepo:    bookingRepo,
 		cache:          c,
+		viewSlots:      make(chan struct{}, maxConcurrentViewWrites),
 	}
+}
+
+func (s *HouseService) recordViewAsync(slugVal string, userID *int, ip string) {
+	select {
+	case s.viewSlots <- struct{}{}:
+	default:
+		return
+	}
+
+	go func() {
+		defer func() { <-s.viewSlots }()
+
+		ctx, cancel := context.WithTimeout(context.Background(), viewWriteTimeout)
+		defer cancel()
+
+		s.repository.RecordView(ctx, slugVal, userID, ip)
+	}()
 }
 
 func (s *HouseService) GetAllPaginated(ctx context.Context, userID int, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error) {
 	cacheKey := filter.CacheKey(limit, offset)
 
-	// Cache hit — fast path. is_liked is per-user, so always re-attach after copy.
 	var cached cachedHouseList
 	if s.cache.Get(ctx, cacheKey, &cached) {
 		houses := make([]schema.HouseListItem, len(cached.Houses))
@@ -58,9 +80,7 @@ func (s *HouseService) GetAllPaginated(ctx context.Context, userID int, filter s
 		return houses, cached.Total, nil
 	}
 
-	// Cache miss — singleflight collapses concurrent identical requests into one DB call.
 	v, err, _ := s.sf.Do(cacheKey, func() (any, error) {
-		// Check cache again — earlier flight may have populated it while we waited.
 		var inner cachedHouseList
 		if s.cache.Get(ctx, cacheKey, &inner) {
 			return &inner, nil
@@ -129,7 +149,7 @@ func (s *HouseService) GetBySlug(ctx context.Context, slugVal string, userID int
 	if userID > 0 {
 		uid = &userID
 	}
-	go s.repository.RecordView(context.Background(), slugVal, uid, ip)
+	s.recordViewAsync(slugVal, uid, ip)
 
 	if userID > 0 {
 		liked, _, lErr := s.likeRepository.StatusWithCount(ctx, userID, slugVal)
@@ -151,9 +171,6 @@ func (s *HouseService) Create(ctx context.Context, req schema.HouseCreateRequest
 	req.OwnerID = ownerID
 	house, err := s.repository.Create(ctx, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "slug already exists") {
-			return house, ErrSlugExists
-		}
 		return house, err
 	}
 	s.cache.DeleteByPrefix("houses:")

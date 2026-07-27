@@ -62,7 +62,7 @@ func (m *mockHouseRepo) Create(_ context.Context, req propertyschema.HouseCreate
 		slug = req.Slug
 	}
 	if m.slugs[slug] {
-		return propertymodel.House{}, fmt.Errorf("slug already exists")
+		return propertymodel.House{}, propertymodel.ErrSlugExists
 	}
 	h := propertymodel.House{ID: m.nextID, NameEN: req.NameEN, Slug: slug, OwnerID: req.OwnerID}
 	m.houses[slug] = h
@@ -74,7 +74,7 @@ func (m *mockHouseRepo) Create(_ context.Context, req propertyschema.HouseCreate
 func (m *mockHouseRepo) Update(_ context.Context, slug string, _ propertyschema.HouseUpdateRequest) (propertymodel.House, error) {
 	h, ok := m.houses[slug]
 	if !ok {
-		return propertymodel.House{}, fmt.Errorf("house with slug '%s' not found", slug)
+		return propertymodel.House{}, fmt.Errorf("%w: slug %q", propertymodel.ErrHouseNotFound, slug)
 	}
 	return h, nil
 }
@@ -107,7 +107,6 @@ func TestHouseService_CheckSlug(t *testing.T) {
 		t.Errorf("normalized = %q, want beach-house", normalized)
 	}
 
-	// Create a house with that slug
 	repo.slugs["beach-house"] = true
 
 	available2, _, _ := svc.CheckSlug(ctx, "Beach House")

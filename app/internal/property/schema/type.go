@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// TypeResponse type response DTO
 type TypeResponse struct {
 	ID       int     `json:"id" example:"1"`
 	Name     string  `json:"name,omitempty" example:"Квартира" maxLength:"255"`

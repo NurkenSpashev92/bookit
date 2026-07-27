@@ -7,7 +7,6 @@ import (
 )
 
 func TestImageService_MaxImagesConstant(t *testing.T) {
-	// Verify the constant is accessible and correct
 	if propertysvc.ErrMaxImagesExceeded == nil {
 		t.Fatal("ErrMaxImagesExceeded should not be nil")
 	}

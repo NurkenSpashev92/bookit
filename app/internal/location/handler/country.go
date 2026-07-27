@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -29,7 +30,7 @@ func NewCountryHandler(countryService *service.CountryService) *CountryHandler {
 func (h *CountryHandler) GetAll(c fiber.Ctx) error {
 	countries, err := h.countryService.GetAll(c.Context())
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	return c.JSON(countries)
 }
@@ -45,12 +46,12 @@ func (h *CountryHandler) GetAll(c fiber.Ctx) error {
 func (h *CountryHandler) GetByID(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	country, err := h.countryService.GetByID(c.Context(), id)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "country not found"})
+		return shared.FailMsg(c, http.StatusNotFound, "country not found")
 	}
 
 	return c.JSON(country)
@@ -70,18 +71,18 @@ func (h *CountryHandler) GetByID(c fiber.Ctx) error {
 func (h *CountryHandler) Create(c fiber.Ctx) error {
 	var req schema.CountryCreateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	country, err := h.countryService.Create(c.Context(), req)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.Status(201).JSON(country)
+	return c.Status(http.StatusCreated).JSON(country)
 }
 
 // UpdateCountry godoc
@@ -99,20 +100,20 @@ func (h *CountryHandler) Create(c fiber.Ctx) error {
 func (h *CountryHandler) Update(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	var req schema.CountryUpdateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	country, err := h.countryService.Update(c.Context(), id, req)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(country)
@@ -130,11 +131,11 @@ func (h *CountryHandler) Update(c fiber.Ctx) error {
 func (h *CountryHandler) Delete(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	if err := h.countryService.Delete(c.Context(), id); err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "country deleted"})

@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"errors"
+	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/nurkenspashev92/bookit/internal/analytics/model"
 	"github.com/nurkenspashev92/bookit/internal/analytics/schema"
 	"github.com/nurkenspashev92/bookit/internal/analytics/service"
 	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
@@ -34,7 +36,7 @@ func (h *StatsHandler) Dashboard(c fiber.Ctx) error {
 
 	stats, err := h.statsService.GetDashboard(c.Context(), user.ID)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(stats)
@@ -54,7 +56,7 @@ func (h *StatsHandler) HouseStats(c fiber.Ctx) error {
 
 	items, err := h.statsService.GetHouseStats(c.Context(), user.ID)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	if items == nil {
@@ -84,7 +86,7 @@ func (h *StatsHandler) Charts(c fiber.Ctx) error {
 
 	charts, err := h.statsService.GetCharts(c.Context(), user.ID, days)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(charts)
@@ -106,15 +108,15 @@ func (h *StatsHandler) HouseDetail(c fiber.Ctx) error {
 
 	slug := c.Params("slug")
 	if slug == "" {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "slug is required"})
+		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
 	}
 
 	stats, err := h.statsService.GetHouseDetailStats(c.Context(), user.ID, slug)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		if errors.Is(err, model.ErrHouseNotFound) {
+			return shared.Fail(c, http.StatusNotFound, err)
 		}
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(stats)

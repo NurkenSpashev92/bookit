@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -28,7 +29,7 @@ func NewTypeHandler(typeService *service.TypeService) *TypeHandler {
 func (h *TypeHandler) GetAll(c fiber.Ctx) error {
 	types, err := h.typeService.GetAll(c.Context())
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	return c.JSON(types)
 }
@@ -46,7 +47,7 @@ func (h *TypeHandler) GetByID(c fiber.Ctx) error {
 
 	t, err := h.typeService.GetByID(c.Context(), id)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "type not found"})
+		return shared.FailMsg(c, http.StatusNotFound, "type not found")
 	}
 
 	return c.JSON(t)
@@ -71,7 +72,7 @@ func (h *TypeHandler) Create(c fiber.Ctx) error {
 
 	createReq := schema.TypeCreateRequest{Name: name}
 	if err := createReq.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	isActive := true
@@ -83,10 +84,10 @@ func (h *TypeHandler) Create(c fiber.Ctx) error {
 
 	created, err := h.typeService.Create(c.Context(), name, isActive, file)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.Status(201).JSON(created)
+	return c.Status(http.StatusCreated).JSON(created)
 }
 
 // Update godoc
@@ -120,7 +121,7 @@ func (h *TypeHandler) Update(c fiber.Ctx) error {
 
 	updated, err := h.typeService.Update(c.Context(), id, name, isActive, file)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(updated)
@@ -139,7 +140,7 @@ func (h *TypeHandler) Delete(c fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 
 	if err := h.typeService.Delete(c.Context(), id); err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "type deleted"})

@@ -20,8 +20,6 @@ func New(client *redis.Client, ttl time.Duration) *Cache {
 	}
 }
 
-// Get fetches and unmarshals a value into dest. Caller-supplied context is honored
-// so a slow Redis cannot block the request beyond its own timeout.
 func (c *Cache) Get(ctx context.Context, key string, dest interface{}) bool {
 	getCtx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 	defer cancel()
@@ -36,7 +34,6 @@ func (c *Cache) Get(ctx context.Context, key string, dest interface{}) bool {
 	return true
 }
 
-// Set marshals and stores a value under TTL. Errors are silenced — caching is best-effort.
 func (c *Cache) Set(ctx context.Context, key string, value interface{}) {
 	setCtx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 	defer cancel()

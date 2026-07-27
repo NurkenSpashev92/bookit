@@ -8,7 +8,6 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/analytics/schema"
 )
 
-// StatsRepository describes the persistence contract StatsService depends on.
 type StatsRepository interface {
 	GetDashboard(ctx context.Context, ownerID int) (schema.DashboardStats, error)
 	GetHouseStats(ctx context.Context, ownerID int) ([]schema.HouseStatsItem, error)

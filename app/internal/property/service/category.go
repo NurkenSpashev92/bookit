@@ -10,7 +10,6 @@ import (
 	"github.com/nurkenspashev92/bookit/pkg/aws"
 )
 
-// CategoryRepository describes the persistence contract CategoryService depends on.
 type CategoryRepository interface {
 	GetCategories(ctx context.Context) ([]schema.CategoryPaginate, error)
 	GetByID(ctx context.Context, id int) (model.Category, error)

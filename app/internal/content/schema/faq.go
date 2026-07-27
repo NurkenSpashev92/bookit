@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// FAQ response DTO
 type FAQ struct {
 	ID         int    `json:"id" example:"1"`
 	QuestionKz string `json:"question_kz,omitempty" example:"Қалай брондау керек?"`

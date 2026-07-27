@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// Country response DTO
 type Country struct {
 	ID     int    `json:"id" example:"1"`
 	NameKZ string `json:"name_kz" form:"name_kz" example:"Қазақстан"`

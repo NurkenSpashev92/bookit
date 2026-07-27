@@ -42,12 +42,6 @@ func (s *UserService) Register(ctx context.Context, req schema.UserCreateRequest
 
 	user, err := s.repository.Create(ctx, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "email already exists") {
-			return nil, ErrEmailAlreadyExists
-		}
-		if strings.Contains(err.Error(), "phone number already exists") {
-			return nil, ErrPhoneAlreadyExists
-		}
 		return nil, err
 	}
 
@@ -177,7 +171,6 @@ func normalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
 }
 
-// UserMapper handles User model to DTO conversions.
 type UserMapper struct{}
 
 func (m *UserMapper) ToAuthUser(user model.User, awsCfg *configs.AwsConfig) schema.AuthUser {

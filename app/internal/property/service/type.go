@@ -9,7 +9,6 @@ import (
 	"github.com/nurkenspashev92/bookit/pkg/aws"
 )
 
-// TypeRepository describes the persistence contract TypeService depends on.
 type TypeRepository interface {
 	GetAll(ctx context.Context) ([]model.Type, error)
 	GetByID(ctx context.Context, id int) (model.Type, error)

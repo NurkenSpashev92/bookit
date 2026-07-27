@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -33,7 +34,7 @@ func NewFAQHandler(faqService *service.FAQService, inquiryService *service.Inqui
 func (h *FAQHandler) GetAll(c fiber.Ctx) error {
 	faqs, err := h.faqService.GetAll(c.Context())
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	if faqs == nil {
 		faqs = []schema.FAQ{}
@@ -52,12 +53,12 @@ func (h *FAQHandler) GetAll(c fiber.Ctx) error {
 func (h *FAQHandler) GetByID(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	faq, err := h.faqService.GetByID(c.Context(), id)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "FAQ not found"})
+		return shared.FailMsg(c, http.StatusNotFound, "FAQ not found")
 	}
 
 	return c.JSON(faq)
@@ -77,18 +78,18 @@ func (h *FAQHandler) GetByID(c fiber.Ctx) error {
 func (h *FAQHandler) Create(c fiber.Ctx) error {
 	var req schema.FAQCreateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	faq, err := h.faqService.Create(c.Context(), req)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.Status(201).JSON(faq)
+	return c.Status(http.StatusCreated).JSON(faq)
 }
 
 // UpdateFAQ godoc
@@ -106,20 +107,20 @@ func (h *FAQHandler) Create(c fiber.Ctx) error {
 func (h *FAQHandler) Update(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	var req schema.FAQUpdateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	faq, err := h.faqService.Update(c.Context(), id, req)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(faq)
@@ -137,11 +138,11 @@ func (h *FAQHandler) Update(c fiber.Ctx) error {
 func (h *FAQHandler) Delete(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	if err := h.faqService.Delete(c.Context(), id); err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "FAQ deleted"})
@@ -157,7 +158,7 @@ func (h *FAQHandler) Delete(c fiber.Ctx) error {
 func (h *FAQHandler) GetInquiries(c fiber.Ctx) error {
 	list, err := h.inquiryService.GetAll(c.Context())
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	if list == nil {
 		list = []schema.Inquiry{}
@@ -176,12 +177,12 @@ func (h *FAQHandler) GetInquiries(c fiber.Ctx) error {
 func (h *FAQHandler) GetInquiryByID(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	inquiry, err := h.inquiryService.GetByID(c.Context(), id)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "Inquiry not found"})
+		return shared.FailMsg(c, http.StatusNotFound, "Inquiry not found")
 	}
 
 	return c.JSON(inquiry)
@@ -201,18 +202,18 @@ func (h *FAQHandler) GetInquiryByID(c fiber.Ctx) error {
 func (h *FAQHandler) CreateInquiry(c fiber.Ctx) error {
 	var req schema.InquiryCreateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	inquiry, err := h.inquiryService.Create(c.Context(), req)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.Status(201).JSON(inquiry)
+	return c.Status(http.StatusCreated).JSON(inquiry)
 }
 
 // UpdateInquiry godoc
@@ -230,20 +231,20 @@ func (h *FAQHandler) CreateInquiry(c fiber.Ctx) error {
 func (h *FAQHandler) UpdateInquiry(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	var req schema.InquiryUpdateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	inquiry, err := h.inquiryService.Update(c.Context(), id, req)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(inquiry)
@@ -261,11 +262,11 @@ func (h *FAQHandler) UpdateInquiry(c fiber.Ctx) error {
 func (h *FAQHandler) DeleteInquiry(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	if err := h.inquiryService.Delete(c.Context(), id); err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "Inquiry deleted"})

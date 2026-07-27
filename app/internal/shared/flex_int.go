@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// FlexInt accepts JSON number (5), string ("5"), empty string (""), or null.
-// Empty/non-numeric strings are treated as 0 (zero value).
-// Marshals always as a JSON number.
 type FlexInt int
 
 func (f *FlexInt) UnmarshalJSON(data []byte) error {

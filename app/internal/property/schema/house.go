@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// House full response
 type House struct {
 	NameEN         string              `json:"name_en" form:"name_en" swaggertype:"string" example:"Beach House"`
 	NameKZ         string              `json:"name_kz" form:"name_kz" swaggertype:"string" example:"Жағажай үйі"`
@@ -170,7 +169,6 @@ func (r HouseUpdateRequest) Validate() error {
 	return v.Result()
 }
 
-// HouseListItem house list item for GET /houses
 type HouseListItem struct {
 	ID                int     `json:"id" example:"1"`
 	NameEN            string  `json:"name_en"`
@@ -194,7 +192,6 @@ type HouseListItem struct {
 	Images            []Image `json:"images"`
 }
 
-// HouseDetailResponse full house detail for GET /houses/{slug}
 type HouseDetailResponse struct {
 	ID                int           `json:"id"`
 	NameEN            string        `json:"name_en"`
@@ -243,7 +240,6 @@ type HouseDetailResponse struct {
 	UpdatedAt         string        `json:"updated_at"`
 }
 
-// HouseBooking current user's active booking for this house
 type HouseBooking struct {
 	ID         int    `json:"id"`
 	StartDate  string `json:"start_date"`
@@ -253,7 +249,6 @@ type HouseBooking struct {
 	TotalPrice int    `json:"total_price"`
 }
 
-// SlugCheckResponse slug availability check response
 type SlugCheckResponse struct {
 	Available bool   `json:"available"`
 	Slug      string `json:"slug"`

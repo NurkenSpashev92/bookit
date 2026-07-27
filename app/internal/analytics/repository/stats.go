@@ -2,12 +2,15 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/nurkenspashev92/bookit/internal/analytics/model"
 	"github.com/nurkenspashev92/bookit/internal/analytics/schema"
 )
 
@@ -176,7 +179,10 @@ func (r *StatsRepository) GetHouseDetailStats(ctx context.Context, ownerID int, 
 		FROM houses WHERE slug=$1 AND owner_id=$2
 	`, slug, ownerID).Scan(&s.HouseID, &s.NameEN, &s.NameKZ, &s.NameRU, &s.Slug, &s.TotalViews, &s.TotalLikes)
 	if err != nil {
-		return s, fmt.Errorf("house not found or not owned by you")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return s, model.ErrHouseNotFound
+		}
+		return s, err
 	}
 
 	g, gctx := errgroup.WithContext(ctx)

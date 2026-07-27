@@ -19,11 +19,11 @@ import (
 	identityh "github.com/nurkenspashev92/bookit/internal/identity/handler"
 	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 	"github.com/nurkenspashev92/bookit/internal/initializers"
-	"github.com/nurkenspashev92/bookit/internal/platform/healthcheck"
 	interactionh "github.com/nurkenspashev92/bookit/internal/interaction/handler"
 	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
 	locationh "github.com/nurkenspashev92/bookit/internal/location/handler"
 	locationsvc "github.com/nurkenspashev92/bookit/internal/location/service"
+	"github.com/nurkenspashev92/bookit/internal/platform/healthcheck"
 	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
@@ -49,9 +49,9 @@ type Services struct {
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
 	app.Use(middleware.CorsHandler)
 	app.Use(initializers.NewLogger())
-	// Gzip JSON responses — list endpoints shrink 5-10×, smaller wire size means lower latency.
+
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
-	// ETag turns repeat GETs into 304 Not Modified — empty body, fastest possible response.
+
 	app.Use(etag.New())
 
 	authHandler := identityh.NewAuthHandler(svc.User)

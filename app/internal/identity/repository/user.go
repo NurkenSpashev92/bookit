@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -13,6 +14,8 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/identity/model"
 	"github.com/nurkenspashev92/bookit/internal/identity/schema"
 )
+
+const pgUniqueViolation = "23505"
 
 type UserRepository struct {
 	db *pgxpool.Pool
@@ -57,14 +60,13 @@ func (r *UserRepository) Create(ctx context.Context, user schema.UserCreateReque
 		&u.IsSuperuser, &u.IsActive, &u.DateJoined, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			if pgErr.Code == "23505" {
-				switch pgErr.ConstraintName {
-				case "users_email_key", "users_email_unique", "ix_users_email":
-					return u, fmt.Errorf("email already exists")
-				case "users_phone_number_key", "users_phone_number_unique":
-					return u, fmt.Errorf("phone number already exists")
-				}
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
+			switch pgErr.ConstraintName {
+			case "users_email_key", "users_email_unique", "ix_users_email":
+				return u, model.ErrEmailExists
+			case "users_phone_number_key", "users_phone_number_unique":
+				return u, model.ErrPhoneExists
 			}
 		}
 		return u, err
@@ -79,7 +81,10 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (model.User, error
 		 FROM users WHERE id=$1`, id,
 	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
 	if err != nil {
-		return user, errors.New("user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return user, model.ErrUserNotFound
+		}
+		return user, err
 	}
 	return user, nil
 }
@@ -92,7 +97,10 @@ func (r *UserRepository) Update(ctx context.Context, userID int, req schema.User
 		 FROM users WHERE id=$1`, userID,
 	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
 	if err != nil {
-		return user, errors.New("user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return user, model.ErrUserNotFound
+		}
+		return user, err
 	}
 
 	if req.FirstName != nil {
@@ -139,7 +147,10 @@ func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phone string) (mo
 		 FROM users WHERE phone_number=$1`, phone,
 	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
 	if err != nil {
-		return user, errors.New("user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return user, model.ErrUserNotFound
+		}
+		return user, err
 	}
 	return user, nil
 }
@@ -167,7 +178,10 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (model.Us
 		 FROM users WHERE email=$1`, email,
 	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
 	if err != nil {
-		return user, errors.New("user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return user, model.ErrUserNotFound
+		}
+		return user, err
 	}
 	return user, nil
 }

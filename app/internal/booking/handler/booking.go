@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -40,21 +41,21 @@ func (h *BookingHandler) Create(c fiber.Ctx) error {
 
 	var req schema.BookingCreateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	booking, err := h.bookingService.Create(c.Context(), user.ID, req)
 	if err != nil {
 		if errors.Is(err, service.ErrBookingOverlap) {
-			return c.Status(409).JSON(shared.ErrorResponse{Error: err.Error()})
+			return shared.Fail(c, http.StatusConflict, err)
 		}
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
-	return c.Status(201).JSON(booking)
+	return c.Status(http.StatusCreated).JSON(booking)
 }
 
 // GetMyBookings godoc
@@ -72,7 +73,7 @@ func (h *BookingHandler) GetMyBookings(c fiber.Ctx) error {
 
 	bookings, err := h.bookingService.GetMyBookings(c.Context(), user.ID)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	if bookings == nil {
 		bookings = []schema.BookingResponse{}
@@ -95,7 +96,7 @@ func (h *BookingHandler) GetOwnerBookings(c fiber.Ctx) error {
 
 	bookings, err := h.bookingService.GetOwnerBookings(c.Context(), user.ID)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	if bookings == nil {
 		bookings = []schema.BookingResponse{}
@@ -119,12 +120,12 @@ func (h *BookingHandler) GetByID(c fiber.Ctx) error {
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	booking, err := h.bookingService.GetByID(c.Context(), id, user.ID)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(booking)
@@ -149,19 +150,19 @@ func (h *BookingHandler) UpdateStatus(c fiber.Ctx) error {
 
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	var req schema.BookingUpdateStatusRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	if err := h.bookingService.UpdateStatus(c.Context(), id, user.ID, req.Status); err != nil {
-		return c.Status(403).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusForbidden, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "status updated"})

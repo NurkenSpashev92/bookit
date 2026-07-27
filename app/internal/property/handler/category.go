@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -28,7 +29,7 @@ func NewCategoryHandler(categoryService *service.CategoryService) *CategoryHandl
 func (h *CategoryHandler) GetAll(c fiber.Ctx) error {
 	categories, err := h.categoryService.GetAll(c.Context())
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	return c.JSON(categories)
 }
@@ -49,7 +50,7 @@ func (h *CategoryHandler) GetByID(c fiber.Ctx) error {
 
 	category, err := h.categoryService.GetByID(c.Context(), id)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "category not found: " + err.Error()})
+		return shared.FailMsg(c, http.StatusNotFound, "category not found")
 	}
 
 	return c.JSON(category)
@@ -78,7 +79,7 @@ func (h *CategoryHandler) Create(c fiber.Ctx) error {
 
 	createReq := schema.CategoryCreateRequest{NameKz: nameKz, NameRu: nameRu, NameEn: nameEn}
 	if err := createReq.Validate(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	isActive := true
@@ -120,14 +121,14 @@ func (h *CategoryHandler) Update(c fiber.Ctx) error {
 
 	var req schema.CategoryUpdateRequest
 	if err := c.Bind().Form(&req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid form"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid form")
 	}
 
 	file, _ := c.FormFile("icon")
 
 	category, err := h.categoryService.Update(c.Context(), id, req, file)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "category not found: " + err.Error()})
+		return shared.FailMsg(c, http.StatusNotFound, "category not found")
 	}
 
 	return c.JSON(category)
@@ -145,11 +146,11 @@ func (h *CategoryHandler) Update(c fiber.Ctx) error {
 func (h *CategoryHandler) Delete(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id: " + err.Error()})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	if err := h.categoryService.Delete(c.Context(), id); err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: "category not found: " + err.Error()})
+		return shared.FailMsg(c, http.StatusNotFound, "category not found")
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "category deleted"})

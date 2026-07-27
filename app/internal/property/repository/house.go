@@ -3,10 +3,13 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
@@ -16,6 +19,8 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
 	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
+
+const pgUniqueViolation = "23505"
 
 type HouseRepository struct {
 	db     *pgxpool.Pool
@@ -49,7 +54,7 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 		wb.add("h.owner_id", "=", *filter.OwnerID)
 	}
 	if filter.Name != nil {
-		wb.addILike("h.name_en", *filter.Name)
+		wb.addILike(*filter.Name)
 	}
 	if filter.MinPrice != nil {
 		wb.add("h.price", ">=", *filter.MinPrice)
@@ -85,7 +90,7 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 		wb.add("h.city_id", "=", *filter.CityID)
 	}
 	if filter.CategoryID != nil {
-		wb.add("", "", *filter.CategoryID)
+		wb.addArg(*filter.CategoryID)
 	}
 
 	g, gctx := errgroup.WithContext(ctx)
@@ -192,8 +197,13 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	return houses, total, nil
 }
 
+type condition struct {
+	format    string
+	valueIdxs []int
+}
+
 type whereBuilder struct {
-	conditions []string
+	conditions []condition
 	values     []interface{}
 }
 
@@ -203,43 +213,41 @@ func newWhereBuilder() *whereBuilder {
 
 func (w *whereBuilder) add(col, op string, val interface{}) {
 	w.values = append(w.values, val)
-	if col != "" {
-		w.conditions = append(w.conditions, fmt.Sprintf("%s %s {%d}", col, op, len(w.values)-1))
-	}
+	w.conditions = append(w.conditions, condition{
+		format:    col + " " + op + " $%d",
+		valueIdxs: []int{len(w.values) - 1},
+	})
 }
 
-func (w *whereBuilder) addILike(col string, val string) {
-	pattern := "%" + val + "%"
-	w.values = append(w.values, pattern)
+func (w *whereBuilder) addArg(val interface{}) {
+	w.values = append(w.values, val)
+}
+
+func (w *whereBuilder) addILike(val string) {
+	w.values = append(w.values, "%"+val+"%")
+
 	idx := len(w.values) - 1
-	w.conditions = append(w.conditions, fmt.Sprintf(
-		"(h.name_en ILIKE {%d} OR h.name_kz ILIKE {%d} OR h.name_ru ILIKE {%d})",
-		idx, idx, idx,
-	))
+	w.conditions = append(w.conditions, condition{
+		format:    "(h.name_en ILIKE $%d OR h.name_kz ILIKE $%d OR h.name_ru ILIKE $%d)",
+		valueIdxs: []int{idx, idx, idx},
+	})
 }
 
 func (w *whereBuilder) build(argOffset int) (string, []interface{}) {
-	if len(w.conditions) == 0 && len(w.values) == len(w.conditions) {
+	if len(w.conditions) == 0 {
 		return "", w.values
 	}
 
-	result := ""
-	if len(w.conditions) > 0 {
-		parts := make([]string, len(w.conditions))
-		for i, cond := range w.conditions {
-			parts[i] = cond
+	parts := make([]string, len(w.conditions))
+	for i, cond := range w.conditions {
+		numbers := make([]interface{}, len(cond.valueIdxs))
+		for j, idx := range cond.valueIdxs {
+			numbers[j] = idx + 1 + argOffset
 		}
-		for i := range parts {
-			for j := range w.values {
-				placeholder := fmt.Sprintf("{%d}", j)
-				replacement := fmt.Sprintf("$%d", j+1+argOffset)
-				parts[i] = strings.ReplaceAll(parts[i], placeholder, replacement)
-			}
-		}
-		result = "WHERE " + strings.Join(parts, " AND ")
+		parts[i] = fmt.Sprintf(cond.format, numbers...)
 	}
 
-	return result, w.values
+	return "WHERE " + strings.Join(parts, " AND "), w.values
 }
 
 func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.HouseDetailResponse, error) {
@@ -315,16 +323,19 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.Ho
 }
 
 func (r *HouseRepository) RecordView(ctx context.Context, slug string, userID *int, ip string) {
-	var houseID int
-	err := r.db.QueryRow(ctx, `SELECT id FROM houses WHERE slug=$1`, slug).Scan(&houseID)
-	if err != nil {
-		return
+	const query = `
+		WITH target AS (
+			SELECT id FROM houses WHERE slug = $1
+		), logged AS (
+			INSERT INTO house_views (house_id, user_id, ip_address)
+			SELECT id, $2, $3 FROM target
+		)
+		UPDATE houses SET view_count = view_count + 1
+		WHERE id IN (SELECT id FROM target)`
+
+	if _, err := r.db.Exec(ctx, query, slug, userID, ip); err != nil {
+		log.Printf("record view for slug %q: %v", slug, err)
 	}
-	_, _ = r.db.Exec(ctx,
-		`INSERT INTO house_views (house_id, user_id, ip_address) VALUES ($1, $2, $3)`,
-		houseID, userID, ip,
-	)
-	_, _ = r.db.Exec(ctx, `UPDATE houses SET view_count = view_count + 1 WHERE id = $1`, houseID)
 }
 
 func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateRequest) (model.House, error) {
@@ -366,20 +377,20 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 		&house.GuestsWithPets, &house.BestHouse, &house.Promotion, &house.DistrictEN, &house.DistrictKZ, &house.DistrictRU, &house.PhoneNumber,
 		&house.CreatedAt, &house.UpdatedAt,
 	); err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			switch pgErr.ConstraintName {
-			case "houses_type_id_fkey":
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch {
+			case pgErr.ConstraintName == "houses_type_id_fkey":
 				return house, fmt.Errorf("type_id %d does not exist", h.TypeID.Int())
-			case "houses_city_id_fkey":
-				return house, fmt.Errorf("city_id does not exist")
-			case "houses_country_id_fkey":
-				return house, fmt.Errorf("country_id does not exist")
-			case "houses_owner_id_fkey":
+			case pgErr.ConstraintName == "houses_city_id_fkey":
+				return house, errors.New("city_id does not exist")
+			case pgErr.ConstraintName == "houses_country_id_fkey":
+				return house, errors.New("country_id does not exist")
+			case pgErr.ConstraintName == "houses_owner_id_fkey":
 				return house, fmt.Errorf("owner_id %d does not exist", h.OwnerID)
+			case pgErr.Code == pgUniqueViolation:
+				return house, model.ErrSlugExists
 			}
-		}
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return house, fmt.Errorf("slug already exists")
 		}
 		return house, err
 	}
@@ -417,100 +428,13 @@ func (r *HouseRepository) getForUpdate(ctx context.Context, slug string) (model.
 func (r *HouseRepository) Update(ctx context.Context, slug string, h schema.HouseUpdateRequest) (model.House, error) {
 	house, err := r.getForUpdate(ctx, slug)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return model.House{}, fmt.Errorf("house with slug '%s' not found", slug)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.House{}, fmt.Errorf("%w: slug %q", model.ErrHouseNotFound, slug)
 		}
 		return house, err
 	}
 
-	if h.NameEN != nil {
-		house.NameEN = *h.NameEN
-	}
-	if h.NameKZ != nil {
-		house.NameKZ = *h.NameKZ
-	}
-	if h.NameRU != nil {
-		house.NameRU = *h.NameRU
-	}
-	if h.Slug != nil {
-		house.Slug = *h.Slug
-	}
-	if h.Price != nil {
-		house.Price = h.Price.Int()
-	}
-	if h.RoomsQty != nil {
-		house.RoomsQty = h.RoomsQty.Int()
-	}
-	if h.GuestQty != nil {
-		house.GuestQty = h.GuestQty.Int()
-	}
-	if h.BedroomQty != nil {
-		house.BedroomQty = h.BedroomQty.Int()
-	}
-	if h.BathQty != nil {
-		house.BathQty = h.BathQty.IntPtr()
-	}
-	if h.DescriptionEN != nil {
-		house.DescriptionEN = *h.DescriptionEN
-	}
-	if h.DescriptionKZ != nil {
-		house.DescriptionKZ = *h.DescriptionKZ
-	}
-	if h.DescriptionRU != nil {
-		house.DescriptionRU = *h.DescriptionRU
-	}
-	if h.AddressEN != nil {
-		house.AddressEN = *h.AddressEN
-	}
-	if h.AddressKZ != nil {
-		house.AddressKZ = *h.AddressKZ
-	}
-	if h.AddressRU != nil {
-		house.AddressRU = *h.AddressRU
-	}
-	if h.Lng != nil {
-		house.Lng = h.Lng.Float64Ptr()
-	}
-	if h.Lat != nil {
-		house.Lat = h.Lat.Float64Ptr()
-	}
-	if h.IsActive != nil {
-		house.IsActive = *h.IsActive
-	}
-	if h.Priority != nil {
-		house.Priority = h.Priority.Int()
-	}
-	if h.TypeID != nil {
-		house.TypeID = h.TypeID.Int()
-	}
-	if h.CityID != nil {
-		house.CityID = h.CityID.IntPtr()
-	}
-	if h.CountryID != nil {
-		house.CountryID = h.CountryID.IntPtr()
-	}
-	if h.GuestsWithPets != nil {
-		house.GuestsWithPets = *h.GuestsWithPets
-	}
-	if h.BestHouse != nil {
-		house.BestHouse = *h.BestHouse
-	}
-	if h.Promotion != nil {
-		house.Promotion = *h.Promotion
-	}
-	if h.DistrictEN != nil {
-		house.DistrictEN = *h.DistrictEN
-	}
-	if h.DistrictKZ != nil {
-		house.DistrictKZ = *h.DistrictKZ
-	}
-	if h.DistrictRU != nil {
-		house.DistrictRU = *h.DistrictRU
-	}
-	if h.PhoneNumber != nil {
-		house.PhoneNumber = *h.PhoneNumber
-	}
-
+	applyHouseUpdate(&house, h)
 	house.UpdatedAt = time.Now()
 
 	slugValue := utils.GenerateSlug(house.Slug, house.NameEN, house.NameKZ, house.NameRU)
@@ -544,14 +468,15 @@ func (r *HouseRepository) Update(ctx context.Context, slug string, h schema.Hous
 		house.PhoneNumber, house.UpdatedAt, house.ID,
 	)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
 			switch pgErr.ConstraintName {
 			case "houses_type_id_fkey":
-				return house, fmt.Errorf("type_id does not exist")
+				return house, errors.New("type_id does not exist")
 			case "houses_city_id_fkey":
-				return house, fmt.Errorf("city_id does not exist")
+				return house, errors.New("city_id does not exist")
 			case "houses_country_id_fkey":
-				return house, fmt.Errorf("country_id does not exist")
+				return house, errors.New("country_id does not exist")
 			}
 		}
 		return house, err

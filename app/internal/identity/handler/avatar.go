@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -34,16 +35,16 @@ func NewAvatarHandler(avatarService *service.AvatarService) *AvatarHandler {
 func (h *AvatarHandler) Upload(c fiber.Ctx) error {
 	user, ok := c.Locals("user").(model.User)
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(shared.ErrorResponse{Error: "unauthenticated"})
+		return shared.FailMsg(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	file, err := c.FormFile("avatar")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(shared.ErrorResponse{Error: "avatar file is required"})
+		return shared.FailMsg(c, http.StatusBadRequest, "avatar file is required")
 	}
 
 	if _, err := h.avatarService.Upload(c.Context(), user.ID, file); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "avatar uploaded"})
@@ -63,14 +64,14 @@ func (h *AvatarHandler) Upload(c fiber.Ctx) error {
 func (h *AvatarHandler) Delete(c fiber.Ctx) error {
 	user, ok := c.Locals("user").(model.User)
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(shared.ErrorResponse{Error: "unauthenticated"})
+		return shared.FailMsg(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	if err := h.avatarService.Delete(c.Context(), user.ID); err != nil {
 		if errors.Is(err, service.ErrAvatarNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(shared.ErrorResponse{Error: err.Error()})
+			return shared.Fail(c, http.StatusNotFound, err)
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "avatar deleted"})

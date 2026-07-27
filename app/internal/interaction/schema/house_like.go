@@ -2,13 +2,11 @@ package schema
 
 import "time"
 
-// HouseLikeResponse like status response
 type HouseLikeResponse struct {
 	Liked     bool `json:"liked" example:"true"`
 	LikeCount int  `json:"like_count" example:"5"`
 }
 
-// HouseLikeItem liked house item for user's liked houses list
 type HouseLikeItem struct {
 	ID        int       `json:"id" example:"1"`
 	NameEN    string    `json:"name_en" example:"Beach House"`

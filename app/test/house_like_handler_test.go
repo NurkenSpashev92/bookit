@@ -20,7 +20,6 @@ func TestHouseLikeHandler_Like_RequiresAuth(t *testing.T) {
 		return c.JSON(interactionschema.HouseLikeResponse{Liked: true, LikeCount: 1})
 	})
 
-	// No cookie
 	resp := doRequest(t, app, http.MethodPost, "/houses/1/like", nil)
 	if resp.StatusCode != 401 {
 		t.Errorf("status = %d, want 401", resp.StatusCode)

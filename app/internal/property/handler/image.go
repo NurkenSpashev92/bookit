@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -34,12 +35,12 @@ func NewImageHandler(imageService *service.ImageService) *ImageHandler {
 func (h *ImageHandler) Upload(c fiber.Ctx) error {
 	slug := c.Params("slug")
 	if slug == "" {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "slug is required"})
+		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid form"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid form")
 	}
 
 	files := form.File["files[]"]
@@ -47,14 +48,14 @@ func (h *ImageHandler) Upload(c fiber.Ctx) error {
 		files = form.File["files"]
 	}
 	if len(files) == 0 {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "no files"})
+		return shared.FailMsg(c, http.StatusBadRequest, "no files")
 	}
 
 	if err := h.imageService.UploadHouseImages(c.Context(), slug, files); err != nil {
 		if errors.Is(err, service.ErrMaxImagesExceeded) {
-			return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+			return shared.Fail(c, http.StatusBadRequest, err)
 		}
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "images uploaded"})
@@ -74,14 +75,14 @@ func (h *ImageHandler) Upload(c fiber.Ctx) error {
 func (h *ImageHandler) Delete(c fiber.Ctx) error {
 	imageID, err := strconv.Atoi(c.Params("image_id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(shared.ErrorResponse{Error: "invalid image id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid image id")
 	}
 
 	if err := h.imageService.DeleteHouseImage(c.Context(), imageID); err != nil {
 		if errors.Is(err, service.ErrImageNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(shared.ErrorResponse{Error: err.Error()})
+			return shared.Fail(c, http.StatusNotFound, err)
 		}
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "image deleted"})

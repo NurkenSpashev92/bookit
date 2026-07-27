@@ -37,23 +37,33 @@ HTTP Request
 app/
 ├── cmd/                # entrypoints
 │   ├── apiserver
-│   └── router
+│   ├── router
+│   └── seed            # demo data generator
 ├── configs/            # config loading and env handling
 ├── docs/               # swagger documentation
 ├── internal/
-│   ├── handlers/       # HTTP handlers only
+│   ├── shared/         # cross-domain DTOs, validation, error responses
 │   ├── initializers/   # database, redis, storage bootstrapping
-│   ├── models/         # domain models and entities
-│   ├── repositories/   # persistence layer
-│   ├── schemas/        # request / response DTOs
-│   └── services/       # business logic
+│   └── <domain>/       # analytics, booking, content, identity,
+│       ├── handler/    # interaction, location, property
+│       ├── model/      # domain entities + domain errors
+│       ├── port/       # interfaces to other domains (dependency inversion)
+│       ├── repository/ # persistence layer
+│       ├── schema/     # request / response DTOs
+│       └── service/    # business logic
 ├── migrations/         # SQL migrations
 ├── pkg/
 │   ├── aws
+│   ├── cache
+│   ├── imageproc
 │   ├── middleware
 │   ├── store
 │   └── utils
 ```
+
+Code is split by domain, not by layer: everything about a domain lives under
+`internal/<domain>/`. Cross-domain calls go through `port/` interfaces so the
+import graph stays acyclic.
 
 ---
 
@@ -76,22 +86,24 @@ Handlers must not:
 
 Example:
 
+Error responses go through `shared.Fail` / `shared.FailMsg` — never write a raw
+status code or hand a client `err.Error()` directly. `shared.Fail` logs 5xx
+details and returns a neutral message, so implementation details do not leak.
+
 ```go
-func (h *HouseHandler) Create(c *gin.Context) {
-    var request schemas.CreateHouseRequest
+func (h *HouseHandler) Create(c fiber.Ctx) error {
+    var request schema.CreateHouseRequest
 
-    if err := c.ShouldBindJSON(&request); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
+    if err := json.Unmarshal(c.Body(), &request); err != nil {
+        return shared.Fail(c, http.StatusBadRequest, err)
     }
 
-    response, err := h.houseService.Create(c.Request.Context(), request)
+    response, err := h.houseService.Create(c.Context(), request)
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
+        return shared.Fail(c, http.StatusInternalServerError, err)
     }
 
-    c.JSON(http.StatusCreated, response)
+    return c.Status(http.StatusCreated).JSON(response)
 }
 ```
 
@@ -99,7 +111,7 @@ func (h *HouseHandler) Create(c *gin.Context) {
 
 ## Schemas / DTOs
 
-Schemas belong in `internal/schemas/`.
+Schemas belong in `internal/<domain>/schema/`.
 
 Rules:
 
@@ -129,7 +141,7 @@ Services must:
 
 * Work through interfaces
 * Not know about HTTP layer
-* Not return gin.Context or HTTP responses
+* Not return fiber.Ctx or HTTP responses
 * Use repositories for persistence
 * Use factories for entity creation
 * Use mappers for DTO to model conversion
@@ -166,7 +178,7 @@ Repositories are responsible only for persistence and queries.
 Rules:
 
 * Declare repository interfaces close to service layer or in repositories/contracts
-* Use GORM or SQL only inside repositories
+* Use SQL (pgx) only inside repositories
 * Do not place business logic in repositories
 * Keep repository methods small and explicit
 * Always pass context.Context
@@ -248,19 +260,19 @@ Rules:
 * Keep model methods minimal
 * Do not place HTTP logic in models
 * Use explicit field names
-* Use GORM tags carefully
+* Keep struct tags minimal — pgx scans by column position, not by tag
 * Add created_at and updated_at timestamps where needed
 
 Example:
 
 ```go
 type House struct {
-    ID          uint      `gorm:"primaryKey"`
-    Title       string    `gorm:"size:255;not null"`
-    Description string    `gorm:"type:text"`
-    CityID      uint      `gorm:"not null"`
-    CreatedAt   time.Time
-    UpdatedAt   time.Time
+    ID          int       `json:"id"`
+    Title       string    `json:"title"`
+    Description string    `json:"description"`
+    CityID      *int      `json:"city_id,omitempty"`
+    CreatedAt   time.Time `json:"created_at"`
+    UpdatedAt   time.Time `json:"updated_at"`
 }
 ```
 
@@ -274,7 +286,7 @@ type House struct {
 * Always specify needed columns
 * Use indexes for frequently queried fields
 * Avoid N+1 queries
-* Use Preload() when related data is needed
+* Fetch related data with JOIN / LATERAL in the same query, never in a loop
 * Use transactions for atomic operations
 * Keep SQL readable and optimized
 
@@ -341,7 +353,7 @@ func TestHouseService_Create(t *testing.T) {
 ❌ Large god services with 1000+ lines
 ❌ Shared utils for unrelated logic
 ❌ Repeating validation rules everywhere
-❌ Returning raw GORM models directly from handlers
+❌ Returning raw domain models directly from handlers
 ❌ Panic for expected business errors
 ❌ Global mutable state
 ❌ Circular dependencies
@@ -351,8 +363,8 @@ func TestHouseService_Create(t *testing.T) {
 
 ## Preferred Stack
 
-* Gin for HTTP layer
-* GORM for ORM
+* Fiber v3 for HTTP layer
+* pgx/v5 for database access (no ORM — plain SQL in repositories)
 * PostgreSQL as primary database
 * Redis for cache
 * Swagger for API docs

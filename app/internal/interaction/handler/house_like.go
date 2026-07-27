@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v3"
 
 	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
@@ -33,12 +35,12 @@ func (h *HouseLikeHandler) Like(c fiber.Ctx) error {
 
 	slug := c.Params("slug")
 	if slug == "" {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "slug is required"})
+		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
 	}
 
 	resp, err := h.likeService.Like(c.Context(), user.ID, slug)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(resp)
@@ -60,12 +62,12 @@ func (h *HouseLikeHandler) Unlike(c fiber.Ctx) error {
 
 	slug := c.Params("slug")
 	if slug == "" {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "slug is required"})
+		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
 	}
 
 	resp, err := h.likeService.Unlike(c.Context(), user.ID, slug)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(resp)
@@ -86,12 +88,12 @@ func (h *HouseLikeHandler) Status(c fiber.Ctx) error {
 
 	slug := c.Params("slug")
 	if slug == "" {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "slug is required"})
+		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
 	}
 
 	resp, err := h.likeService.Status(c.Context(), user.ID, slug)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(resp)
@@ -111,7 +113,7 @@ func (h *HouseLikeHandler) UserLikedHouses(c fiber.Ctx) error {
 
 	houses, err := h.likeService.GetUserLikedHouses(c.Context(), user.ID)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	if houses == nil {

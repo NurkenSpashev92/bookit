@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-// PaginatedResponse generic paginated response wrapper
 type PaginatedResponse struct {
 	Data       interface{} `json:"data"`
 	Total      int         `json:"total" example:"100"`
@@ -15,7 +14,6 @@ type PaginatedResponse struct {
 	TotalPages int         `json:"total_pages" example:"10"`
 }
 
-// PaginationParams parsed pagination query params
 type PaginationParams struct {
 	Page     int
 	PageSize int

@@ -12,8 +12,6 @@ import (
 )
 
 func TestHouseHandler_GetAll_Empty(t *testing.T) {
-	// This tests that the handler returns proper JSON even when service returns nil.
-	// We can't call the real handler without DB, but we test the routing setup.
 	app := newTestApp()
 	app.Get("/houses", func(c fiber.Ctx) error {
 		return c.JSON([]propertyschema.HouseListItem{})
@@ -34,7 +32,7 @@ func TestHouseHandler_GetAll_Empty(t *testing.T) {
 func TestHouseHandler_GetBySlug_NotFound(t *testing.T) {
 	app := newTestApp()
 	houseHandler := propertyh.NewHouseHandler(nil)
-	// GetBySlug with nil service will panic — test the route pattern instead
+
 	app.Get("/houses/:slug", func(c fiber.Ctx) error {
 		slug := c.Params("slug")
 		if slug == "" {
@@ -42,7 +40,7 @@ func TestHouseHandler_GetBySlug_NotFound(t *testing.T) {
 		}
 		return c.Status(404).JSON(shared.ErrorResponse{Error: "house not found"})
 	})
-	_ = houseHandler // used for type check
+	_ = houseHandler
 
 	resp := doRequest(t, app, http.MethodGet, "/houses/non-existent-slug", nil)
 	if resp.StatusCode != 404 {
@@ -69,7 +67,6 @@ func TestHouseHandler_Create_InvalidJSON(t *testing.T) {
 		return c.Status(201).JSON(nil)
 	})
 
-	// Send empty body
 	resp := doRequest(t, app, http.MethodPost, "/houses", map[string]any{})
 	if resp.StatusCode != 400 {
 		t.Errorf("status = %d, want 400", resp.StatusCode)
@@ -95,10 +92,8 @@ func TestHouseHandler_Create_ValidationErrors(t *testing.T) {
 		return c.Status(201).JSON(nil)
 	})
 
-	// Missing required fields
 	body := map[string]any{
 		"name_en": "Test",
-		// missing name_kz, name_ru, descriptions, addresses, type_id
 	}
 	resp := doRequest(t, app, http.MethodPost, "/houses", body)
 	if resp.StatusCode != 400 {
@@ -109,7 +104,6 @@ func TestHouseHandler_Create_ValidationErrors(t *testing.T) {
 func TestHouseHandler_CheckSlug_RouteOrder(t *testing.T) {
 	app := newTestApp()
 
-	// Static routes must be before /:slug
 	app.Get("/houses/check-slug", func(c fiber.Ctx) error {
 		return c.JSON(propertyschema.SlugCheckResponse{Available: true, Slug: "test"})
 	})
@@ -120,7 +114,6 @@ func TestHouseHandler_CheckSlug_RouteOrder(t *testing.T) {
 		return c.JSON(fiber.Map{"slug": c.Params("slug")})
 	})
 
-	// check-slug should NOT be caught by :slug
 	resp := doRequest(t, app, http.MethodGet, "/houses/check-slug?slug=test", nil)
 	if resp.StatusCode != 200 {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
@@ -131,13 +124,11 @@ func TestHouseHandler_CheckSlug_RouteOrder(t *testing.T) {
 		t.Error("expected available=true")
 	}
 
-	// liked should NOT be caught by :slug
 	resp2 := doRequest(t, app, http.MethodGet, "/houses/liked", nil)
 	if resp2.StatusCode != 200 {
 		t.Fatalf("liked: status = %d, want 200", resp2.StatusCode)
 	}
 
-	// real slug should work
 	resp3 := doRequest(t, app, http.MethodGet, "/houses/beach-house", nil)
 	if resp3.StatusCode != 200 {
 		t.Fatalf("slug: status = %d, want 200", resp3.StatusCode)

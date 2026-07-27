@@ -1,6 +1,5 @@
 package schema
 
-// Image image response DTO
 type Image struct {
 	ID        int    `json:"id" example:"1"`
 	Original  string `json:"original" example:"https://bucket.s3.eu-central-1.amazonaws.com/houses/original/1_123.jpg"`

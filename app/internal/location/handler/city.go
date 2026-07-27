@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -29,7 +30,7 @@ func NewCityHandler(cityService *service.CityService) *CityHandler {
 func (h *CityHandler) GetAll(c fiber.Ctx) error {
 	cities, err := h.cityService.GetAll(c.Context())
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 	return c.JSON(cities)
 }
@@ -45,12 +46,12 @@ func (h *CityHandler) GetAll(c fiber.Ctx) error {
 func (h *CityHandler) GetByID(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	city, err := h.cityService.GetByID(c.Context(), id)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(city)
@@ -70,18 +71,18 @@ func (h *CityHandler) GetByID(c fiber.Ctx) error {
 func (h *CityHandler) Create(c fiber.Ctx) error {
 	var req schema.CityCreateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	city, err := h.cityService.Create(c.Context(), req)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
-	return c.Status(201).JSON(city)
+	return c.Status(http.StatusCreated).JSON(city)
 }
 
 // UpdateCity godoc
@@ -99,20 +100,20 @@ func (h *CityHandler) Create(c fiber.Ctx) error {
 func (h *CityHandler) Update(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	var req schema.CityUpdateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	city, err := h.cityService.Update(c.Context(), id, req)
 	if err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(city)
@@ -130,11 +131,11 @@ func (h *CityHandler) Update(c fiber.Ctx) error {
 func (h *CityHandler) Delete(c fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: "invalid id"})
+		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
 	}
 
 	if err := h.cityService.Delete(c.Context(), id); err != nil {
-		return c.Status(404).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusNotFound, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "city deleted"})

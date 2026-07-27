@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// City response DTO
 type City struct {
 	ID          int     `json:"id" example:"1"`
 	NameKZ      string  `json:"name_kz" example:"Астана"`

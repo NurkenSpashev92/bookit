@@ -64,7 +64,6 @@ func (app *ApiApp) Run() {
 
 	db := database.Conn
 
-	// Repositories
 	userRepo := identityrepo.NewUserRepository(db)
 	houseRepo := propertyrepo.NewHouseRepository(db, cfgAws)
 	houseLikeRepo := interactionrepo.NewHouseLikeRepository(db, cfgAws)
@@ -76,7 +75,6 @@ func (app *ApiApp) Run() {
 	faqRepo := contentrepo.NewFAQRepository(db)
 	inquiryRepo := contentrepo.NewInquiryRepository(db)
 
-	// Redis + Cache
 	cfgRedis := configs.NewRedisConfig()
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfgRedis.Host + ":" + cfgRedis.Port,
@@ -90,11 +88,9 @@ func (app *ApiApp) Run() {
 
 	houseCache := cache.New(redisClient, 5*time.Minute)
 
-	// Additional Repositories
 	statsRepo := analyticsrepo.NewStatsRepository(db)
 	bookingRepo := bookingrepo.NewBookingRepository(db)
 
-	// Services
 	jwtService := identitysvc.NewJWTService(cfgJwt)
 	userService := identitysvc.NewUserService(userRepo, jwtService, cfgAws)
 	houseService := propertysvc.NewHouseService(houseRepo, houseLikeRepo, bookingRepo, houseCache)
@@ -129,8 +125,6 @@ func (app *ApiApp) Run() {
 
 	app.App = router.RegisterRoutes(app.App, db, svc)
 
-	// pprof on a separate port — gated behind PPROF_PORT env. Binds to 0.0.0.0 so the
-	// port is reachable through the docker port mapping; never expose in production.
 	if pprofPort := os.Getenv("PPROF_PORT"); pprofPort != "" {
 		go func() {
 			log.Printf("pprof listening on 0.0.0.0:%s", pprofPort)

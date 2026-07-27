@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -35,24 +36,24 @@ func NewAuthHandler(userService *service.UserService) *AuthHandler {
 func (h *AuthHandler) Register(c fiber.Ctx) error {
 	var req schema.UserCreateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	resp, err := h.userService.Register(c.Context(), req)
 	if err != nil {
 		if errors.Is(err, service.ErrEmailAlreadyExists) || errors.Is(err, service.ErrPhoneAlreadyExists) {
-			return c.Status(409).JSON(shared.ErrorResponse{Error: err.Error()})
+			return shared.Fail(c, http.StatusConflict, err)
 		}
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	setAccessCookie(c, resp.AccessToken)
 	setRefreshCookie(c, resp.RefreshToken)
 
-	return c.Status(201).JSON(resp)
+	return c.Status(http.StatusCreated).JSON(resp)
 }
 
 // Login godoc
@@ -68,18 +69,18 @@ func (h *AuthHandler) Register(c fiber.Ctx) error {
 func (h *AuthHandler) Login(c fiber.Ctx) error {
 	var req schema.UserLoginRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	resp, err := h.userService.Login(c.Context(), req)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrAccountDisabled) {
-			return c.Status(401).JSON(shared.ErrorResponse{Error: err.Error()})
+			return shared.Fail(c, http.StatusUnauthorized, err)
 		}
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	setAccessCookie(c, resp.AccessToken)
@@ -109,13 +110,13 @@ func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 	}
 
 	if refreshToken == "" {
-		return c.Status(401).JSON(shared.ErrorResponse{Error: "refresh token required"})
+		return shared.FailMsg(c, http.StatusUnauthorized, "refresh token required")
 	}
 
 	resp, err := h.userService.RefreshTokens(c.Context(), refreshToken)
 	if err != nil {
 		clearAuthCookies(c)
-		return c.Status(401).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusUnauthorized, err)
 	}
 
 	setAccessCookie(c, resp.AccessToken)
@@ -144,15 +145,15 @@ func (h *AuthHandler) UpdateProfile(c fiber.Ctx) error {
 
 	var req schema.UserUpdateRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	authUser, err := h.userService.UpdateProfile(c.Context(), user.ID, req)
 	if err != nil {
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(authUser)
@@ -178,17 +179,17 @@ func (h *AuthHandler) ChangePassword(c fiber.Ctx) error {
 
 	var req schema.ChangePasswordRequest
 	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 	if err := req.Validate(); err != nil {
-		return c.Status(400).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusBadRequest, err)
 	}
 
 	if err := h.userService.ChangePassword(c.Context(), user.ID, req); err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
-			return c.Status(401).JSON(shared.ErrorResponse{Error: "old password is incorrect"})
+			return shared.FailMsg(c, http.StatusUnauthorized, "old password is incorrect")
 		}
-		return c.Status(500).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(shared.MessageResponse{Message: "password changed"})
@@ -217,12 +218,12 @@ func (h *AuthHandler) Logout(c fiber.Ctx) error {
 func (h *AuthHandler) Me(c fiber.Ctx) error {
 	token := c.Cookies("access_token")
 	if token == "" {
-		return c.Status(401).JSON(shared.ErrorResponse{Error: "unauthenticated"})
+		return shared.FailMsg(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	resp, err := h.userService.Me(c.Context(), token)
 	if err != nil {
-		return c.Status(401).JSON(shared.ErrorResponse{Error: err.Error()})
+		return shared.Fail(c, http.StatusUnauthorized, err)
 	}
 
 	return c.JSON(resp)

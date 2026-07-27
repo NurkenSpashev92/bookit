@@ -17,7 +17,6 @@ import (
 
 const maxHouseImages = 15
 
-// HouseImageRepository describes the persistence contract ImageService depends on.
 type HouseImageRepository interface {
 	GetHouseIDBySlug(ctx context.Context, slug string) (int, error)
 	CountByHouse(ctx context.Context, houseID int) (int, error)

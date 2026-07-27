@@ -25,7 +25,6 @@ func (r BookingCreateRequest) Validate() error {
 	return v.Result()
 }
 
-// BookingResponse booking response DTO
 type BookingResponse struct {
 	ID            int    `json:"id" example:"1"`
 	HouseID       int    `json:"house_id" example:"1"`

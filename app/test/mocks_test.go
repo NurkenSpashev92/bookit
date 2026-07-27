@@ -12,8 +12,6 @@ import (
 	propertyschema "github.com/nurkenspashev92/bookit/internal/property/schema"
 )
 
-// --- User Repository Mock ---
-
 type mockUserRepo struct {
 	users    map[int]identitymodel.User
 	byEmail  map[string]identitymodel.User
@@ -39,7 +37,7 @@ func (m *mockUserRepo) Create(ctx context.Context, req identityschema.UserCreate
 	user := identitymodel.User{
 		ID:       m.nextID,
 		Email:    req.Email,
-		Password: "$2a$10$fakehash", // fake bcrypt
+		Password: "$2a$10$fakehash",
 		IsActive: true,
 	}
 	m.nextID++
@@ -51,7 +49,7 @@ func (m *mockUserRepo) Create(ctx context.Context, req identityschema.UserCreate
 func (m *mockUserRepo) GetByID(ctx context.Context, id int) (identitymodel.User, error) {
 	u, ok := m.users[id]
 	if !ok {
-		return identitymodel.User{}, fmt.Errorf("user not found")
+		return identitymodel.User{}, identitymodel.ErrUserNotFound
 	}
 	return u, nil
 }
@@ -59,7 +57,7 @@ func (m *mockUserRepo) GetByID(ctx context.Context, id int) (identitymodel.User,
 func (m *mockUserRepo) GetByEmail(ctx context.Context, email string) (identitymodel.User, error) {
 	u, ok := m.byEmail[email]
 	if !ok {
-		return identitymodel.User{}, fmt.Errorf("user not found")
+		return identitymodel.User{}, identitymodel.ErrUserNotFound
 	}
 	return u, nil
 }
@@ -70,13 +68,13 @@ func (m *mockUserRepo) GetByPhoneNumber(_ context.Context, phone string) (identi
 			return u, nil
 		}
 	}
-	return identitymodel.User{}, fmt.Errorf("user not found")
+	return identitymodel.User{}, identitymodel.ErrUserNotFound
 }
 
 func (m *mockUserRepo) Update(_ context.Context, userID int, _ identityschema.UserUpdateRequest) (identitymodel.User, error) {
 	u, ok := m.users[userID]
 	if !ok {
-		return identitymodel.User{}, fmt.Errorf("user not found")
+		return identitymodel.User{}, identitymodel.ErrUserNotFound
 	}
 	return u, nil
 }
@@ -89,11 +87,9 @@ func (m *mockUserRepo) UpdateAvatar(_ context.Context, _ int, _ string) error {
 	return nil
 }
 
-// --- House Like Repository Mock ---
-
 type mockHouseLikeRepo struct {
-	likes  map[string]bool   // "userID:slug"
-	counts map[string]int    // slug -> count
+	likes  map[string]bool
+	counts map[string]int
 }
 
 func newMockHouseLikeRepo() *mockHouseLikeRepo {
@@ -151,8 +147,6 @@ func (m *mockHouseLikeRepo) GetUserLikedHouseIDs(_ context.Context, userID int) 
 	return ids, nil
 }
 
-// --- FAQ Repository Mock ---
-
 type mockFAQRepo struct {
 	faqs   map[int]contentschema.FAQ
 	nextID int
@@ -194,12 +188,24 @@ func (m *mockFAQRepo) Update(_ context.Context, id int, req contentschema.FAQUpd
 	if !ok {
 		return contentschema.FAQ{}, fmt.Errorf("FAQ not found")
 	}
-	if req.QuestionKz != nil { f.QuestionKz = *req.QuestionKz }
-	if req.AnswerKz != nil { f.AnswerKz = *req.AnswerKz }
-	if req.QuestionRu != nil { f.QuestionRu = *req.QuestionRu }
-	if req.AnswerRu != nil { f.AnswerRu = *req.AnswerRu }
-	if req.QuestionEn != nil { f.QuestionEn = *req.QuestionEn }
-	if req.AnswerEn != nil { f.AnswerEn = *req.AnswerEn }
+	if req.QuestionKz != nil {
+		f.QuestionKz = *req.QuestionKz
+	}
+	if req.AnswerKz != nil {
+		f.AnswerKz = *req.AnswerKz
+	}
+	if req.QuestionRu != nil {
+		f.QuestionRu = *req.QuestionRu
+	}
+	if req.AnswerRu != nil {
+		f.AnswerRu = *req.AnswerRu
+	}
+	if req.QuestionEn != nil {
+		f.QuestionEn = *req.QuestionEn
+	}
+	if req.AnswerEn != nil {
+		f.AnswerEn = *req.AnswerEn
+	}
 	m.faqs[id] = f
 	return f, nil
 }
@@ -211,8 +217,6 @@ func (m *mockFAQRepo) Delete(_ context.Context, id int) error {
 	delete(m.faqs, id)
 	return nil
 }
-
-// --- Country Repository Mock ---
 
 type mockCountryRepo struct {
 	countries map[int]locationmodel.Country
@@ -251,9 +255,15 @@ func (m *mockCountryRepo) Update(_ context.Context, id int, req locationschema.C
 	if !ok {
 		return locationmodel.Country{}, fmt.Errorf("country not found")
 	}
-	if req.NameKZ != nil { c.NameKZ = *req.NameKZ }
-	if req.NameEN != nil { c.NameEN = *req.NameEN }
-	if req.NameRU != nil { c.NameRU = *req.NameRU }
+	if req.NameKZ != nil {
+		c.NameKZ = *req.NameKZ
+	}
+	if req.NameEN != nil {
+		c.NameEN = *req.NameEN
+	}
+	if req.NameRU != nil {
+		c.NameRU = *req.NameRU
+	}
 	m.countries[id] = c
 	return c, nil
 }

@@ -13,7 +13,6 @@ func TestCountryService_CRUD(t *testing.T) {
 	svc := locationsvc.NewCountryService(repo)
 	ctx := context.Background()
 
-	// Create
 	country, err := svc.Create(ctx, locationschema.CountryCreateRequest{
 		NameKZ: "Қазақстан", NameEN: "Kazakhstan", NameRU: "Казахстан", Code: "KZ",
 	})
@@ -27,7 +26,6 @@ func TestCountryService_CRUD(t *testing.T) {
 		t.Errorf("NameEN = %q", country.NameEN)
 	}
 
-	// GetByID
 	got, err := svc.GetByID(ctx, country.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +34,6 @@ func TestCountryService_CRUD(t *testing.T) {
 		t.Errorf("Code = %q", got.Code)
 	}
 
-	// GetAll
 	all, err := svc.GetAll(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -45,7 +42,6 @@ func TestCountryService_CRUD(t *testing.T) {
 		t.Errorf("count = %d, want 1", len(all))
 	}
 
-	// Update
 	newName := "Updated"
 	updated, err := svc.Update(ctx, country.ID, locationschema.CountryUpdateRequest{NameEN: &newName})
 	if err != nil {
@@ -55,7 +51,6 @@ func TestCountryService_CRUD(t *testing.T) {
 		t.Errorf("NameEN = %q", updated.NameEN)
 	}
 
-	// Delete
 	if err := svc.Delete(ctx, country.ID); err != nil {
 		t.Fatal(err)
 	}

@@ -22,7 +22,6 @@ func TestHouseLikeService_Like(t *testing.T) {
 		t.Errorf("count = %d, want 1", resp.LikeCount)
 	}
 
-	// Like again — idempotent
 	resp2, _ := svc.Like(context.Background(), 1, "beach-house")
 	if resp2.LikeCount != 1 {
 		t.Errorf("double like count = %d, want 1", resp2.LikeCount)
@@ -51,13 +50,11 @@ func TestHouseLikeService_Status(t *testing.T) {
 	repo := newMockHouseLikeRepo()
 	svc := interactionsvc.NewHouseLikeService(repo)
 
-	// Not liked
 	resp, _ := svc.Status(context.Background(), 1, "beach-house")
 	if resp.Liked {
 		t.Error("should not be liked")
 	}
 
-	// Like then check
 	svc.Like(context.Background(), 1, "beach-house")
 	resp2, _ := svc.Status(context.Background(), 1, "beach-house")
 	if !resp2.Liked {

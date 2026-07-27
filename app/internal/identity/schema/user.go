@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// User response DTO
 type User struct {
 	ID          int    `json:"id" example:"1"`
 	Email       string `json:"email" example:"user@example.com"`
@@ -14,7 +13,6 @@ type User struct {
 	IsActive    bool   `json:"is_active" example:"true"`
 }
 
-// AuthUser authenticated user DTO
 type AuthUser struct {
 	ID          int    `json:"id" example:"1"`
 	Email       string `json:"email" example:"user@example.com"`
@@ -116,14 +114,12 @@ func (r UserLoginRequest) Validate() error {
 	return v.Result()
 }
 
-// AuthResponse auth success response
 type AuthResponse struct {
 	User         AuthUser `json:"user"`
 	AccessToken  string   `json:"access_token,omitempty" example:"eyJhbGciOiJIUzI1NiIs..."`
 	RefreshToken string   `json:"refresh_token,omitempty" example:"eyJhbGciOiJIUzI1NiIs..."`
 }
 
-// RefreshRequest refresh token request
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }

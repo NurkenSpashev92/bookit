@@ -176,9 +176,6 @@ func (r *BookingRepository) GetOwnerIDByBooking(ctx context.Context, bookingID i
 	return ownerID, nil
 }
 
-// GetUserActiveBooking returns the user's currently active booking on a house
-// in the property-domain shape (HouseBooking). This implements the property.port.BookingChecker
-// port — a downstream dependency from booking back to the property aggregate.
 func (r *BookingRepository) GetUserActiveBooking(ctx context.Context, houseID, userID int) (*propertyschema.HouseBooking, error) {
 	var b propertyschema.HouseBooking
 	var sd, ed time.Time

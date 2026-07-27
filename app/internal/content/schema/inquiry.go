@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// Inquiry response DTO
 type Inquiry struct {
 	ID          int    `json:"id" example:"1"`
 	Email       string `json:"email" example:"guest@example.com" format:"email"`

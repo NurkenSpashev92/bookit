@@ -13,7 +13,6 @@ func TestFAQService_CRUD(t *testing.T) {
 	svc := contentsvc.NewFAQService(repo)
 	ctx := context.Background()
 
-	// Create
 	req := contentschema.FAQCreateRequest{
 		QuestionKz: "Q?", AnswerKz: "A",
 		QuestionRu: "В?", AnswerRu: "О",
@@ -30,7 +29,6 @@ func TestFAQService_CRUD(t *testing.T) {
 		t.Errorf("QuestionKz = %q", faq.QuestionKz)
 	}
 
-	// GetByID
 	got, err := svc.GetByID(ctx, faq.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -39,7 +37,6 @@ func TestFAQService_CRUD(t *testing.T) {
 		t.Errorf("QuestionEn = %q", got.QuestionEn)
 	}
 
-	// GetAll
 	all, err := svc.GetAll(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +45,6 @@ func TestFAQService_CRUD(t *testing.T) {
 		t.Errorf("count = %d, want 1", len(all))
 	}
 
-	// Update
 	newQ := "Updated?"
 	updated, err := svc.Update(ctx, faq.ID, contentschema.FAQUpdateRequest{QuestionKz: &newQ})
 	if err != nil {
@@ -58,12 +54,10 @@ func TestFAQService_CRUD(t *testing.T) {
 		t.Errorf("QuestionKz = %q", updated.QuestionKz)
 	}
 
-	// Delete
 	if err := svc.Delete(ctx, faq.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify deleted
 	_, err = svc.GetByID(ctx, faq.ID)
 	if err == nil {
 		t.Error("expected error after delete")

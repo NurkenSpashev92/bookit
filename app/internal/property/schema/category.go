@@ -2,7 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// Category response DTO
 type Category struct {
 	Id       int     `json:"id" example:"1"`
 	NameKz   string  `json:"name_kz" example:"Апартаменты"`
@@ -50,7 +49,6 @@ func (r CategoryUpdateRequest) Validate() error {
 	return v.Result()
 }
 
-// CategoryPaginate category list item
 type CategoryPaginate struct {
 	Id       int     `json:"id" example:"1"`
 	NameKz   string  `json:"name_kz" example:"Апартаменты"`
