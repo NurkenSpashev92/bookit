@@ -86,13 +86,37 @@ func run() error {
 		return err
 	}
 
-	cityID := firstIDOrNil(ctx, conn, "cities")
-	countryID := firstIDOrNil(ctx, conn, "countries")
-
-	houseIDs, err := insertHouses(ctx, conn, buildHouseRows(ownerIDs, typeIDs, cityID, countryID))
+	countryIDs, err := ensureCountries(ctx, conn)
 	if err != nil {
 		return err
 	}
+
+	cities, err := ensureCities(ctx, conn, countryIDs[0])
+	if err != nil {
+		return err
+	}
+
+	categoryIDs, err := ensureCategories(ctx, conn)
+	if err != nil {
+		return err
+	}
+
+	houseIDs, err := insertHouses(ctx, conn, buildHouseRows(ownerIDs, typeIDs, cities))
+	if err != nil {
+		return err
+	}
+
+	if err := linkHouseCategories(ctx, conn, houseIDs, categoryIDs); err != nil {
+		return err
+	}
+
+	if err := backfillHouseLocations(ctx, conn, cities); err != nil {
+		return err
+	}
+	if err := backfillHouseCategories(ctx, conn, categoryIDs); err != nil {
+		return err
+	}
+
 	if len(houseIDs) == 0 {
 		log.Println("No new houses created — nothing to upload")
 		return nil

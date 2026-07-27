@@ -42,11 +42,12 @@ const insertHouseSQL = `
 	ON CONFLICT (slug) DO NOTHING
 	RETURNING id`
 
-func buildHouseRows(ownerIDs, typeIDs []int, cityID, countryID *int) []houseRow {
+func buildHouseRows(ownerIDs, typeIDs []int, cities []cityRef) []houseRow {
 	rows := make([]houseRow, 0, totalHouses)
 
 	for i := range totalHouses {
 		nameEN := fmt.Sprintf("%s %d", pick(namesEN), i+1)
+		cityID, countryID := pickCity(cities)
 
 		rows = append(rows, houseRow{
 			nameEN: nameEN,
@@ -86,6 +87,15 @@ func buildHouseRows(ownerIDs, typeIDs []int, cityID, countryID *int) []houseRow 
 	}
 
 	return rows
+}
+
+func pickCity(cities []cityRef) (cityID, countryID *int) {
+	if len(cities) == 0 {
+		return nil, nil
+	}
+
+	city := cities[rand.Intn(len(cities))]
+	return &city.id, &city.countryID
 }
 
 func insertHouses(ctx context.Context, conn *pgxpool.Pool, rows []houseRow) ([]int, error) {

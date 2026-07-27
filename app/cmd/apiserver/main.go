@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/redis/go-redis/v9"
 
 	"github.com/nurkenspashev92/bookit/cmd/router"
 	"github.com/nurkenspashev92/bookit/configs"
@@ -25,6 +24,7 @@ import (
 	contentsvc "github.com/nurkenspashev92/bookit/internal/content/service"
 	identityrepo "github.com/nurkenspashev92/bookit/internal/identity/repository"
 	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
+	"github.com/nurkenspashev92/bookit/internal/initializers"
 	interactionrepo "github.com/nurkenspashev92/bookit/internal/interaction/repository"
 	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
 	locationrepo "github.com/nurkenspashev92/bookit/internal/location/repository"
@@ -32,7 +32,6 @@ import (
 	propertyrepo "github.com/nurkenspashev92/bookit/internal/property/repository"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
-	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
@@ -75,18 +74,11 @@ func (app *ApiApp) Run() {
 	faqRepo := contentrepo.NewFAQRepository(db)
 	inquiryRepo := contentrepo.NewInquiryRepository(db)
 
-	cfgRedis := configs.NewRedisConfig()
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     cfgRedis.Host + ":" + cfgRedis.Port,
-		Password: cfgRedis.Password,
-		DB:       cfgRedis.DB,
-	})
-	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+	houseCache, err := initializers.NewCache(configs.NewCacheConfig(), configs.NewRedisConfig())
+	if err != nil {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
-	defer redisClient.Close()
-
-	houseCache := cache.New(redisClient, 5*time.Minute)
+	defer houseCache.Close()
 
 	statsRepo := analyticsrepo.NewStatsRepository(db)
 	bookingRepo := bookingrepo.NewBookingRepository(db)
@@ -107,6 +99,7 @@ func (app *ApiApp) Run() {
 	inquiryService := contentsvc.NewInquiryService(inquiryRepo)
 
 	svc := &router.Services{
+		Cache:     houseCache,
 		User:      userService,
 		JWT:       jwtService,
 		House:     houseService,

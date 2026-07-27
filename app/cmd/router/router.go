@@ -26,10 +26,17 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/platform/healthcheck"
 	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
+	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
+var cachedResponseRoutes = map[string]string{
+	"/api/v1/houses":  "houses",
+	"/api/v1/houses/": "houses",
+}
+
 type Services struct {
+	Cache     *cache.Cache
 	User      *identitysvc.UserService
 	JWT       *identitysvc.JWTService
 	House     *propertysvc.HouseService
@@ -49,6 +56,11 @@ type Services struct {
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
 	app.Use(middleware.CorsHandler)
 	app.Use(initializers.NewLogger())
+
+	app.Use(middleware.ResponseCache(middleware.ResponseCacheConfig{
+		Cache:  svc.Cache,
+		Routes: cachedResponseRoutes,
+	}))
 
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
 

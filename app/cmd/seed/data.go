@@ -59,7 +59,45 @@ var (
 	districtsRU = []string{"Центр", "Верхний город", "Средний город", "Пригород", "Старый город"}
 
 	defaultTypes = []string{"Apartment", "House", "Villa", "Cottage", "Hotel"}
+
+	defaultCountries = []countrySeed{
+		{nameEN: "Kazakhstan", nameKZ: "Қазақстан", nameRU: "Казахстан", code: "KZ"},
+	}
+
+	defaultCities = []citySeed{
+		{nameEN: "Astana", nameKZ: "Астана", nameRU: "Астана", postalCode: "010000"},
+		{nameEN: "Almaty", nameKZ: "Алматы", nameRU: "Алматы", postalCode: "050000"},
+		{nameEN: "Shymkent", nameKZ: "Шымкент", nameRU: "Шымкент", postalCode: "160000"},
+		{nameEN: "Karaganda", nameKZ: "Қарағанды", nameRU: "Караганда", postalCode: "100000"},
+		{nameEN: "Aktau", nameKZ: "Ақтау", nameRU: "Актау", postalCode: "130000"},
+		{nameEN: "Turkestan", nameKZ: "Түркістан", nameRU: "Туркестан", postalCode: "161200"},
+	}
+
+	defaultCategories = []categorySeed{
+		{nameEN: "Beachfront", nameKZ: "Жағажай маңы", nameRU: "У пляжа"},
+		{nameEN: "Mountains", nameKZ: "Таулар", nameRU: "Горы"},
+		{nameEN: "City center", nameKZ: "Қала орталығы", nameRU: "Центр города"},
+		{nameEN: "Countryside", nameKZ: "Ауыл", nameRU: "За городом"},
+		{nameEN: "Lakeside", nameKZ: "Көл жағасы", nameRU: "У озера"},
+		{nameEN: "Ski-in", nameKZ: "Шаңғы курорты", nameRU: "Горнолыжные"},
+		{nameEN: "Family friendly", nameKZ: "Отбасыларға", nameRU: "Для семьи"},
+		{nameEN: "Business travel", nameKZ: "Іссапар", nameRU: "Командировка"},
+		{nameEN: "Luxury", nameKZ: "Люкс", nameRU: "Люкс"},
+		{nameEN: "Budget", nameKZ: "Үнемді", nameRU: "Бюджетные"},
+	}
 )
+
+type countrySeed struct {
+	nameEN, nameKZ, nameRU, code string
+}
+
+type citySeed struct {
+	nameEN, nameKZ, nameRU, postalCode string
+}
+
+type categorySeed struct {
+	nameEN, nameKZ, nameRU string
+}
 
 func pick(s []string) string {
 	return s[rand.Intn(len(s))]

@@ -139,7 +139,7 @@ func (s *ImageService) UploadHouseImages(ctx context.Context, slug string, files
 		return fmt.Errorf("db save failed: %w", err)
 	}
 
-	s.cache.DeleteByPrefix("houses:")
+	s.cache.InvalidateNamespace("houses")
 	return nil
 }
 
@@ -162,6 +162,6 @@ func (s *ImageService) DeleteHouseImage(ctx context.Context, imageID int) error 
 	}
 	_ = g.Wait()
 
-	s.cache.DeleteByPrefix("houses:")
+	s.cache.InvalidateNamespace("houses")
 	return nil
 }

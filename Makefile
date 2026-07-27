@@ -18,7 +18,8 @@ else
 endif
 
 .PHONY: help up down build restart logs ps app postgres clean prune install mode test test-v test-cover \
-        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action seed install-stack
+        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action seed install-stack \
+        bench bench-mixed bench-db cache-off cache-on pprof
 
 help:
 	@echo ""
@@ -46,6 +47,13 @@ help:
 	@echo "  make migrate-drop              💥 Drop everything (DANGEROUS)"
 	@echo ""
 	@echo "  make seed             🌱 Seed database with demo houses"
+	@echo ""
+	@echo "  make bench            📊 Ladder: latency at low conn, rps at high"
+	@echo "  make bench-mixed      📊 Mixed public endpoints (devops/bench.lua)"
+	@echo "  make bench-db         📊 Uncached path — run make cache-off first"
+	@echo "  make cache-off        ❄️  Restart app with CACHE_ENABLED=false"
+	@echo "  make cache-on         🔥 Restart app with cache enabled"
+	@echo "  make pprof            🔬 CPU profile (30s) in the browser"
 	@echo ""
 	@echo "  make clean            🧹 Remove containers + volumes"
 	@echo "  make prune            💣 Docker system prune"
@@ -140,6 +148,28 @@ else
 	@echo "❌ Seed доступен только в DEV режиме (DEBUG=true)."
 	@exit 1
 endif
+
+# ----- benchmarking / profiling -----
+
+bench:
+	@bash devops/bench.sh
+
+bench-mixed:
+	@bash devops/bench.sh -s devops/bench.lua
+
+bench-db:
+	@bash devops/bench.sh -s devops/houses_uncached.lua -c "10 25 50"
+
+cache-off:
+	@CACHE_ENABLED=false $(COMPOSE) $(COMPOSE_FILES) up -d --force-recreate --no-deps app
+	@echo "❄️  Кэш выключен. Вернуть: make cache-on"
+
+cache-on:
+	@CACHE_ENABLED=true $(COMPOSE) $(COMPOSE_FILES) up -d --force-recreate --no-deps app
+	@echo "🔥 Кэш включён"
+
+pprof:
+	@go tool pprof -http=:8081 'http://localhost:$(PPROF_PORT)/debug/pprof/profile?seconds=30'
 
 clean:
 	$(COMPOSE) $(COMPOSE_FILES) down -v --remove-orphans

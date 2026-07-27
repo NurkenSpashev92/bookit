@@ -173,14 +173,14 @@ func (s *HouseService) Create(ctx context.Context, req schema.HouseCreateRequest
 	if err != nil {
 		return house, err
 	}
-	s.cache.DeleteByPrefix("houses:")
+	s.cache.InvalidateNamespace("houses")
 	return house, nil
 }
 
 func (s *HouseService) Update(ctx context.Context, slugVal string, req schema.HouseUpdateRequest) (model.House, error) {
 	house, err := s.repository.Update(ctx, slugVal, req)
 	if err == nil {
-		s.cache.DeleteByPrefix("houses:")
+		s.cache.InvalidateNamespace("houses")
 	}
 	return house, err
 }
@@ -188,7 +188,7 @@ func (s *HouseService) Update(ctx context.Context, slugVal string, req schema.Ho
 func (s *HouseService) Delete(ctx context.Context, slugVal string) error {
 	err := s.repository.Delete(ctx, slugVal)
 	if err == nil {
-		s.cache.DeleteByPrefix("houses:")
+		s.cache.InvalidateNamespace("houses")
 	}
 	return err
 }
