@@ -6,25 +6,26 @@ ENV_FILE=.env
 export
 
 # читаем DEBUG из .env
-DEBUG := $(shell grep -E '^DEBUG=' $(ENV_FILE) | cut -d '=' -f2 | tr '[:upper:]' '[:lower:]')
+DEBUG := $(shell grep -E '^DEBUG=' $(ENV_FILE) 2>/dev/null | cut -d '=' -f2 | tr '[:upper:]' '[:lower:]')
 
 # выбираем compose файлы
 ifeq ($(DEBUG),true)
 	COMPOSE_FILES=-f docker-compose.yml -f docker-compose.dev.yml
 	MODE=DEV
 else
-	COMPOSE_FILES=-f docker-compose.yml
+	COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 	MODE=PROD
 endif
 
 .PHONY: help up down build restart logs ps app postgres clean prune install mode test test-v test-cover \
-        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action
+        migrate-up migrate-down migrate-version migrate-force migrate-create migrate-drop migrate-action seed env install-stack
 
 help:
 	@echo ""
 	@echo "Mode: $(MODE)"
 	@echo ""
 	@echo "Available commands:"
+	@echo "  make env              📝 Create .env from .env.example"
 	@echo "  make install          🚀 Deploy project"
 	@echo "  make start            🚀 Start containers"
 	@echo "  make down             🛑 Stop containers"
@@ -45,6 +46,8 @@ help:
 	@echo "  make migrate-create NAME=<x>   📝 Create new migration files"
 	@echo "  make migrate-drop              💥 Drop everything (DANGEROUS)"
 	@echo ""
+	@echo "  make seed             🌱 Seed database with demo houses"
+	@echo ""
 	@echo "  make clean            🧹 Remove containers + volumes"
 	@echo "  make prune            💣 Docker system prune"
 	@echo ""
@@ -52,7 +55,15 @@ help:
 mode:
 	@echo "Running in $(MODE) mode (DEBUG=$(DEBUG))"
 
+
+env:
+	@bash devops/env.sh $(if $(filter 1,$(FORCE)),--force)
+
 install:
+	@bash devops/env.sh --if-missing
+	@$(MAKE) install-stack
+
+install-stack:
 	$(COMPOSE) $(COMPOSE_FILES) build
 	$(COMPOSE) $(COMPOSE_FILES) up -d postgres_db
 	$(MAKE) migrate-up
@@ -122,6 +133,14 @@ migrate-action:
 		-path /migrations \
 		-database postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)?sslmode=disable \
 		$(action)
+
+seed:
+ifeq ($(DEBUG),true)
+	@$(COMPOSE) $(COMPOSE_FILES) exec app go run ./cmd/seed
+else
+	@echo "❌ Seed доступен только в DEV режиме (DEBUG=true)."
+	@exit 1
+endif
 
 clean:
 	$(COMPOSE) $(COMPOSE_FILES) down -v --remove-orphans

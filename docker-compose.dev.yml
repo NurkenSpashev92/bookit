@@ -1,19 +1,10 @@
 services:
   app:
-    image: golang:latest
-    container_name: app
+    image: golang:1.26
     working_dir: /app
     volumes:
       - ./app:/app
       - go-mod-cache:/go/pkg/mod
-    env_file:
-      - .env
-    ports:
-      - "${APP_PORT}:8080"
-      - "${PPROF_PORT:-6060}:6060"
-    depends_on:
-      postgres_db:
-        condition: service_healthy
     command: >
       sh -c "
       go install github.com/swaggo/swag/cmd/swag@latest &&
