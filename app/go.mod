@@ -48,6 +48,7 @@ require (
 	github.com/go-openapi/swag/stringutils v0.25.4 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.4 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
+	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gofiber/schema v1.7.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
