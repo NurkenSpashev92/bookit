@@ -19,10 +19,3 @@ func TestNewFiberConfig(t *testing.T) {
 		t.Error("CaseSensitive should be true")
 	}
 }
-
-func TestNewLogger(t *testing.T) {
-	handler := initializers.NewLogger()
-	if handler == nil {
-		t.Fatal("NewLogger returned nil")
-	}
-}

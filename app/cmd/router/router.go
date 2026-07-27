@@ -1,6 +1,7 @@
 package router
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/Flussen/swagger-fiber-v3"
@@ -18,7 +19,6 @@ import (
 	contentsvc "github.com/nurkenspashev92/bookit/internal/content/service"
 	identityh "github.com/nurkenspashev92/bookit/internal/identity/handler"
 	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
-	"github.com/nurkenspashev92/bookit/internal/initializers"
 	interactionh "github.com/nurkenspashev92/bookit/internal/interaction/handler"
 	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
 	locationh "github.com/nurkenspashev92/bookit/internal/location/handler"
@@ -35,7 +35,12 @@ var cachedResponseRoutes = map[string]string{
 	"/api/v1/houses/": "houses",
 }
 
+var quietLogPaths = map[string]struct{}{
+	"/api/v1/healthcheck": {},
+}
+
 type Services struct {
+	Logger    *slog.Logger
 	Cache     *cache.Cache
 	User      *identitysvc.UserService
 	JWT       *identitysvc.JWTService
@@ -55,7 +60,10 @@ type Services struct {
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
 	app.Use(middleware.CorsHandler)
-	app.Use(initializers.NewLogger())
+	app.Use(middleware.RequestLogger(middleware.RequestLoggerConfig{
+		Logger:     svc.Logger,
+		QuietPaths: quietLogPaths,
+	}))
 	app.Use(middleware.RecoverPanic())
 
 	app.Use(middleware.ResponseCache(middleware.ResponseCacheConfig{

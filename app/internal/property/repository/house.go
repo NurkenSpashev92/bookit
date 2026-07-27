@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -17,6 +17,7 @@ import (
 	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/pkg/logger"
 	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
@@ -334,7 +335,10 @@ func (r *HouseRepository) RecordView(ctx context.Context, slug string, userID *i
 		WHERE id IN (SELECT id FROM target)`
 
 	if _, err := r.db.Exec(ctx, query, slug, userID, ip); err != nil {
-		log.Printf("record view for slug %q: %v", slug, err)
+		logger.FromContext(ctx).ErrorContext(ctx, "failed to record house view",
+			slog.String("slug", slug),
+			logger.Err(err),
+		)
 	}
 }
 

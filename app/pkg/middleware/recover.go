@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"runtime/debug"
 
 	"github.com/gofiber/fiber/v3"
+
+	"github.com/nurkenspashev92/bookit/pkg/logger"
 )
 
 func RecoverPanic() fiber.Handler {
@@ -16,7 +18,12 @@ func RecoverPanic() fiber.Handler {
 				return
 			}
 
-			log.Printf("[%s %s] panic: %v\n%s", c.Method(), c.Path(), p, debug.Stack())
+			logger.FromContext(c.Context()).ErrorContext(c.Context(), "panic recovered",
+				slog.String("method", c.Method()),
+				slog.String("path", c.Path()),
+				slog.Any("panic", p),
+				slog.String("stack", string(debug.Stack())),
+			)
 
 			if panicErr, ok := p.(error); ok {
 				err = fmt.Errorf("panic: %w", panicErr)
