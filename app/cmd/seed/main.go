@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -11,7 +12,9 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
@@ -21,6 +24,10 @@ import (
 const (
 	totalHouses = 100
 	imagesDir   = "img"
+
+	adminEmail     = "admin@bookit.kz"
+	adminPassword  = "1q2w3e4r"
+	adminFirstName = "admin"
 )
 
 var (
@@ -72,6 +79,8 @@ var (
 	addressesRU = []string{
 		"ул. Абая 123", "ул. Токтара 456", "пр. Назарбаева 789", "ул. Мира 321", "ул. Республики 654",
 	}
+	defaultTypes = []string{"Apartment", "House", "Villa", "Cottage", "Hotel"}
+
 	districtsEN = []string{"Downtown", "Uptown", "Midtown", "Suburbs", "Old Town"}
 	districtsKZ = []string{"Орталық", "Жоғары қала", "Орта қала", "Іргетас", "Ескі қала"}
 	districtsRU = []string{"Центр", "Верхний город", "Средний город", "Пригород", "Старый город"}
@@ -102,12 +111,14 @@ func main() {
 	}
 	log.Printf("Loaded %d image files", len(imageFiles))
 
-	var ownerID, typeID int
-	if err := conn.QueryRow(ctx, `SELECT id FROM users LIMIT 1`).Scan(&ownerID); err != nil {
-		log.Fatalf("no users found: %v", err)
+	ownerID, err := ensureAdmin(ctx, conn)
+	if err != nil {
+		log.Fatalf("failed to ensure admin user: %v", err)
 	}
-	if err := conn.QueryRow(ctx, `SELECT id FROM types LIMIT 1`).Scan(&typeID); err != nil {
-		log.Fatalf("no types found: %v", err)
+
+	typeIDs, err := ensureTypes(ctx, conn)
+	if err != nil {
+		log.Fatalf("failed to ensure house types: %v", err)
 	}
 
 	var cityID, countryID *int
@@ -148,7 +159,7 @@ func main() {
 			nameEN, nameKZ, nameRU, houseSlug, price, rooms, guests, bedrooms, baths,
 			pick(descriptionsEN), pick(descriptionsKZ), pick(descriptionsRU),
 			pick(addressesEN), pick(addressesKZ), pick(addressesRU),
-			lng, lat, true, priority, ownerID, typeID, cityID, countryID,
+			lng, lat, true, priority, ownerID, typeIDs[rand.Intn(len(typeIDs))], cityID, countryID,
 			rand.Intn(2) == 1, rand.Intn(5) == 0, rand.Intn(5) == 0,
 			pick(districtsEN), pick(districtsKZ), pick(districtsRU), "+77001234567",
 		).Scan(&houseID)
@@ -196,6 +207,88 @@ func main() {
 	}
 
 	log.Println("Seeding complete!")
+}
+
+func ensureAdmin(ctx context.Context, conn *pgxpool.Pool) (int, error) {
+	var id int
+	var isSuperuser, isActive bool
+
+	err := conn.QueryRow(ctx,
+		`SELECT id, is_superuser, is_active FROM users WHERE email = $1`, adminEmail,
+	).Scan(&id, &isSuperuser, &isActive)
+
+	switch {
+	case err == nil:
+		if isSuperuser && isActive {
+			log.Printf("Admin '%s' already exists (id=%d)", adminEmail, id)
+			return id, nil
+		}
+		if _, err := conn.Exec(ctx,
+			`UPDATE users SET is_superuser = TRUE, is_active = TRUE, updated_at = NOW() WHERE id = $1`, id,
+		); err != nil {
+			return 0, fmt.Errorf("promote to superuser: %w", err)
+		}
+		log.Printf("Admin '%s' promoted to superuser (id=%d)", adminEmail, id)
+		return id, nil
+
+	case errors.Is(err, pgx.ErrNoRows):
+		// создаём ниже
+
+	default:
+		return 0, fmt.Errorf("lookup admin: %w", err)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return 0, fmt.Errorf("hash admin password: %w", err)
+	}
+
+	err = conn.QueryRow(ctx, `
+		INSERT INTO users (
+			email, first_name, last_name, middle_name, password,
+			is_superuser, is_active, date_joined, created_at, updated_at
+		) VALUES ($1, $2, '', '', $3, TRUE, TRUE, NOW(), NOW(), NOW())
+		RETURNING id`,
+		adminEmail, adminFirstName, string(hashedPassword),
+	).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("create admin: %w", err)
+	}
+
+	log.Printf("Admin '%s' created (id=%d, password=%s)", adminEmail, id, adminPassword)
+	return id, nil
+}
+
+// ensureTypes возвращает id типов жилья, создавая недостающие. Уникального
+// индекса по name в таблице нет, поэтому дубликаты отсекаются поиском по имени.
+func ensureTypes(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
+	ids := make([]int, 0, len(defaultTypes))
+
+	for _, name := range defaultTypes {
+		var id int
+
+		err := conn.QueryRow(ctx, `SELECT id FROM types WHERE name = $1 LIMIT 1`, name).Scan(&id)
+		switch {
+		case err == nil:
+
+		case errors.Is(err, pgx.ErrNoRows):
+			if err := conn.QueryRow(ctx, `
+				INSERT INTO types (name, is_active, created_at, updated_at)
+				VALUES ($1, TRUE, NOW(), NOW())
+				RETURNING id`, name,
+			).Scan(&id); err != nil {
+				return nil, fmt.Errorf("create type %q: %w", name, err)
+			}
+			log.Printf("Type '%s' created (id=%d)", name, id)
+
+		default:
+			return nil, fmt.Errorf("lookup type %q: %w", name, err)
+		}
+
+		ids = append(ids, id)
+	}
+
+	return ids, nil
 }
 
 type imageFile struct {
