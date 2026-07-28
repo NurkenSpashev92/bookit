@@ -36,3 +36,4 @@ tmp/
 .claude/
 img/
 redis/
+app/tmp/
