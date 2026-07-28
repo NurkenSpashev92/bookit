@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
@@ -154,7 +153,7 @@ func (r *CategoryRepository) Delete(ctx context.Context, id int) error {
 	}
 
 	if cmd.RowsAffected() == 0 {
-		return pgx.ErrNoRows
+		return model.ErrCategoryNotFound
 	}
 
 	return nil

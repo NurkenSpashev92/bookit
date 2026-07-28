@@ -1,9 +1,9 @@
 package model
 
-import "errors"
+import "github.com/nurkenspashev92/bookit/internal/shared"
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-	ErrEmailExists  = errors.New("email already exists")
-	ErrPhoneExists  = errors.New("phone number already exists")
+	ErrUserNotFound = shared.NotFound("user not found")
+	ErrEmailExists  = shared.Conflict("email already exists")
+	ErrPhoneExists  = shared.Conflict("phone number already exists")
 )

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nurkenspashev92/bookit/internal/location/model"
 	"github.com/nurkenspashev92/bookit/internal/location/schema"
+	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type CityRepository struct {
@@ -67,7 +68,7 @@ func (r *CityRepository) GetByIDWithCountry(ctx context.Context, id int) (schema
 		&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code,
 	)
 	if err != nil {
-		return c, fmt.Errorf("city not found: %w", err)
+		return c, store.MapNoRows(err, model.ErrCityNotFound)
 	}
 	c.Country = ct
 	return c, nil
@@ -127,7 +128,7 @@ func (r *CityRepository) Delete(ctx context.Context, id int) error {
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("city not found")
+		return model.ErrCityNotFound
 	}
 	return nil
 }

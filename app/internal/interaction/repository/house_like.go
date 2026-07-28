@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/nurkenspashev92/bookit/configs"
+	"github.com/nurkenspashev92/bookit/internal/interaction/model"
 	propertyschema "github.com/nurkenspashev92/bookit/internal/property/schema"
 )
 
@@ -27,7 +28,7 @@ func (r *HouseLikeRepository) getHouseIDBySlug(ctx context.Context, slug string)
 	var id int
 	err := r.db.QueryRow(ctx, `SELECT id FROM houses WHERE slug=$1`, slug).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, errors.New("house not found")
+		return 0, model.ErrHouseNotFound
 	}
 	return id, err
 }

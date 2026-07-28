@@ -55,7 +55,7 @@ type uploadedImage struct {
 func (s *ImageService) UploadHouseImages(ctx context.Context, slug string, files []*multipart.FileHeader) error {
 	houseID, err := s.repository.GetHouseIDBySlug(ctx, slug)
 	if err != nil {
-		return fmt.Errorf("house not found")
+		return model.ErrHouseNotFound
 	}
 
 	count, err := s.repository.CountByHouse(ctx, houseID)

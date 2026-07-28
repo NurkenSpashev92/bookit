@@ -1,24 +1,33 @@
 package handler
 
 import (
-	"errors"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/analytics/model"
 	"github.com/nurkenspashev92/bookit/internal/analytics/schema"
-	"github.com/nurkenspashev92/bookit/internal/analytics/service"
-	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
 	"github.com/nurkenspashev92/bookit/internal/shared"
+	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-type StatsHandler struct {
-	statsService *service.StatsService
+const (
+	defaultChartDays = 30
+	minChartDays     = 1
+	maxChartDays     = 365
+)
+
+type StatsService interface {
+	GetDashboard(ctx context.Context, ownerID int) (schema.DashboardStats, error)
+	GetHouseStats(ctx context.Context, ownerID int) ([]schema.HouseStatsItem, error)
+	GetHouseDetailStats(ctx context.Context, ownerID int, slug string) (schema.HouseDetailStats, error)
+	GetCharts(ctx context.Context, ownerID, days int) (map[string]interface{}, error)
 }
 
-func NewStatsHandler(statsService *service.StatsService) *StatsHandler {
+type StatsHandler struct {
+	statsService StatsService
+}
+
+func NewStatsHandler(statsService StatsService) *StatsHandler {
 	return &StatsHandler{statsService: statsService}
 }
 
@@ -32,11 +41,14 @@ func NewStatsHandler(statsService *service.StatsService) *StatsHandler {
 // @Security     ApiKeyAuth
 // @Router       /stats/dashboard [get]
 func (h *StatsHandler) Dashboard(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
 	stats, err := h.statsService.GetDashboard(c.Context(), user.ID)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(stats)
@@ -52,18 +64,17 @@ func (h *StatsHandler) Dashboard(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /stats/houses [get]
 func (h *StatsHandler) HouseStats(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
 	items, err := h.statsService.GetHouseStats(c.Context(), user.ID)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	if items == nil {
-		items = []schema.HouseStatsItem{}
-	}
-
-	return c.JSON(items)
+	return shared.List(c, items)
 }
 
 // Charts godoc
@@ -77,16 +88,16 @@ func (h *StatsHandler) HouseStats(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /stats/charts [get]
 func (h *StatsHandler) Charts(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	days := 30
-	if d, err := strconv.Atoi(c.Query("days", "30")); err == nil && d > 0 && d <= 365 {
-		days = d
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
+
+	days := shared.QueryIntInRange(c, "days", defaultChartDays, minChartDays, maxChartDays)
 
 	charts, err := h.statsService.GetCharts(c.Context(), user.ID, days)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(charts)
@@ -104,19 +115,19 @@ func (h *StatsHandler) Charts(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /stats/houses/{slug} [get]
 func (h *StatsHandler) HouseDetail(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
+	slug, err := shared.ParamString(c, "slug")
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	stats, err := h.statsService.GetHouseDetailStats(c.Context(), user.ID, slug)
 	if err != nil {
-		if errors.Is(err, model.ErrHouseNotFound) {
-			return shared.Fail(c, http.StatusNotFound, err)
-		}
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(stats)

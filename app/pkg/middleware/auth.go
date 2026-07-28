@@ -3,30 +3,36 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v3"
 
-	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
+	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
-func AuthRequired(jwtService *identitysvc.JWTService) fiber.Handler {
+type TokenValidator interface {
+	ValidateToken(token string) (identitymodel.User, error)
+}
+
+func AuthRequired(validator TokenValidator) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		token := c.Cookies("access_token")
+		token := accessToken(c)
 		if token == "" {
-			token = c.Cookies("jwt")
-		}
-		if token == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "unauthenticated",
-			})
+			return shared.Fail(c, shared.Unauthorized("unauthenticated"))
 		}
 
-		user, err := jwtService.ValidateToken(token)
+		user, err := validator.ValidateToken(token)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "invalid or expired token",
-			})
+			return shared.Fail(c, shared.Unauthorized("invalid or expired token"))
 		}
 
-		c.Locals("user", user)
+		c.Locals(userLocalsKey, user)
 
 		return c.Next()
 	}
+}
+
+func accessToken(c fiber.Ctx) string {
+	if token := c.Cookies("access_token"); token != "" {
+		return token
+	}
+
+	return c.Cookies("jwt")
 }

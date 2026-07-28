@@ -1,22 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/nurkenspashev92/bookit/internal/location/model"
 	"github.com/nurkenspashev92/bookit/internal/location/schema"
-	"github.com/nurkenspashev92/bookit/internal/location/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
-type CityHandler struct {
-	cityService *service.CityService
+type CityService interface {
+	GetAll(ctx context.Context) ([]schema.City, error)
+	GetByID(ctx context.Context, id int) (schema.City, error)
+	Create(ctx context.Context, req schema.CityCreateRequest) (model.City, error)
+	Update(ctx context.Context, id int, req schema.CityUpdateRequest) (model.City, error)
+	Delete(ctx context.Context, id int) error
 }
 
-func NewCityHandler(cityService *service.CityService) *CityHandler {
+type CityHandler struct {
+	cityService CityService
+}
+
+func NewCityHandler(cityService CityService) *CityHandler {
 	return &CityHandler{cityService: cityService}
 }
 
@@ -30,9 +36,10 @@ func NewCityHandler(cityService *service.CityService) *CityHandler {
 func (h *CityHandler) GetAll(c fiber.Ctx) error {
 	cities, err := h.cityService.GetAll(c.Context())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	return c.JSON(cities)
+
+	return shared.List(c, cities)
 }
 
 // GetCity godoc
@@ -44,14 +51,14 @@ func (h *CityHandler) GetAll(c fiber.Ctx) error {
 // @Failure 404 {object} shared.ErrorResponse
 // @Router /cities/{id} [get]
 func (h *CityHandler) GetByID(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	city, err := h.cityService.GetByID(c.Context(), id)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(city)
@@ -69,20 +76,17 @@ func (h *CityHandler) GetByID(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /cities [post]
 func (h *CityHandler) Create(c fiber.Ctx) error {
-	var req schema.CityCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	city, err := h.cityService.Create(c.Context(), req)
+	request, err := shared.Bind[schema.CityCreateRequest](c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(city)
+	city, err := h.cityService.Create(c.Context(), request)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, city)
 }
 
 // UpdateCity godoc
@@ -98,22 +102,19 @@ func (h *CityHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /cities/{id} [patch]
 func (h *CityHandler) Update(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
-	var req schema.CityUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
+	request, err := shared.Bind[schema.CityUpdateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
-	city, err := h.cityService.Update(c.Context(), id, req)
+	city, err := h.cityService.Update(c.Context(), id, request)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(city)
@@ -129,14 +130,14 @@ func (h *CityHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /cities/{id} [delete]
 func (h *CityHandler) Delete(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	if err := h.cityService.Delete(c.Context(), id); err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "city deleted"})
+	return shared.OK(c, "city deleted")
 }

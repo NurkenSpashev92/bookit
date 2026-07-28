@@ -1,24 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
-	"errors"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/nurkenspashev92/bookit/internal/booking/schema"
-	"github.com/nurkenspashev92/bookit/internal/booking/service"
-	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
 	"github.com/nurkenspashev92/bookit/internal/shared"
+	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-type BookingHandler struct {
-	bookingService *service.BookingService
+type BookingService interface {
+	Create(ctx context.Context, userID int, req schema.BookingCreateRequest) (schema.BookingResponse, error)
+	GetMyBookings(ctx context.Context, userID int) ([]schema.BookingResponse, error)
+	GetOwnerBookings(ctx context.Context, ownerID int) ([]schema.BookingResponse, error)
+	GetByID(ctx context.Context, id, userID int) (schema.BookingResponse, error)
+	UpdateStatus(ctx context.Context, bookingID, userID int, status string) error
 }
 
-func NewBookingHandler(bookingService *service.BookingService) *BookingHandler {
+type BookingHandler struct {
+	bookingService BookingService
+}
+
+func NewBookingHandler(bookingService BookingService) *BookingHandler {
 	return &BookingHandler{bookingService: bookingService}
 }
 
@@ -37,25 +41,22 @@ func NewBookingHandler(bookingService *service.BookingService) *BookingHandler {
 // @Security     ApiKeyAuth
 // @Router       /bookings [post]
 func (h *BookingHandler) Create(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	var req schema.BookingCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	booking, err := h.bookingService.Create(c.Context(), user.ID, req)
+	user, err := middleware.CurrentUser(c)
 	if err != nil {
-		if errors.Is(err, service.ErrBookingOverlap) {
-			return shared.Fail(c, http.StatusConflict, err)
-		}
-		return shared.Fail(c, http.StatusBadRequest, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(booking)
+	request, err := shared.Bind[schema.BookingCreateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	booking, err := h.bookingService.Create(c.Context(), user.ID, request)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, booking)
 }
 
 // GetMyBookings godoc
@@ -69,16 +70,17 @@ func (h *BookingHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /bookings [get]
 func (h *BookingHandler) GetMyBookings(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
 	bookings, err := h.bookingService.GetMyBookings(c.Context(), user.ID)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	if bookings == nil {
-		bookings = []schema.BookingResponse{}
-	}
-	return c.JSON(bookings)
+
+	return shared.List(c, bookings)
 }
 
 // GetOwnerBookings godoc
@@ -92,16 +94,17 @@ func (h *BookingHandler) GetMyBookings(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /bookings/owner [get]
 func (h *BookingHandler) GetOwnerBookings(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
 	bookings, err := h.bookingService.GetOwnerBookings(c.Context(), user.ID)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	if bookings == nil {
-		bookings = []schema.BookingResponse{}
-	}
-	return c.JSON(bookings)
+
+	return shared.List(c, bookings)
 }
 
 // GetByID godoc
@@ -116,16 +119,19 @@ func (h *BookingHandler) GetOwnerBookings(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /bookings/{id} [get]
 func (h *BookingHandler) GetByID(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	id, err := strconv.Atoi(c.Params("id"))
+	user, err := middleware.CurrentUser(c)
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
+	}
+
+	id, err := shared.ParamInt(c, "id")
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	booking, err := h.bookingService.GetByID(c.Context(), id, user.ID)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(booking)
@@ -146,24 +152,24 @@ func (h *BookingHandler) GetByID(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /bookings/{id}/status [patch]
 func (h *BookingHandler) UpdateStatus(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	id, err := strconv.Atoi(c.Params("id"))
+	user, err := middleware.CurrentUser(c)
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
-	var req schema.BookingUpdateStatusRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
+	id, err := shared.ParamInt(c, "id")
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
-	if err := h.bookingService.UpdateStatus(c.Context(), id, user.ID, req.Status); err != nil {
-		return shared.Fail(c, http.StatusForbidden, err)
+	request, err := shared.Bind[schema.BookingUpdateStatusRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "status updated"})
+	if err := h.bookingService.UpdateStatus(c.Context(), id, user.ID, request.Status); err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.OK(c, "status updated")
 }

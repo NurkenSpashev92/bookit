@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/nurkenspashev92/bookit/internal/content/model"
 	"github.com/nurkenspashev92/bookit/internal/content/schema"
+	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type InquiryRepository struct {
@@ -40,7 +41,7 @@ func (r *InquiryRepository) GetByID(ctx context.Context, id int) (schema.Inquiry
 	err := r.db.QueryRow(ctx, `SELECT id, email, phone_number, text, is_approved FROM inquiries WHERE id=$1`, id).
 		Scan(&i.ID, &i.Email, &i.PhoneNumber, &i.Text, &i.IsApproved)
 	if err != nil {
-		return i, fmt.Errorf("Inquiry not found: %w", err)
+		return i, store.MapNoRows(err, model.ErrInquiryNotFound)
 	}
 	return i, nil
 }
@@ -86,7 +87,7 @@ func (r *InquiryRepository) Delete(ctx context.Context, id int) error {
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("Inquiry not found")
+		return model.ErrInquiryNotFound
 	}
 	return nil
 }

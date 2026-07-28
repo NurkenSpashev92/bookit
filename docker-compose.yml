@@ -15,8 +15,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Общая часть. Образ задаётся оверрайдом: devops/Dockerfile в prod,
-  # готовый golang в dev — базовый файл сам по себе не запускается.
   app:
     container_name: app
     restart: unless-stopped

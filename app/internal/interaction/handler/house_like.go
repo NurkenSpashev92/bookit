@@ -1,21 +1,28 @@
 package handler
 
 import (
-	"net/http"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
-	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
-	"github.com/nurkenspashev92/bookit/internal/interaction/service"
+	"github.com/nurkenspashev92/bookit/internal/interaction/schema"
 	propertyschema "github.com/nurkenspashev92/bookit/internal/property/schema"
 	"github.com/nurkenspashev92/bookit/internal/shared"
+	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-type HouseLikeHandler struct {
-	likeService *service.HouseLikeService
+type HouseLikeService interface {
+	Like(ctx context.Context, userID int, slug string) (*schema.HouseLikeResponse, error)
+	Unlike(ctx context.Context, userID int, slug string) (*schema.HouseLikeResponse, error)
+	Status(ctx context.Context, userID int, slug string) (*schema.HouseLikeResponse, error)
+	GetUserLikedHouses(ctx context.Context, userID int) ([]propertyschema.HouseListItem, error)
 }
 
-func NewHouseLikeHandler(likeService *service.HouseLikeService) *HouseLikeHandler {
+type HouseLikeHandler struct {
+	likeService HouseLikeService
+}
+
+func NewHouseLikeHandler(likeService HouseLikeService) *HouseLikeHandler {
 	return &HouseLikeHandler{likeService: likeService}
 }
 
@@ -31,19 +38,17 @@ func NewHouseLikeHandler(likeService *service.HouseLikeService) *HouseLikeHandle
 // @Security ApiKeyAuth
 // @Router /houses/{slug}/like [post]
 func (h *HouseLikeHandler) Like(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
-	}
-
-	resp, err := h.likeService.Like(c.Context(), user.ID, slug)
+	user, slug, err := likeRequest(c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(resp)
+	response, err := h.likeService.Like(c.Context(), user, slug)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return c.JSON(response)
 }
 
 // Unlike godoc
@@ -58,19 +63,17 @@ func (h *HouseLikeHandler) Like(c fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Router /houses/{slug}/like [delete]
 func (h *HouseLikeHandler) Unlike(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
-	}
-
-	resp, err := h.likeService.Unlike(c.Context(), user.ID, slug)
+	user, slug, err := likeRequest(c)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(resp)
+	response, err := h.likeService.Unlike(c.Context(), user, slug)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return c.JSON(response)
 }
 
 // LikeStatus godoc
@@ -84,19 +87,17 @@ func (h *HouseLikeHandler) Unlike(c fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Router /houses/{slug}/like [get]
 func (h *HouseLikeHandler) Status(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
-	}
-
-	resp, err := h.likeService.Status(c.Context(), user.ID, slug)
+	user, slug, err := likeRequest(c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(resp)
+	response, err := h.likeService.Status(c.Context(), user, slug)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return c.JSON(response)
 }
 
 // UserLikedHouses godoc
@@ -109,16 +110,29 @@ func (h *HouseLikeHandler) Status(c fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Router /houses/liked [get]
 func (h *HouseLikeHandler) UserLikedHouses(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
 	houses, err := h.likeService.GetUserLikedHouses(c.Context(), user.ID)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	if houses == nil {
-		houses = []propertyschema.HouseListItem{}
+	return shared.List(c, houses)
+}
+
+func likeRequest(c fiber.Ctx) (int, string, error) {
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return 0, "", err
 	}
 
-	return c.JSON(houses)
+	slug, err := shared.ParamString(c, "slug")
+	if err != nil {
+		return 0, "", err
+	}
+
+	return user.ID, slug, nil
 }

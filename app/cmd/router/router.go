@@ -1,32 +1,22 @@
 package router
 
 import (
-	"time"
-
 	"github.com/Flussen/swagger-fiber-v3"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/etag"
 	"github.com/gofiber/fiber/v3/middleware/paginate"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
-	"github.com/gofiber/fiber/v3/middleware/timeout"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	_ "github.com/nurkenspashev92/bookit/docs"
-	analyticsh "github.com/nurkenspashev92/bookit/internal/analytics/handler"
 	analyticssvc "github.com/nurkenspashev92/bookit/internal/analytics/service"
-	bookingh "github.com/nurkenspashev92/bookit/internal/booking/handler"
 	bookingsvc "github.com/nurkenspashev92/bookit/internal/booking/service"
-	contenth "github.com/nurkenspashev92/bookit/internal/content/handler"
 	contentsvc "github.com/nurkenspashev92/bookit/internal/content/service"
-	identityh "github.com/nurkenspashev92/bookit/internal/identity/handler"
 	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
-	interactionh "github.com/nurkenspashev92/bookit/internal/interaction/handler"
 	interactionsvc "github.com/nurkenspashev92/bookit/internal/interaction/service"
-	locationh "github.com/nurkenspashev92/bookit/internal/location/handler"
 	locationsvc "github.com/nurkenspashev92/bookit/internal/location/service"
 	"github.com/nurkenspashev92/bookit/internal/platform/healthcheck"
-	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 	"github.com/nurkenspashev92/bookit/pkg/cache"
@@ -60,158 +50,46 @@ type Services struct {
 	Booking   *bookingsvc.BookingService
 }
 
+type guards struct {
+	required fiber.Handler
+	optional fiber.Handler
+}
+
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
+	useMiddleware(app, svc)
+
+	access := guards{
+		required: middleware.AuthRequired(svc.JWT),
+		optional: middleware.AuthOptional(svc.JWT),
+	}
+
+	apiV1 := app.Group("/api/v1")
+	apiV1.Get("/healthcheck", healthcheck.HealthCheck(db))
+
+	registerIdentityRoutes(apiV1, svc, access)
+	registerPropertyRoutes(apiV1, svc, access)
+	registerLocationRoutes(apiV1, svc, access)
+	registerContentRoutes(apiV1, svc, access)
+	registerBookingRoutes(apiV1, svc, access)
+	registerAnalyticsRoutes(apiV1, svc, access)
+
+	app.Get("/swagger/*", swagger.HandlerDefault)
+
+	return app
+}
+
+func useMiddleware(app *fiber.App, svc *Services) {
 	app.Use(middleware.Cors())
 	app.Use(requestid.New())
 	app.Use(middleware.RequestLogger(middleware.RequestLoggerConfig{
 		QuietPaths: quietLogPaths,
 	}))
 	app.Use(middleware.RecoverPanic())
-
 	app.Use(middleware.ResponseCache(middleware.ResponseCacheConfig{
 		Cache:  svc.Cache,
 		Routes: cachedResponseRoutes,
 	}))
-
 	app.Use(compress.New(compress.Config{Level: compress.LevelBestSpeed}))
-
 	app.Use(etag.New())
-
 	app.Use(paginate.New(shared.PaginationConfig()))
-
-	authHandler := identityh.NewAuthHandler(svc.User)
-	houseHandler := propertyh.NewHouseHandler(svc.House)
-	houseLikeHandler := interactionh.NewHouseLikeHandler(svc.HouseLike)
-	imageHandler := propertyh.NewImageHandler(svc.Image)
-	categoryHandler := propertyh.NewCategoryHandler(svc.Category)
-	countryHandler := locationh.NewCountryHandler(svc.Country)
-	cityHandler := locationh.NewCityHandler(svc.City)
-	typeHandler := propertyh.NewTypeHandler(svc.Type)
-	avatarHandler := identityh.NewAvatarHandler(svc.Avatar)
-	statsHandler := analyticsh.NewStatsHandler(svc.Stats)
-	bookingHandler := bookingh.NewBookingHandler(svc.Booking)
-	faqHandler := contenth.NewFAQHandler(svc.FAQ, svc.Inquiry)
-
-	apiV1 := app.Group("/api/v1")
-	{
-		apiV1.Get("/healthcheck", healthcheck.HealthCheck(db))
-
-		auth := apiV1.Group("/auth")
-		{
-			auth.Post("/register", authHandler.Register)
-			auth.Post("/login", authHandler.Login)
-			auth.Post("/refresh", authHandler.Refresh)
-			auth.Post("/logout", authHandler.Logout)
-			auth.Get("/me", authHandler.Me)
-			auth.Patch("/me", middleware.AuthRequired(svc.JWT), authHandler.UpdateProfile)
-			auth.Patch("/me/password", middleware.AuthRequired(svc.JWT), authHandler.ChangePassword)
-			auth.Post("/me/avatar",
-				middleware.AuthRequired(svc.JWT),
-				middleware.UploadLimits(10*1024*1024),
-				timeout.New(avatarHandler.Upload, timeout.Config{Timeout: 30 * time.Second}),
-			)
-			auth.Delete("/me/avatar", middleware.AuthRequired(svc.JWT), avatarHandler.Delete)
-		}
-
-		category := apiV1.Group("/categories")
-		{
-			category.Get("/", categoryHandler.GetAll)
-			category.Get("/:id", categoryHandler.GetByID)
-			category.Post("", middleware.AuthRequired(svc.JWT), categoryHandler.Create)
-			category.Patch("/:id", middleware.AuthRequired(svc.JWT), categoryHandler.Update)
-			category.Delete("/:id", middleware.AuthRequired(svc.JWT), categoryHandler.Delete)
-		}
-
-		country := apiV1.Group("/countries")
-		{
-			country.Get("/", countryHandler.GetAll)
-			country.Get("/:id", countryHandler.GetByID)
-			country.Post("/", middleware.AuthRequired(svc.JWT), countryHandler.Create)
-			country.Patch("/:id", middleware.AuthRequired(svc.JWT), countryHandler.Update)
-			country.Delete("/:id", middleware.AuthRequired(svc.JWT), countryHandler.Delete)
-		}
-
-		city := apiV1.Group("/cities")
-		{
-			city.Get("/", cityHandler.GetAll)
-			city.Get("/:id", cityHandler.GetByID)
-			city.Post("/", middleware.AuthRequired(svc.JWT), cityHandler.Create)
-			city.Patch("/:id", middleware.AuthRequired(svc.JWT), cityHandler.Update)
-			city.Delete("/:id", middleware.AuthRequired(svc.JWT), cityHandler.Delete)
-		}
-
-		types := apiV1.Group("/types")
-		{
-			types.Get("/", typeHandler.GetAll)
-			types.Get("/:id", typeHandler.GetByID)
-			types.Post("/", middleware.AuthRequired(svc.JWT), typeHandler.Create)
-			types.Patch("/:id", middleware.AuthRequired(svc.JWT), typeHandler.Update)
-			types.Delete("/:id", middleware.AuthRequired(svc.JWT), typeHandler.Delete)
-		}
-
-		faq := apiV1.Group("/faqs")
-		{
-			faq.Get("/", faqHandler.GetAll)
-			faq.Get("/:id", faqHandler.GetByID)
-			faq.Post("/", middleware.AuthRequired(svc.JWT), faqHandler.Create)
-			faq.Patch("/:id", middleware.AuthRequired(svc.JWT), faqHandler.Update)
-			faq.Delete("/:id", middleware.AuthRequired(svc.JWT), faqHandler.Delete)
-		}
-
-		inquiry := apiV1.Group("/inquiry")
-		{
-			inquiry.Get("/", faqHandler.GetInquiries)
-			inquiry.Get("/:id", faqHandler.GetInquiryByID)
-			inquiry.Post("/", middleware.AuthRequired(svc.JWT), faqHandler.CreateInquiry)
-			inquiry.Patch("/:id", middleware.AuthRequired(svc.JWT), faqHandler.UpdateInquiry)
-			inquiry.Delete("/:id", middleware.AuthRequired(svc.JWT), faqHandler.DeleteInquiry)
-		}
-
-		apiV1.Get("/my-houses", middleware.AuthRequired(svc.JWT), houseHandler.MyHouses)
-
-		bookings := apiV1.Group("/bookings")
-		{
-			bookings.Post("/", middleware.AuthRequired(svc.JWT), bookingHandler.Create)
-			bookings.Get("/", middleware.AuthRequired(svc.JWT), bookingHandler.GetMyBookings)
-			bookings.Get("/owner", middleware.AuthRequired(svc.JWT), bookingHandler.GetOwnerBookings)
-			bookings.Get("/:id", middleware.AuthRequired(svc.JWT), bookingHandler.GetByID)
-			bookings.Patch("/:id/status", middleware.AuthRequired(svc.JWT), bookingHandler.UpdateStatus)
-		}
-
-		stats := apiV1.Group("/stats")
-		{
-			stats.Get("/dashboard", middleware.AuthRequired(svc.JWT), statsHandler.Dashboard)
-			stats.Get("/houses", middleware.AuthRequired(svc.JWT), statsHandler.HouseStats)
-			stats.Get("/houses/:slug", middleware.AuthRequired(svc.JWT), statsHandler.HouseDetail)
-			stats.Get("/charts", middleware.AuthRequired(svc.JWT), statsHandler.Charts)
-		}
-
-		houses := apiV1.Group("/houses")
-		{
-			houses.Get("/", middleware.AuthOptional(svc.JWT), houseHandler.GetAll)
-			houses.Post("/", middleware.AuthRequired(svc.JWT), houseHandler.Create)
-			houses.Patch("/:slug", middleware.AuthRequired(svc.JWT), houseHandler.Update)
-			houses.Delete("/:slug", middleware.AuthRequired(svc.JWT), houseHandler.Delete)
-
-			houses.Get("/check-slug", houseHandler.CheckSlug)
-			houses.Get("/liked", middleware.AuthRequired(svc.JWT), houseLikeHandler.UserLikedHouses)
-			houses.Delete("/images/:image_id", middleware.AuthRequired(svc.JWT), imageHandler.Delete)
-
-			houses.Get("/:slug", middleware.AuthOptional(svc.JWT), houseHandler.GetBySlug)
-
-			houses.Post("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Like)
-			houses.Delete("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Unlike)
-			houses.Get("/:slug/like", middleware.AuthRequired(svc.JWT), houseLikeHandler.Status)
-
-			houses.Post("/:slug/images",
-				middleware.AuthRequired(svc.JWT),
-				middleware.UploadLimits(50*1024*1024),
-				timeout.New(imageHandler.Upload, timeout.Config{Timeout: 2 * time.Minute}),
-			)
-		}
-	}
-
-	app.Get("/swagger/*", swagger.HandlerDefault)
-
-	return app
 }

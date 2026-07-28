@@ -1,9 +1,11 @@
 package model
 
-import "errors"
+import "github.com/nurkenspashev92/bookit/internal/shared"
 
 var (
-	ErrHouseNotFound    = errors.New("house not found")
-	ErrSlugExists       = errors.New("slug already exists")
-	ErrCategoryNotFound = errors.New("one of category_ids does not exist")
+	ErrHouseNotFound      = shared.NotFound("house not found")
+	ErrSlugExists         = shared.Conflict("slug already exists")
+	ErrCategoryNotFound   = shared.NotFound("category not found")
+	ErrCategoryRefInvalid = shared.Invalid("one of category_ids does not exist")
+	ErrTypeNotFound       = shared.NotFound("type not found")
 )

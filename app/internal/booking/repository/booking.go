@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/nurkenspashev92/bookit/internal/booking/model"
 	"github.com/nurkenspashev92/bookit/internal/booking/schema"
 	propertyschema "github.com/nurkenspashev92/bookit/internal/property/schema"
 )
@@ -25,7 +26,7 @@ func (r *BookingRepository) GetHouseBySlug(ctx context.Context, slug string) (in
 	var houseID, price int
 	err := r.db.QueryRow(ctx, `SELECT id, price FROM houses WHERE slug=$1`, slug).Scan(&houseID, &price)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, 0, fmt.Errorf("house not found")
+		return 0, 0, model.ErrHouseNotFound
 	}
 	return houseID, price, err
 }
@@ -82,7 +83,7 @@ func (r *BookingRepository) scanBooking(ctx context.Context, where string, arg i
 		&b.Message, &createdAt, &updatedAt,
 	)
 	if err != nil {
-		return b, fmt.Errorf("booking not found")
+		return b, model.ErrBookingNotFound
 	}
 
 	if ownerPhone != nil {
@@ -171,7 +172,7 @@ func (r *BookingRepository) GetOwnerIDByBooking(ctx context.Context, bookingID i
 		WHERE b.id=$1
 	`, bookingID).Scan(&ownerID)
 	if err != nil {
-		return 0, fmt.Errorf("booking not found")
+		return 0, model.ErrBookingNotFound
 	}
 	return ownerID, nil
 }
@@ -197,7 +198,7 @@ func (r *BookingRepository) GetBookingUserID(ctx context.Context, bookingID int)
 	var userID int
 	err := r.db.QueryRow(ctx, `SELECT user_id FROM bookings WHERE id=$1`, bookingID).Scan(&userID)
 	if err != nil {
-		return 0, fmt.Errorf("booking not found")
+		return 0, model.ErrBookingNotFound
 	}
 	return userID, nil
 }

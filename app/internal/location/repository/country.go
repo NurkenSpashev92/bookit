@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -89,7 +88,7 @@ func (r *CountryRepository) Delete(ctx context.Context, id int) error {
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("country not found")
+		return model.ErrCountryNotFound
 	}
 	return nil
 }

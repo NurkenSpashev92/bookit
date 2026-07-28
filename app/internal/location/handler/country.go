@@ -1,22 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/nurkenspashev92/bookit/internal/location/model"
 	"github.com/nurkenspashev92/bookit/internal/location/schema"
-	"github.com/nurkenspashev92/bookit/internal/location/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
-type CountryHandler struct {
-	countryService *service.CountryService
+type CountryService interface {
+	GetAll(ctx context.Context) ([]model.Country, error)
+	GetByID(ctx context.Context, id int) (model.Country, error)
+	Create(ctx context.Context, req schema.CountryCreateRequest) (model.Country, error)
+	Update(ctx context.Context, id int, req schema.CountryUpdateRequest) (model.Country, error)
+	Delete(ctx context.Context, id int) error
 }
 
-func NewCountryHandler(countryService *service.CountryService) *CountryHandler {
+type CountryHandler struct {
+	countryService CountryService
+}
+
+func NewCountryHandler(countryService CountryService) *CountryHandler {
 	return &CountryHandler{countryService: countryService}
 }
 
@@ -30,9 +36,10 @@ func NewCountryHandler(countryService *service.CountryService) *CountryHandler {
 func (h *CountryHandler) GetAll(c fiber.Ctx) error {
 	countries, err := h.countryService.GetAll(c.Context())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	return c.JSON(countries)
+
+	return shared.List(c, countries)
 }
 
 // GetCountry godoc
@@ -44,14 +51,14 @@ func (h *CountryHandler) GetAll(c fiber.Ctx) error {
 // @Failure 404 {object} shared.ErrorResponse
 // @Router /countries/{id} [get]
 func (h *CountryHandler) GetByID(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	country, err := h.countryService.GetByID(c.Context(), id)
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "country not found")
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(country)
@@ -69,20 +76,17 @@ func (h *CountryHandler) GetByID(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /countries [post]
 func (h *CountryHandler) Create(c fiber.Ctx) error {
-	var req schema.CountryCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	country, err := h.countryService.Create(c.Context(), req)
+	request, err := shared.Bind[schema.CountryCreateRequest](c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(country)
+	country, err := h.countryService.Create(c.Context(), request)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, country)
 }
 
 // UpdateCountry godoc
@@ -98,22 +102,19 @@ func (h *CountryHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /countries/{id} [patch]
 func (h *CountryHandler) Update(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
-	var req schema.CountryUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
+	request, err := shared.Bind[schema.CountryUpdateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
-	country, err := h.countryService.Update(c.Context(), id, req)
+	country, err := h.countryService.Update(c.Context(), id, request)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(country)
@@ -129,14 +130,14 @@ func (h *CountryHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /countries/{id} [delete]
 func (h *CountryHandler) Delete(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	if err := h.countryService.Delete(c.Context(), id); err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "country deleted"})
+	return shared.OK(c, "country deleted")
 }

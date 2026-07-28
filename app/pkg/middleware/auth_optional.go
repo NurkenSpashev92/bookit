@@ -2,21 +2,19 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v3"
-
-	identitysvc "github.com/nurkenspashev92/bookit/internal/identity/service"
 )
 
-func AuthOptional(jwtService *identitysvc.JWTService) fiber.Handler {
+func AuthOptional(validator TokenValidator) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		token := c.Cookies("access_token")
+		token := accessToken(c)
 		if token == "" {
-			token = c.Cookies("jwt")
+			return c.Next()
 		}
-		if token != "" {
-			if user, err := jwtService.ValidateToken(token); err == nil {
-				c.Locals("user", user)
-			}
+
+		if user, err := validator.ValidateToken(token); err == nil {
+			c.Locals(userLocalsKey, user)
 		}
+
 		return c.Next()
 	}
 }

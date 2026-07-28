@@ -1,5 +1,5 @@
 package model
 
-import "errors"
+import "github.com/nurkenspashev92/bookit/internal/shared"
 
-var ErrHouseNotFound = errors.New("house not found or not owned by you")
+var ErrHouseNotFound = shared.NotFound("house not found or not owned by you")

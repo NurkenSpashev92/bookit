@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/nurkenspashev92/bookit/internal/booking/model"
 	"github.com/nurkenspashev92/bookit/internal/booking/schema"
 )
 
@@ -38,10 +38,10 @@ func (s *BookingService) Create(ctx context.Context, userID int, req schema.Book
 	end, _ := time.Parse("2006-01-02", req.EndDate)
 
 	if !end.After(start) {
-		return schema.BookingResponse{}, fmt.Errorf("end_date must be after start_date")
+		return schema.BookingResponse{}, model.ErrInvalidDateRange
 	}
 	if start.Before(time.Now().Truncate(24 * time.Hour)) {
-		return schema.BookingResponse{}, fmt.Errorf("start_date cannot be in the past")
+		return schema.BookingResponse{}, model.ErrStartDateInPast
 	}
 
 	overlap, err := s.repository.HasOverlap(ctx, houseID, req.StartDate, req.EndDate)
@@ -49,7 +49,7 @@ func (s *BookingService) Create(ctx context.Context, userID int, req schema.Book
 		return schema.BookingResponse{}, err
 	}
 	if overlap {
-		return schema.BookingResponse{}, ErrBookingOverlap
+		return schema.BookingResponse{}, model.ErrBookingOverlap
 	}
 
 	days := int(end.Sub(start).Hours() / 24)
@@ -79,7 +79,7 @@ func (s *BookingService) GetByID(ctx context.Context, id, userID int) (schema.Bo
 
 	ownerID, _ := s.repository.GetOwnerIDByBooking(ctx, id)
 	if booking.GuestID != userID && ownerID != userID {
-		return schema.BookingResponse{}, fmt.Errorf("booking not found")
+		return schema.BookingResponse{}, model.ErrBookingNotFound
 	}
 
 	return booking, nil
@@ -97,10 +97,10 @@ func (s *BookingService) UpdateStatus(ctx context.Context, bookingID, userID int
 	}
 
 	if status == "cancelled" && bookingUserID != userID {
-		return fmt.Errorf("only the guest can cancel a booking")
+		return model.ErrCancelNotAllowed
 	}
 	if (status == "confirmed" || status == "rejected") && ownerID != userID {
-		return fmt.Errorf("only the owner can confirm or reject a booking")
+		return model.ErrDecisionNotAllowed
 	}
 
 	return s.repository.UpdateStatus(ctx, bookingID, status)

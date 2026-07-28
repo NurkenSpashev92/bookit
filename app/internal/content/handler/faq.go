@@ -1,27 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/nurkenspashev92/bookit/internal/content/schema"
-	"github.com/nurkenspashev92/bookit/internal/content/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
-type FAQHandler struct {
-	faqService     *service.FAQService
-	inquiryService *service.InquiryService
+type FAQService interface {
+	GetAll(ctx context.Context) ([]schema.FAQ, error)
+	GetByID(ctx context.Context, id int) (schema.FAQ, error)
+	Create(ctx context.Context, req schema.FAQCreateRequest) (schema.FAQ, error)
+	Update(ctx context.Context, id int, req schema.FAQUpdateRequest) (schema.FAQ, error)
+	Delete(ctx context.Context, id int) error
 }
 
-func NewFAQHandler(faqService *service.FAQService, inquiryService *service.InquiryService) *FAQHandler {
-	return &FAQHandler{
-		faqService:     faqService,
-		inquiryService: inquiryService,
-	}
+type FAQHandler struct {
+	faqService FAQService
+}
+
+func NewFAQHandler(faqService FAQService) *FAQHandler {
+	return &FAQHandler{faqService: faqService}
 }
 
 // GetFAQs godoc
@@ -34,12 +35,10 @@ func NewFAQHandler(faqService *service.FAQService, inquiryService *service.Inqui
 func (h *FAQHandler) GetAll(c fiber.Ctx) error {
 	faqs, err := h.faqService.GetAll(c.Context())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	if faqs == nil {
-		faqs = []schema.FAQ{}
-	}
-	return c.JSON(faqs)
+
+	return shared.List(c, faqs)
 }
 
 // GetFAQByID godoc
@@ -51,14 +50,14 @@ func (h *FAQHandler) GetAll(c fiber.Ctx) error {
 // @Failure 404 {object} shared.ErrorResponse
 // @Router /faqs/{id} [get]
 func (h *FAQHandler) GetByID(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	faq, err := h.faqService.GetByID(c.Context(), id)
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "FAQ not found")
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(faq)
@@ -76,20 +75,17 @@ func (h *FAQHandler) GetByID(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /faqs [post]
 func (h *FAQHandler) Create(c fiber.Ctx) error {
-	var req schema.FAQCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	faq, err := h.faqService.Create(c.Context(), req)
+	request, err := shared.Bind[schema.FAQCreateRequest](c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(faq)
+	faq, err := h.faqService.Create(c.Context(), request)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, faq)
 }
 
 // UpdateFAQ godoc
@@ -105,22 +101,19 @@ func (h *FAQHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /faqs/{id} [patch]
 func (h *FAQHandler) Update(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
-	var req schema.FAQUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
+	request, err := shared.Bind[schema.FAQUpdateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
-	faq, err := h.faqService.Update(c.Context(), id, req)
+	faq, err := h.faqService.Update(c.Context(), id, request)
 	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(faq)
@@ -136,138 +129,14 @@ func (h *FAQHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /faqs/{id} [delete]
 func (h *FAQHandler) Delete(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	if err := h.faqService.Delete(c.Context(), id); err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "FAQ deleted"})
-}
-
-// GetInquiries godoc
-// @Summary Get all inquiries
-// @Tags Inquiry
-// @Produce json
-// @Success 200 {array} schema.Inquiry
-// @Failure 500 {object} shared.ErrorResponse
-// @Router /inquiries [get]
-func (h *FAQHandler) GetInquiries(c fiber.Ctx) error {
-	list, err := h.inquiryService.GetAll(c.Context())
-	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
-	}
-	if list == nil {
-		list = []schema.Inquiry{}
-	}
-	return c.JSON(list)
-}
-
-// GetInquiryByID godoc
-// @Summary Get inquiry by ID
-// @Tags Inquiry
-// @Produce json
-// @Param id path int true "Inquiry ID"
-// @Success 200 {object} schema.Inquiry
-// @Failure 404 {object} shared.ErrorResponse
-// @Router /inquiries/{id} [get]
-func (h *FAQHandler) GetInquiryByID(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
-	}
-
-	inquiry, err := h.inquiryService.GetByID(c.Context(), id)
-	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "Inquiry not found")
-	}
-
-	return c.JSON(inquiry)
-}
-
-// CreateInquiry godoc
-// @Summary Create an inquiry
-// @Tags Inquiry
-// @Accept json
-// @Produce json
-// @Param inquiry body schema.InquiryCreateRequest true "Inquiry data"
-// @Success 201 {object} schema.Inquiry
-// @Failure 400 {object} shared.ErrorResponse
-// @Failure 500 {object} shared.ErrorResponse
-// @Security     ApiKeyAuth
-// @Router /inquiries [post]
-func (h *FAQHandler) CreateInquiry(c fiber.Ctx) error {
-	var req schema.InquiryCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	inquiry, err := h.inquiryService.Create(c.Context(), req)
-	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
-	}
-
-	return c.Status(http.StatusCreated).JSON(inquiry)
-}
-
-// UpdateInquiry godoc
-// @Summary Update an inquiry
-// @Tags Inquiry
-// @Accept json
-// @Produce json
-// @Param id path int true "Inquiry ID"
-// @Param inquiry body schema.InquiryUpdateRequest true "Inquiry data"
-// @Success 200 {object} schema.Inquiry
-// @Failure 400 {object} shared.ErrorResponse
-// @Failure 404 {object} shared.ErrorResponse
-// @Security     ApiKeyAuth
-// @Router /inquiries/{id} [patch]
-func (h *FAQHandler) UpdateInquiry(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
-	}
-
-	var req schema.InquiryUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	inquiry, err := h.inquiryService.Update(c.Context(), id, req)
-	if err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
-	}
-
-	return c.JSON(inquiry)
-}
-
-// DeleteInquiry godoc
-// @Summary Delete an inquiry
-// @Tags Inquiry
-// @Produce json
-// @Param id path int true "Inquiry ID"
-// @Success 200 {object} shared.MessageResponse
-// @Failure 404 {object} shared.ErrorResponse
-// @Security     ApiKeyAuth
-// @Router /inquiries/{id} [delete]
-func (h *FAQHandler) DeleteInquiry(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
-	}
-
-	if err := h.inquiryService.Delete(c.Context(), id); err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
-	}
-
-	return c.JSON(shared.MessageResponse{Message: "Inquiry deleted"})
+	return shared.OK(c, "FAQ deleted")
 }

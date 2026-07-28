@@ -1,17 +1,18 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/nurkenspashev92/bookit/internal/identity/model"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
 var (
 	ErrEmailAlreadyExists = model.ErrEmailExists
 	ErrPhoneAlreadyExists = model.ErrPhoneExists
+	ErrUserNotFound       = model.ErrUserNotFound
 
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrInvalidToken       = errors.New("invalid or expired token")
-	ErrAccountDisabled    = errors.New("account is disabled")
-	ErrAvatarNotFound     = errors.New("avatar not found")
+	ErrInvalidCredentials = shared.Unauthorized("invalid email or password")
+	ErrWrongPassword      = shared.Unauthorized("old password is incorrect")
+	ErrInvalidToken       = shared.Unauthorized("invalid or expired token")
+	ErrAccountDisabled    = shared.Unauthorized("account is disabled")
+	ErrAvatarNotFound     = shared.NotFound("avatar not found")
 )

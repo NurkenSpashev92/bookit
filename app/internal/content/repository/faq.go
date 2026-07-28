@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/nurkenspashev92/bookit/internal/content/model"
 	"github.com/nurkenspashev92/bookit/internal/content/schema"
+	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type FAQRepository struct {
@@ -40,7 +41,7 @@ func (r *FAQRepository) GetByID(ctx context.Context, id int) (schema.FAQ, error)
 	err := r.db.QueryRow(ctx, `SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq WHERE id=$1`, id).
 		Scan(&f.ID, &f.QuestionKz, &f.AnswerKz, &f.QuestionRu, &f.AnswerRu, &f.QuestionEn, &f.AnswerEn)
 	if err != nil {
-		return f, fmt.Errorf("FAQ not found: %w", err)
+		return f, store.MapNoRows(err, model.ErrFAQNotFound)
 	}
 	return f, nil
 }
@@ -93,7 +94,7 @@ func (r *FAQRepository) Delete(ctx context.Context, id int) error {
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("FAQ not found")
+		return model.ErrFAQNotFound
 	}
 	return nil
 }

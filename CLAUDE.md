@@ -65,6 +65,16 @@ Code is split by domain, not by layer: everything about a domain lives under
 `internal/<domain>/`. Cross-domain calls go through `port/` interfaces so the
 import graph stays acyclic.
 
+### Routing and composition root
+
+* `cmd/apiserver/container.go` is the only place that constructs repositories
+  and services; `main.go` owns just the process lifecycle
+* `cmd/router/router.go` holds the middleware chain and delegates to one
+  `routes_<domain>.go` registrar per domain
+* Dictionary resources share `registerReferenceRoutes` — public reads,
+  authenticated writes
+* Inside a group, literal paths are registered before `/:param` ones
+
 ---
 
 ## Handlers
@@ -84,28 +94,70 @@ Handlers must not:
 * Instantiate repositories manually
 * Contain complex conditional flows
 
-Example:
+Handlers depend on an interface declared in the handler package, never on a
+concrete `*service.XService` — that keeps the direction of dependencies inward
+and makes the handler testable with a stub.
 
-Error responses go through `shared.Fail` / `shared.FailMsg` — never write a raw
-status code or hand a client `err.Error()` directly. `shared.Fail` logs 5xx
-details and returns a neutral message, so implementation details do not leak.
+Every error response goes through `shared.Fail(c, err)`. The status comes from
+the error itself, so handlers never map errors to status codes and never hand a
+client `err.Error()` directly. 5xx details are logged and answered with a
+neutral message.
 
 ```go
+type HouseService interface {
+    Create(ctx context.Context, req schema.CreateHouseRequest, ownerID int) (model.House, error)
+}
+
 func (h *HouseHandler) Create(c fiber.Ctx) error {
-    var request schema.CreateHouseRequest
-
-    if err := json.Unmarshal(c.Body(), &request); err != nil {
-        return shared.Fail(c, http.StatusBadRequest, err)
-    }
-
-    response, err := h.houseService.Create(c.Context(), request)
+    user, err := middleware.CurrentUser(c)
     if err != nil {
-        return shared.Fail(c, http.StatusInternalServerError, err)
+        return shared.Fail(c, err)
     }
 
-    return c.Status(http.StatusCreated).JSON(response)
+    request, err := shared.Bind[schema.CreateHouseRequest](c)
+    if err != nil {
+        return shared.Fail(c, err)
+    }
+
+    house, err := h.houseService.Create(c.Context(), request, user.ID)
+    if err != nil {
+        return shared.Fail(c, err)
+    }
+
+    return shared.Created(c, house)
 }
 ```
+
+Shared handler kit (`internal/shared`):
+
+* `Bind[T](c)` — decodes the body and runs `Validate()` when the DTO has one
+* `ParamInt(c, name)` / `ParamString(c, name)` — required path parameters
+* `QueryIntInRange(c, name, fallback, min, max)` — optional numeric query
+* `Fail(c, err)`, `OK(c, msg)`, `Created(c, payload)`, `List(c, items)`
+* `middleware.CurrentUser(c)` / `middleware.CurrentUserID(c)` — authenticated user
+
+---
+
+## Errors
+
+Domain errors are declared once per domain in `internal/<domain>/model/errors.go`
+as typed values, and carry the kind the transport layer needs:
+
+```go
+var (
+    ErrHouseNotFound = shared.NotFound("house not found")
+    ErrSlugExists    = shared.Conflict("slug already exists")
+)
+```
+
+Rules:
+
+* Constructors: `shared.Invalid`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`
+* Kinds map to statuses in one place (`shared.StatusOf`); handlers never switch on errors
+* Repositories translate storage failures with `store.MapNoRows(err, model.ErrX)`
+* Wrap with `fmt.Errorf("...: %w", ErrX)` to add context — `errors.Is` and the
+  status mapping keep working, and the client still sees the clean message
+* Anything untyped is treated as an internal failure: 500 with a neutral body
 
 ---
 

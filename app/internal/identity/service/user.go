@@ -124,11 +124,11 @@ func (s *UserService) RefreshTokens(ctx context.Context, refreshToken string) (*
 func (s *UserService) ChangePassword(ctx context.Context, userID int, req schema.ChangePasswordRequest) error {
 	user, err := s.repository.GetByID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("user not found")
+		return ErrUserNotFound
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
-		return ErrInvalidCredentials
+		return ErrWrongPassword
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
@@ -157,7 +157,7 @@ func (s *UserService) Me(ctx context.Context, accessToken string) (*schema.AuthR
 
 	user, err := s.repository.GetByID(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("user not found")
+		return nil, ErrUserNotFound
 	}
 
 	authUser := s.mapper.ToAuthUser(user, s.awsCfg)

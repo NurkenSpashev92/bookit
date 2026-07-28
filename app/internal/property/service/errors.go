@@ -1,17 +1,16 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/nurkenspashev92/bookit/internal/property/model"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
 var (
-	ErrSlugExists       = model.ErrSlugExists
-	ErrCategoryNotFound = model.ErrCategoryNotFound
-	ErrHouseNotFound    = model.ErrHouseNotFound
+	ErrSlugExists         = model.ErrSlugExists
+	ErrCategoryRefInvalid = model.ErrCategoryRefInvalid
+	ErrHouseNotFound      = model.ErrHouseNotFound
 
-	ErrMaxImagesExceeded = errors.New("maximum 15 images allowed")
-	ErrImageTooLarge     = errors.New("image must be at most 5 MB")
-	ErrImageNotFound     = errors.New("image not found")
+	ErrMaxImagesExceeded = shared.Invalid("maximum 15 images allowed")
+	ErrImageTooLarge     = shared.Invalid("image must be at most 5 MB")
+	ErrImageNotFound     = shared.NotFound("image not found")
 )

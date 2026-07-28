@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
+	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type TypeRepository struct {
@@ -40,7 +40,7 @@ func (r *TypeRepository) GetByID(ctx context.Context, id int) (model.Type, error
 	var t model.Type
 	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_ru, name_en, is_active FROM types WHERE id=$1`, id).
 		Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.IsActive)
-	return t, err
+	return t, store.MapNoRows(err, model.ErrTypeNotFound)
 }
 
 func (r *TypeRepository) Create(ctx context.Context, t model.Type) (model.Type, error) {
@@ -69,7 +69,7 @@ func (r *TypeRepository) Delete(ctx context.Context, id int) error {
 		return err
 	}
 	if cmd.RowsAffected() == 0 {
-		return fmt.Errorf("type not found")
+		return model.ErrTypeNotFound
 	}
 
 	return nil

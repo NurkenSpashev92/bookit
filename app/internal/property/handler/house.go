@@ -1,23 +1,31 @@
 package handler
 
 import (
-	"encoding/json"
-	"errors"
-	"net/http"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
-	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
+	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
-	"github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
+	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-type HouseHandler struct {
-	houseService *service.HouseService
+type HouseService interface {
+	GetAllPaginated(ctx context.Context, userID int, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error)
+	GetMyHouses(ctx context.Context, ownerID, limit, offset int) ([]schema.HouseListItem, int, error)
+	GetBySlug(ctx context.Context, slug string, userID int, ip string) (schema.HouseDetailResponse, error)
+	Create(ctx context.Context, req schema.HouseCreateRequest, ownerID int) (model.House, error)
+	Update(ctx context.Context, slug string, req schema.HouseUpdateRequest) (model.House, error)
+	Delete(ctx context.Context, slug string) error
+	CheckSlug(ctx context.Context, rawSlug string) (bool, string, error)
 }
 
-func NewHouseHandler(houseService *service.HouseService) *HouseHandler {
+type HouseHandler struct {
+	houseService HouseService
+}
+
+func NewHouseHandler(houseService HouseService) *HouseHandler {
 	return &HouseHandler{houseService: houseService}
 }
 
@@ -32,24 +40,15 @@ func NewHouseHandler(houseService *service.HouseService) *HouseHandler {
 // @Failure      500  {object} shared.ErrorResponse
 // @Router       /houses [get]
 func (h *HouseHandler) GetAll(c fiber.Ctx) error {
-	var userID int
-	if user, ok := c.Locals("user").(identitymodel.User); ok {
-		userID = user.ID
-	}
-
 	page := shared.Page(c)
 	filter := schema.ParseHouseFilter(c)
 
-	houses, total, err := h.houseService.GetAllPaginated(c.Context(), userID, filter, page.Limit, page.Start())
+	houses, total, err := h.houseService.GetAllPaginated(c.Context(), middleware.CurrentUserID(c), filter, page.Limit, page.Start())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	if houses == nil {
-		houses = []schema.HouseListItem{}
-	}
-
-	return c.JSON(shared.Paginated(houses, total, page))
+	return c.JSON(shared.Paginated(shared.Items(houses), total, page))
 }
 
 // MyHouses godoc
@@ -62,20 +61,19 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /my-houses [get]
 func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
 
 	page := shared.Page(c)
 
 	houses, total, err := h.houseService.GetMyHouses(c.Context(), user.ID, page.Limit, page.Start())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	if houses == nil {
-		houses = []schema.HouseListItem{}
-	}
-
-	return c.JSON(shared.Paginated(houses, total, page))
+	return c.JSON(shared.Paginated(shared.Items(houses), total, page))
 }
 
 // GetBySlug godoc
@@ -87,19 +85,14 @@ func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
 // @Failure      404  {object} shared.ErrorResponse
 // @Router       /houses/{slug} [get]
 func (h *HouseHandler) GetBySlug(c fiber.Ctx) error {
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
-	}
-
-	var userID int
-	if user, ok := c.Locals("user").(identitymodel.User); ok {
-		userID = user.ID
-	}
-
-	house, err := h.houseService.GetBySlug(c.Context(), slug, userID, c.IP())
+	slug, err := shared.ParamString(c, "slug")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "house not found")
+		return shared.Fail(c, err)
+	}
+
+	house, err := h.houseService.GetBySlug(c.Context(), slug, middleware.CurrentUserID(c), c.IP())
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(house)
@@ -118,28 +111,22 @@ func (h *HouseHandler) GetBySlug(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /houses [post]
 func (h *HouseHandler) Create(c fiber.Ctx) error {
-	user := c.Locals("user").(identitymodel.User)
-
-	var req schema.HouseCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	house, err := h.houseService.Create(c.Context(), req, user.ID)
+	user, err := middleware.CurrentUser(c)
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrSlugExists):
-			return shared.FailMsg(c, http.StatusConflict, "slug already exists")
-		case errors.Is(err, service.ErrCategoryNotFound):
-			return shared.Fail(c, http.StatusBadRequest, err)
-		}
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(house)
+	request, err := shared.Bind[schema.HouseCreateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	house, err := h.houseService.Create(c.Context(), request, user.ID)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, house)
 }
 
 // Update godoc
@@ -156,28 +143,19 @@ func (h *HouseHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /houses/{slug} [patch]
 func (h *HouseHandler) Update(c fiber.Ctx) error {
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
-	}
-
-	var req schema.HouseUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	house, err := h.houseService.Update(c.Context(), slug, req)
+	slug, err := shared.ParamString(c, "slug")
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrSlugExists):
-			return shared.FailMsg(c, http.StatusConflict, "slug already exists")
-		case errors.Is(err, service.ErrHouseNotFound):
-			return shared.FailMsg(c, http.StatusNotFound, "house not found")
-		}
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
+	}
+
+	request, err := shared.Bind[schema.HouseUpdateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	house, err := h.houseService.Update(c.Context(), slug, request)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(house)
@@ -194,16 +172,16 @@ func (h *HouseHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /houses/{slug} [delete]
 func (h *HouseHandler) Delete(c fiber.Ctx) error {
-	slug := c.Params("slug")
-	if slug == "" {
-		return shared.FailMsg(c, http.StatusBadRequest, "slug is required")
+	slug, err := shared.ParamString(c, "slug")
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	if err := h.houseService.Delete(c.Context(), slug); err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "house deleted"})
+	return shared.OK(c, "house deleted")
 }
 
 // CheckSlug godoc
@@ -217,11 +195,8 @@ func (h *HouseHandler) Delete(c fiber.Ctx) error {
 func (h *HouseHandler) CheckSlug(c fiber.Ctx) error {
 	available, normalized, err := h.houseService.CheckSlug(c.Context(), c.Query("slug"))
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(fiber.Map{
-		"available": available,
-		"slug":      normalized,
-	})
+	return c.JSON(schema.SlugCheckResponse{Available: available, Slug: normalized})
 }

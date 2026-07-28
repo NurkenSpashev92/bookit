@@ -1,22 +1,26 @@
 package handler
 
 import (
-	"errors"
-	"net/http"
+	"context"
+	"mime/multipart"
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/nurkenspashev92/bookit/internal/identity/model"
 	"github.com/nurkenspashev92/bookit/internal/identity/schema"
-	"github.com/nurkenspashev92/bookit/internal/identity/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
+	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-type AvatarHandler struct {
-	avatarService *service.AvatarService
+type AvatarService interface {
+	Upload(ctx context.Context, userID int, file *multipart.FileHeader) (schema.AuthUser, error)
+	Delete(ctx context.Context, userID int) (schema.AuthUser, error)
 }
 
-func NewAvatarHandler(avatarService *service.AvatarService) *AvatarHandler {
+type AvatarHandler struct {
+	avatarService AvatarService
+}
+
+func NewAvatarHandler(avatarService AvatarService) *AvatarHandler {
 	return &AvatarHandler{avatarService: avatarService}
 }
 
@@ -34,19 +38,19 @@ func NewAvatarHandler(avatarService *service.AvatarService) *AvatarHandler {
 // @Security ApiKeyAuth
 // @Router /auth/me/avatar [post]
 func (h *AvatarHandler) Upload(c fiber.Ctx) error {
-	user, ok := c.Locals("user").(model.User)
-	if !ok {
-		return shared.FailMsg(c, http.StatusUnauthorized, "unauthenticated")
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	file, err := c.FormFile("avatar")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "avatar file is required")
+		return shared.Fail(c, shared.Invalid("avatar file is required"))
 	}
 
 	authUser, err := h.avatarService.Upload(c.Context(), user.ID, file)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(schema.AuthResponse{User: authUser})
@@ -64,17 +68,14 @@ func (h *AvatarHandler) Upload(c fiber.Ctx) error {
 // @Security ApiKeyAuth
 // @Router /auth/me/avatar [delete]
 func (h *AvatarHandler) Delete(c fiber.Ctx) error {
-	user, ok := c.Locals("user").(model.User)
-	if !ok {
-		return shared.FailMsg(c, http.StatusUnauthorized, "unauthenticated")
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	authUser, err := h.avatarService.Delete(c.Context(), user.ID)
 	if err != nil {
-		if errors.Is(err, service.ErrAvatarNotFound) {
-			return shared.Fail(c, http.StatusNotFound, err)
-		}
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(schema.AuthResponse{User: authUser})

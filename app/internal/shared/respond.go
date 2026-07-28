@@ -7,7 +7,11 @@ import (
 	fiberlog "github.com/gofiber/fiber/v3/log"
 )
 
-func Fail(c fiber.Ctx, status int, err error) error {
+const internalErrorMessage = "internal server error"
+
+func Fail(c fiber.Ctx, err error) error {
+	status := StatusOf(err)
+
 	if status >= http.StatusInternalServerError {
 		fiberlog.WithContext(c.Context()).Errorw("request failed",
 			"method", c.Method(),
@@ -19,11 +23,25 @@ func Fail(c fiber.Ctx, status int, err error) error {
 		return c.Status(status).JSON(ErrorResponse{Error: internalErrorMessage})
 	}
 
-	return c.Status(status).JSON(ErrorResponse{Error: err.Error()})
+	return c.Status(status).JSON(ErrorResponse{Error: MessageOf(err)})
 }
 
-func FailMsg(c fiber.Ctx, status int, message string) error {
-	return c.Status(status).JSON(ErrorResponse{Error: message})
+func OK(c fiber.Ctx, message string) error {
+	return c.JSON(MessageResponse{Message: message})
 }
 
-const internalErrorMessage = "internal server error"
+func Created(c fiber.Ctx, payload any) error {
+	return c.Status(http.StatusCreated).JSON(payload)
+}
+
+func Items[T any](items []T) []T {
+	if items == nil {
+		return []T{}
+	}
+
+	return items
+}
+
+func List[T any](c fiber.Ctx, items []T) error {
+	return c.JSON(Items(items))
+}

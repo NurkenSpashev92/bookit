@@ -1,22 +1,27 @@
 package handler
 
 import (
-	"encoding/json"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
-	"github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
-type TypeHandler struct {
-	typeService *service.TypeService
+type TypeService interface {
+	GetAll(ctx context.Context) ([]schema.TypeResponse, error)
+	GetByID(ctx context.Context, id int) (schema.TypeResponse, error)
+	Create(ctx context.Context, req schema.TypeCreateRequest) (schema.TypeResponse, error)
+	Update(ctx context.Context, id int, req schema.TypeUpdateRequest) (schema.TypeResponse, error)
+	Delete(ctx context.Context, id int) error
 }
 
-func NewTypeHandler(typeService *service.TypeService) *TypeHandler {
+type TypeHandler struct {
+	typeService TypeService
+}
+
+func NewTypeHandler(typeService TypeService) *TypeHandler {
 	return &TypeHandler{typeService: typeService}
 }
 
@@ -30,9 +35,10 @@ func NewTypeHandler(typeService *service.TypeService) *TypeHandler {
 func (h *TypeHandler) GetAll(c fiber.Ctx) error {
 	types, err := h.typeService.GetAll(c.Context())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	return c.JSON(types)
+
+	return shared.List(c, types)
 }
 
 // GetByID godoc
@@ -44,14 +50,17 @@ func (h *TypeHandler) GetAll(c fiber.Ctx) error {
 // @Failure 404 {object} shared.ErrorResponse
 // @Router /types/{id} [get]
 func (h *TypeHandler) GetByID(c fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
-
-	t, err := h.typeService.GetByID(c.Context(), id)
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "type not found")
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(t)
+	propertyType, err := h.typeService.GetByID(c.Context(), id)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return c.JSON(propertyType)
 }
 
 // Create godoc
@@ -66,21 +75,17 @@ func (h *TypeHandler) GetByID(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /types [post]
 func (h *TypeHandler) Create(c fiber.Ctx) error {
-	var req schema.TypeCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
-	}
-
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	created, err := h.typeService.Create(c.Context(), req)
+	request, err := shared.Bind[schema.TypeCreateRequest](c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(created)
+	created, err := h.typeService.Create(c.Context(), request)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, created)
 }
 
 // Update godoc
@@ -96,20 +101,19 @@ func (h *TypeHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /types/{id} [patch]
 func (h *TypeHandler) Update(c fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
-
-	var req schema.TypeUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
-	}
-
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	updated, err := h.typeService.Update(c.Context(), id, req)
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "type not found")
+		return shared.Fail(c, err)
+	}
+
+	request, err := shared.Bind[schema.TypeUpdateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	updated, err := h.typeService.Update(c.Context(), id, request)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(updated)
@@ -125,11 +129,14 @@ func (h *TypeHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /types/{id} [delete]
 func (h *TypeHandler) Delete(c fiber.Ctx) error {
-	id, _ := strconv.Atoi(c.Params("id"))
-
-	if err := h.typeService.Delete(c.Context(), id); err != nil {
-		return shared.Fail(c, http.StatusNotFound, err)
+	id, err := shared.ParamInt(c, "id")
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "type deleted"})
+	if err := h.typeService.Delete(c.Context(), id); err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.OK(c, "type deleted")
 }

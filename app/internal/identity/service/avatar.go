@@ -33,7 +33,7 @@ func NewAvatarService(repo UserRepository, s3 *aws.AwsS3Client, awsCfg *configs.
 func (s *AvatarService) Upload(ctx context.Context, userID int, file *multipart.FileHeader) (schema.AuthUser, error) {
 	user, err := s.repository.GetByID(ctx, userID)
 	if err != nil {
-		return schema.AuthUser{}, fmt.Errorf("user not found")
+		return schema.AuthUser{}, ErrUserNotFound
 	}
 
 	result, err := imageproc.Process(file)
@@ -64,7 +64,7 @@ func (s *AvatarService) Upload(ctx context.Context, userID int, file *multipart.
 func (s *AvatarService) Delete(ctx context.Context, userID int) (schema.AuthUser, error) {
 	user, err := s.repository.GetByID(ctx, userID)
 	if err != nil {
-		return schema.AuthUser{}, fmt.Errorf("user not found")
+		return schema.AuthUser{}, ErrUserNotFound
 	}
 
 	if user.Avatar == "" {

@@ -1,22 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
-	"net/http"
-	"strconv"
+	"context"
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
-	"github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
 )
 
-type CategoryHandler struct {
-	categoryService *service.CategoryService
+type CategoryService interface {
+	GetAll(ctx context.Context) ([]schema.CategoryPaginate, error)
+	GetByID(ctx context.Context, id int) (model.Category, error)
+	Create(ctx context.Context, req schema.CategoryCreateRequest) (model.Category, error)
+	Update(ctx context.Context, id int, req schema.CategoryUpdateRequest) (model.Category, error)
+	Delete(ctx context.Context, id int) error
 }
 
-func NewCategoryHandler(categoryService *service.CategoryService) *CategoryHandler {
+type CategoryHandler struct {
+	categoryService CategoryService
+}
+
+func NewCategoryHandler(categoryService CategoryService) *CategoryHandler {
 	return &CategoryHandler{categoryService: categoryService}
 }
 
@@ -30,9 +36,10 @@ func NewCategoryHandler(categoryService *service.CategoryService) *CategoryHandl
 func (h *CategoryHandler) GetAll(c fiber.Ctx) error {
 	categories, err := h.categoryService.GetAll(c.Context())
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
-	return c.JSON(categories)
+
+	return shared.List(c, categories)
 }
 
 // GetByID godoc
@@ -44,14 +51,14 @@ func (h *CategoryHandler) GetAll(c fiber.Ctx) error {
 // @Failure 404 {object} shared.ErrorResponse
 // @Router /categories/{id} [get]
 func (h *CategoryHandler) GetByID(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(shared.ErrorResponse{Error: "invalid id: " + err.Error()})
+		return shared.Fail(c, err)
 	}
 
 	category, err := h.categoryService.GetByID(c.Context(), id)
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "category not found")
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(category)
@@ -69,21 +76,17 @@ func (h *CategoryHandler) GetByID(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /categories [post]
 func (h *CategoryHandler) Create(c fiber.Ctx) error {
-	var req schema.CategoryCreateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
-	}
-
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	category, err := h.categoryService.Create(c.Context(), req)
+	request, err := shared.Bind[schema.CategoryCreateRequest](c)
 	if err != nil {
-		return shared.Fail(c, http.StatusInternalServerError, err)
+		return shared.Fail(c, err)
 	}
 
-	return c.Status(http.StatusCreated).JSON(category)
+	category, err := h.categoryService.Create(c.Context(), request)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.Created(c, category)
 }
 
 // Update godoc
@@ -99,23 +102,19 @@ func (h *CategoryHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /categories/{id} [patch]
 func (h *CategoryHandler) Update(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
-	var req schema.CategoryUpdateRequest
-	if err := json.Unmarshal(c.Body(), &req); err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid body")
-	}
-
-	if err := req.Validate(); err != nil {
-		return shared.Fail(c, http.StatusBadRequest, err)
-	}
-
-	category, err := h.categoryService.Update(c.Context(), id, req)
+	request, err := shared.Bind[schema.CategoryUpdateRequest](c)
 	if err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "category not found")
+		return shared.Fail(c, err)
+	}
+
+	category, err := h.categoryService.Update(c.Context(), id, request)
+	if err != nil {
+		return shared.Fail(c, err)
 	}
 
 	return c.JSON(category)
@@ -131,14 +130,14 @@ func (h *CategoryHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router /categories/{id} [delete]
 func (h *CategoryHandler) Delete(c fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+	id, err := shared.ParamInt(c, "id")
 	if err != nil {
-		return shared.FailMsg(c, http.StatusBadRequest, "invalid id")
+		return shared.Fail(c, err)
 	}
 
 	if err := h.categoryService.Delete(c.Context(), id); err != nil {
-		return shared.FailMsg(c, http.StatusNotFound, "category not found")
+		return shared.Fail(c, err)
 	}
 
-	return c.JSON(shared.MessageResponse{Message: "category deleted"})
+	return shared.OK(c, "category deleted")
 }

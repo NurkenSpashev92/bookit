@@ -17,6 +17,7 @@ import (
 	"github.com/nurkenspashev92/bookit/configs"
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/internal/shared"
 	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
@@ -390,13 +391,13 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 		if errors.As(err, &pgErr) {
 			switch {
 			case pgErr.ConstraintName == "houses_type_id_fkey":
-				return house, fmt.Errorf("type_id %d does not exist", h.TypeID.Int())
+				return house, shared.Invalid(fmt.Sprintf("type_id %d does not exist", h.TypeID.Int()))
 			case pgErr.ConstraintName == "houses_city_id_fkey":
-				return house, errors.New("city_id does not exist")
+				return house, shared.Invalid("city_id does not exist")
 			case pgErr.ConstraintName == "houses_country_id_fkey":
-				return house, errors.New("country_id does not exist")
+				return house, shared.Invalid("country_id does not exist")
 			case pgErr.ConstraintName == "houses_owner_id_fkey":
-				return house, fmt.Errorf("owner_id %d does not exist", h.OwnerID)
+				return house, shared.Invalid(fmt.Sprintf("owner_id %d does not exist", h.OwnerID))
 			case pgErr.Code == pgUniqueViolation:
 				return house, model.ErrSlugExists
 			}
@@ -437,7 +438,7 @@ func linkHouseCategories(ctx context.Context, tx pgx.Tx, houseID int, categoryID
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.ConstraintName == "house_category_category_id_fkey" {
-			return model.ErrCategoryNotFound
+			return model.ErrCategoryRefInvalid
 		}
 		return fmt.Errorf("failed to link categories: %w", err)
 	}
@@ -538,11 +539,11 @@ func (r *HouseRepository) Update(ctx context.Context, slug string, h schema.Hous
 		if errors.As(err, &pgErr) {
 			switch pgErr.ConstraintName {
 			case "houses_type_id_fkey":
-				return house, errors.New("type_id does not exist")
+				return house, shared.Invalid("type_id does not exist")
 			case "houses_city_id_fkey":
-				return house, errors.New("city_id does not exist")
+				return house, shared.Invalid("city_id does not exist")
 			case "houses_country_id_fkey":
-				return house, errors.New("country_id does not exist")
+				return house, shared.Invalid("country_id does not exist")
 			}
 		}
 		return house, err
