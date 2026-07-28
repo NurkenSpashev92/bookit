@@ -46,6 +46,7 @@ app/
 │   ├── initializers/   # database, redis, storage bootstrapping
 │   └── <domain>/       # analytics, booking, content, identity,
 │       ├── handler/    # interaction, location, property
+│       │               # handlers + routes.go (domain route registrar)
 │       ├── model/      # domain entities + domain errors
 │       ├── port/       # interfaces to other domains (dependency inversion)
 │       ├── repository/ # persistence layer
@@ -67,13 +68,18 @@ import graph stays acyclic.
 
 ### Routing and composition root
 
+* Every domain owns its routes in `internal/<domain>/handler/routes.go` and
+  exposes `RegisterRoutes(api fiber.Router, deps Deps, guards shared.Guards)`;
+  the registrar constructs its handlers from the services it is given
+* `cmd/router/router.go` only holds the middleware chain and calls the domain
+  registrars — no paths, no handler construction
 * `cmd/apiserver/container.go` is the only place that constructs repositories
   and services; `main.go` owns just the process lifecycle
-* `cmd/router/router.go` holds the middleware chain and delegates to one
-  `routes_<domain>.go` registrar per domain
-* Dictionary resources share `registerReferenceRoutes` — public reads,
+* Dictionary resources share `shared.RegisterCRUD` — public reads,
   authenticated writes
-* Inside a group, literal paths are registered before `/:param` ones
+* Inside a group, literal paths are registered before `/:param` ones; where two
+  domains share a prefix (`/houses`), the registration order in `router.go`
+  keeps that invariant and `test/routes_test.go` locks it
 
 ---
 
