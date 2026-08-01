@@ -14,6 +14,8 @@ definitions:
         type: string
       name_ru:
         type: string
+      slug:
+        type: string
       updated_at:
         type: string
     type: object
@@ -156,6 +158,9 @@ definitions:
       phone_number:
         example: "+77001234567"
         type: string
+      subscription_type:
+        example: basic
+        type: string
     type: object
   schema.AuthResponse:
     properties:
@@ -198,6 +203,9 @@ definitions:
         type: string
       phone_number:
         example: "+77001234567"
+        type: string
+      subscription_type:
+        example: basic
         type: string
     type: object
   schema.BookingCreateRequest:
@@ -341,6 +349,10 @@ definitions:
         example: Апартаменты
         maxLength: 255
         type: string
+      slug:
+        example: apartments
+        maxLength: 255
+        type: string
     required:
     - name_en
     - name_kz
@@ -363,6 +375,9 @@ definitions:
       name_ru:
         example: Апартаменты
         type: string
+      slug:
+        example: apartments
+        type: string
     type: object
   schema.CategoryUpdateRequest:
     description: Request body for updating a category (all fields optional)
@@ -380,6 +395,10 @@ definitions:
         type: string
       name_ru:
         example: Апартаменты
+        maxLength: 255
+        type: string
+      slug:
+        example: apartments
         maxLength: 255
         type: string
     type: object
@@ -479,6 +498,9 @@ definitions:
       name:
         example: Wi-Fi
         type: string
+      slug:
+        example: wi-fi
+        type: string
     type: object
   schema.ConvenienceCreateRequest:
     description: Request body for creating a convenience
@@ -488,6 +510,10 @@ definitions:
         type: boolean
       name:
         example: Wi-Fi
+        maxLength: 255
+        type: string
+      slug:
+        example: wi-fi
         maxLength: 255
         type: string
     required:
@@ -504,6 +530,9 @@ definitions:
       name:
         example: Wi-Fi
         type: string
+      slug:
+        example: wi-fi
+        type: string
     type: object
   schema.ConvenienceUpdateRequest:
     description: Request body for updating a convenience (all fields optional)
@@ -513,6 +542,10 @@ definitions:
         type: boolean
       name:
         example: Wi-Fi
+        maxLength: 255
+        type: string
+      slug:
+        example: wi-fi
         maxLength: 255
         type: string
     type: object
@@ -1204,6 +1237,81 @@ definitions:
       slug:
         type: string
     type: object
+  schema.SubscriptionActivateRequest:
+    description: Request body for activating a subscription plan
+    properties:
+      duration_days:
+        example: 30
+        type: integer
+      type:
+        example: pro
+        type: string
+    required:
+    - type
+    type: object
+  schema.SubscriptionActivationResponse:
+    properties:
+      already_active:
+        example: false
+        type: boolean
+      message:
+        example: subscription plan activated
+        type: string
+      subscription:
+        $ref: '#/definitions/schema.SubscriptionResponse'
+    type: object
+  schema.SubscriptionCreateRequest:
+    description: Request body for creating a subscription
+    properties:
+      end_date:
+        type: string
+      status:
+        example: active
+        type: string
+      type:
+        example: basic
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    required:
+    - user_id
+    type: object
+  schema.SubscriptionResponse:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        example: 1
+        type: integer
+      start_date:
+        type: string
+      status:
+        example: active
+        type: string
+      type:
+        example: basic
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  schema.SubscriptionUpdateRequest:
+    description: Request body for updating a subscription (all fields optional)
+    properties:
+      end_date:
+        type: string
+      status:
+        example: in_active
+        type: string
+      type:
+        example: pro
+        type: string
+    type: object
   schema.TypeCreateRequest:
     description: Request body for creating a type
     properties:
@@ -1220,6 +1328,10 @@ definitions:
         type: string
       name_ru:
         example: Квартира
+        maxLength: 255
+        type: string
+      slug:
+        example: apartment
         maxLength: 255
         type: string
     required:
@@ -1244,6 +1356,9 @@ definitions:
       name_ru:
         example: Квартира
         type: string
+      slug:
+        example: apartment
+        type: string
     type: object
   schema.TypeUpdateRequest:
     description: Request body for updating a type (all fields optional)
@@ -1261,6 +1376,10 @@ definitions:
         type: string
       name_ru:
         example: Квартира
+        maxLength: 255
+        type: string
+      slug:
+        example: apartment
         maxLength: 255
         type: string
     type: object
@@ -3142,6 +3261,257 @@ paths:
       summary: Detailed stats for a single house
       tags:
       - Stats
+  /subscriptions:
+    get:
+      description: Admin only. Without a `page` query param the response is a plain
+        array. With `page` it is the paginated envelope.
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.SubscriptionResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List subscriptions
+      tags:
+      - Subscriptions
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Subscription
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.SubscriptionCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schema.SubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create subscription
+      tags:
+      - Subscriptions
+  /subscriptions/{id}:
+    delete:
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shared.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete subscription
+      tags:
+      - Subscriptions
+    get:
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.SubscriptionResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get subscription by id
+      tags:
+      - Subscriptions
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.SubscriptionUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.SubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update subscription
+      tags:
+      - Subscriptions
+  /subscriptions/activate:
+    post:
+      consumes:
+      - application/json
+      description: Activates the given plan for the current user. If the same plan
+        is already active, returns a message with the current end date and does not
+        create a new record. Switching to a different plan deactivates the current
+        one, creates a new active subscription, and updates the user's subscription_type.
+      parameters:
+      - description: Plan to activate
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.SubscriptionActivateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.SubscriptionActivationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Activate or change my subscription plan
+      tags:
+      - Subscriptions
+  /subscriptions/cancel:
+    post:
+      description: Deactivates the current user's active plan (if any) and resets
+        their subscription_type to basic. Idempotent.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shared.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel my subscription plan
+      tags:
+      - Subscriptions
+  /subscriptions/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.SubscriptionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get my subscription
+      tags:
+      - Subscriptions
+  /subscriptions/user/{userId}:
+    get:
+      description: Admin only.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.SubscriptionResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List a user's subscriptions
+      tags:
+      - Subscriptions
   /types:
     get:
       description: Without a `page` query param the response is a plain array. With
@@ -3286,6 +3656,10 @@ paths:
       description: Admin only. Without a `page` query param the response is a plain
         array. With `page` it is the paginated envelope (shared.PaginatedResponse).
       parameters:
+      - description: Search by name/email/phone
+        in: query
+        name: search
+        type: string
       - description: Page number (enables the paginated envelope)
         in: query
         name: page

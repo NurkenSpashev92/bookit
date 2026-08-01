@@ -2759,6 +2759,400 @@ const docTemplate = `{
                 }
             }
         },
+        "/subscriptions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Admin only. Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "List subscriptions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.SubscriptionResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Create subscription",
+                "parameters": [
+                    {
+                        "description": "Subscription",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/activate": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Activates the given plan for the current user. If the same plan is already active, returns a message with the current end date and does not create a new record. Switching to a different plan deactivates the current one, creates a new active subscription, and updates the user's subscription_type.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Activate or change my subscription plan",
+                "parameters": [
+                    {
+                        "description": "Plan to activate",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionActivateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionActivationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Deactivates the current user's active plan (if any) and resets their subscription_type to basic. Idempotent.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Cancel my subscription plan",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/shared.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/me": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get my subscription",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/user/{userId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "List a user's subscriptions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.SubscriptionResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get subscription by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Delete subscription",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/shared.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Update subscription",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/types": {
             "get": {
                 "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
@@ -2993,6 +3387,12 @@ const docTemplate = `{
                 "summary": "List all users",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Search by name/email/phone",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number (enables the paginated envelope)",
                         "name": "page",
@@ -3126,6 +3526,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name_ru": {
+                    "type": "string"
+                },
+                "slug": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -3337,6 +3740,10 @@ const docTemplate = `{
                 "phone_number": {
                     "type": "string",
                     "example": "+77001234567"
+                },
+                "subscription_type": {
+                    "type": "string",
+                    "example": "basic"
                 }
             }
         },
@@ -3397,6 +3804,10 @@ const docTemplate = `{
                 "phone_number": {
                     "type": "string",
                     "example": "+77001234567"
+                },
+                "subscription_type": {
+                    "type": "string",
+                    "example": "basic"
                 }
             }
         },
@@ -3599,6 +4010,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Апартаменты"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "apartments"
                 }
             }
         },
@@ -3624,6 +4040,10 @@ const docTemplate = `{
                 "name_ru": {
                     "type": "string",
                     "example": "Апартаменты"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "apartments"
                 }
             }
         },
@@ -3649,6 +4069,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Апартаменты"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "apartments"
                 }
             }
         },
@@ -3779,6 +4204,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Wi-Fi"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "wi-fi"
                 }
             }
         },
@@ -3797,6 +4226,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Wi-Fi"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "wi-fi"
                 }
             }
         },
@@ -3814,6 +4248,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Wi-Fi"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "wi-fi"
                 }
             }
         },
@@ -3829,6 +4267,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Wi-Fi"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "wi-fi"
                 }
             }
         },
@@ -4801,6 +5244,113 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.SubscriptionActivateRequest": {
+            "description": "Request body for activating a subscription plan",
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "duration_days": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "type": {
+                    "type": "string",
+                    "example": "pro"
+                }
+            }
+        },
+        "schema.SubscriptionActivationResponse": {
+            "type": "object",
+            "properties": {
+                "already_active": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "message": {
+                    "type": "string",
+                    "example": "subscription plan activated"
+                },
+                "subscription": {
+                    "$ref": "#/definitions/schema.SubscriptionResponse"
+                }
+            }
+        },
+        "schema.SubscriptionCreateRequest": {
+            "description": "Request body for creating a subscription",
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "basic"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "schema.SubscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "basic"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "schema.SubscriptionUpdateRequest": {
+            "description": "Request body for updating a subscription (all fields optional)",
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "in_active"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "pro"
+                }
+            }
+        },
         "schema.TypeCreateRequest": {
             "description": "Request body for creating a type",
             "type": "object",
@@ -4828,6 +5378,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Квартира"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "apartment"
                 }
             }
         },
@@ -4853,6 +5408,10 @@ const docTemplate = `{
                 "name_ru": {
                     "type": "string",
                     "example": "Квартира"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "apartment"
                 }
             }
         },
@@ -4878,6 +5437,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Квартира"
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "apartment"
                 }
             }
         },

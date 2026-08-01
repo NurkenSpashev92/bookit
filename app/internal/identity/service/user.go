@@ -20,8 +20,8 @@ type UserRepository interface {
 	Update(ctx context.Context, userID int, req schema.UserUpdateRequest) (model.User, error)
 	UpdatePassword(ctx context.Context, userID int, hashedPassword string) error
 	UpdateAvatar(ctx context.Context, userID int, avatar string) error
-	ListAll(ctx context.Context) ([]model.User, error)
-	ListPaginated(ctx context.Context, limit, offset int) ([]model.User, int, error)
+	ListAll(ctx context.Context, search string) ([]model.User, error)
+	ListPaginated(ctx context.Context, search string, limit, offset int) ([]model.User, int, error)
 	UpdateFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error)
 }
 
@@ -170,8 +170,8 @@ func (s *UserService) Me(ctx context.Context, accessToken string) (*schema.AuthR
 	}, nil
 }
 
-func (s *UserService) ListUsers(ctx context.Context) ([]schema.AdminUser, error) {
-	users, err := s.repository.ListAll(ctx)
+func (s *UserService) ListUsers(ctx context.Context, search string) ([]schema.AdminUser, error) {
+	users, err := s.repository.ListAll(ctx, search)
 	if err != nil {
 		return nil, err
 	}
@@ -184,8 +184,8 @@ func (s *UserService) ListUsers(ctx context.Context) ([]schema.AdminUser, error)
 	return result, nil
 }
 
-func (s *UserService) ListUsersPaginated(ctx context.Context, limit, offset int) ([]schema.AdminUser, int, error) {
-	users, total, err := s.repository.ListPaginated(ctx, limit, offset)
+func (s *UserService) ListUsersPaginated(ctx context.Context, search string, limit, offset int) ([]schema.AdminUser, int, error) {
+	users, total, err := s.repository.ListPaginated(ctx, search, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}

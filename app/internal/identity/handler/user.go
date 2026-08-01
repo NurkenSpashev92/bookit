@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -10,8 +11,8 @@ import (
 )
 
 type UserAdminService interface {
-	ListUsers(ctx context.Context) ([]schema.AdminUser, error)
-	ListUsersPaginated(ctx context.Context, limit, offset int) ([]schema.AdminUser, int, error)
+	ListUsers(ctx context.Context, search string) ([]schema.AdminUser, error)
+	ListUsersPaginated(ctx context.Context, search string, limit, offset int) ([]schema.AdminUser, int, error)
 	UpdateUserFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error)
 }
 
@@ -28,6 +29,7 @@ func NewUserHandler(userService UserAdminService) *UserHandler {
 // @Description  Admin only. Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags         Users
 // @Produce      json
+// @Param        search     query string false "Search by name/email/phone"
 // @Param        page       query int false "Page number (enables the paginated envelope)"
 // @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success      200  {array}   schema.AdminUser
@@ -37,7 +39,16 @@ func NewUserHandler(userService UserAdminService) *UserHandler {
 // @Security     ApiKeyAuth
 // @Router       /users [get]
 func (h *UserHandler) List(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.userService.ListUsers, h.userService.ListUsersPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.AdminUser, error) {
+			return h.userService.ListUsers(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.AdminUser, int, error) {
+			return h.userService.ListUsersPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // Update godoc

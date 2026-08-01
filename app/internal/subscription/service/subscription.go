@@ -10,10 +10,14 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/subscription/schema"
 )
 
+const defaultDurationDays = 30
+
 type SubscriptionRepository interface {
 	Create(ctx context.Context, s model.Subscription) (model.Subscription, error)
 	GetByID(ctx context.Context, id int) (model.Subscription, error)
 	GetLatestByUserID(ctx context.Context, userID int) (model.Subscription, error)
+	GetActiveByUserID(ctx context.Context, userID int) (model.Subscription, error)
+	Deactivate(ctx context.Context, id int) error
 	ListByUserID(ctx context.Context, userID int) ([]model.Subscription, error)
 	ListAll(ctx context.Context) ([]model.Subscription, error)
 	ListPaginated(ctx context.Context, limit, offset int) ([]model.Subscription, int, error)
@@ -90,6 +94,67 @@ func (s *SubscriptionService) Create(ctx context.Context, req schema.Subscriptio
 	return toResponse(created), nil
 }
 
+func (s *SubscriptionService) Activate(ctx context.Context, userID int, req schema.SubscriptionActivateRequest) (schema.SubscriptionActivationResponse, error) {
+	newType := model.Type(req.Type)
+
+	current, err := s.repository.GetActiveByUserID(ctx, userID)
+	switch {
+	case err == nil && current.Type == newType:
+		return schema.SubscriptionActivationResponse{
+			Message:       "subscription plan already active",
+			AlreadyActive: true,
+			Subscription:  toResponse(current),
+		}, nil
+	case err == nil:
+		if err := s.repository.Deactivate(ctx, current.ID); err != nil {
+			return schema.SubscriptionActivationResponse{}, err
+		}
+	case !errors.Is(err, model.ErrSubscriptionNotFound):
+		return schema.SubscriptionActivationResponse{}, err
+	}
+
+	days := req.DurationDays
+	if days <= 0 {
+		days = defaultDurationDays
+	}
+	now := time.Now()
+	end := now.AddDate(0, 0, days)
+
+	created, err := s.repository.Create(ctx, model.Subscription{
+		UserID:    userID,
+		Type:      newType,
+		Status:    model.StatusActive,
+		StartDate: now,
+		EndDate:   &end,
+	})
+	if err != nil {
+		return schema.SubscriptionActivationResponse{}, err
+	}
+
+	if err := s.syncUser(ctx, userID, string(newType)); err != nil {
+		return schema.SubscriptionActivationResponse{}, err
+	}
+
+	return schema.SubscriptionActivationResponse{
+		Message:      "subscription plan activated",
+		Subscription: toResponse(created),
+	}, nil
+}
+
+func (s *SubscriptionService) Cancel(ctx context.Context, userID int) error {
+	current, err := s.repository.GetActiveByUserID(ctx, userID)
+	switch {
+	case err == nil:
+		if err := s.repository.Deactivate(ctx, current.ID); err != nil {
+			return err
+		}
+	case !errors.Is(err, model.ErrSubscriptionNotFound):
+		return err
+	}
+
+	return s.syncUser(ctx, userID, string(model.TypeBasic))
+}
+
 func (s *SubscriptionService) Update(ctx context.Context, id int, req schema.SubscriptionUpdateRequest) (schema.SubscriptionResponse, error) {
 	sub, err := s.repository.GetByID(ctx, id)
 	if err != nil {
@@ -123,8 +188,6 @@ func (s *SubscriptionService) Delete(ctx context.Context, id int) error {
 		return err
 	}
 
-	// Recompute the user's tier from their remaining latest subscription,
-	// falling back to basic when none is left.
 	tier := string(model.TypeBasic)
 	if latest, err := s.repository.GetLatestByUserID(ctx, userID); err == nil {
 		tier = effectiveTier(latest)
@@ -135,7 +198,6 @@ func (s *SubscriptionService) Delete(ctx context.Context, id int) error {
 	return s.syncUser(ctx, userID, tier)
 }
 
-// syncUser mirrors the effective tier into users.subscription_type.
 func (s *SubscriptionService) syncUser(ctx context.Context, userID int, tier string) error {
 	if s.userSync == nil {
 		return nil
@@ -143,8 +205,6 @@ func (s *SubscriptionService) syncUser(ctx context.Context, userID int, tier str
 	return s.userSync.SetSubscriptionType(ctx, userID, tier)
 }
 
-// effectiveTier is the plan the user actually gets: the subscription type while
-// active, otherwise basic.
 func effectiveTier(sub model.Subscription) string {
 	if sub.Status == model.StatusActive {
 		return string(sub.Type)
@@ -152,8 +212,6 @@ func effectiveTier(sub model.Subscription) string {
 	return string(model.TypeBasic)
 }
 
-// orDefault converts a request enum string to its typed form, falling back to
-// def when the field was omitted.
 func orDefault[T ~string](v string, def T) T {
 	if v == "" {
 		return def

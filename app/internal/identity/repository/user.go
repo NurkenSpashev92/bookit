@@ -140,11 +140,23 @@ func (r *UserRepository) Update(ctx context.Context, userID int, req schema.User
 	return user, nil
 }
 
-func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
+// userSearchWhere filters users by first_name, last_name, email or phone_number
+// case-insensitively. It expects the search pattern (already wrapped in '%') as $1.
+const userSearchWhere = " WHERE (first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1 OR phone_number ILIKE $1)"
+
+func (r *UserRepository) ListAll(ctx context.Context, search string) ([]model.User, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = userSearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	rows, err := r.db.Query(ctx,
 		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
-		 FROM users
+		 FROM users`+where+`
 		 ORDER BY id`,
+		args...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
@@ -163,19 +175,29 @@ func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
 	return users, rows.Err()
 }
 
-func (r *UserRepository) ListPaginated(ctx context.Context, limit, offset int) ([]model.User, int, error) {
+func (r *UserRepository) ListPaginated(ctx context.Context, search string, limit, offset int) ([]model.User, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = userSearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`+where, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count users: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx,
+	args = append(args, limit, offset)
+	query := fmt.Sprintf(
 		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
-		 FROM users
+		 FROM users%s
 		 ORDER BY id
-		 LIMIT $1 OFFSET $2`,
-		limit, offset,
+		 LIMIT $%d OFFSET $%d`,
+		where, len(args)-1, len(args),
 	)
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list users: %w", err)
 	}

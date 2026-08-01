@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	contentschema "github.com/nurkenspashev92/bookit/internal/content/schema"
 	identitymodel "github.com/nurkenspashev92/bookit/internal/identity/model"
@@ -87,16 +88,18 @@ func (m *mockUserRepo) UpdateAvatar(_ context.Context, _ int, _ string) error {
 	return nil
 }
 
-func (m *mockUserRepo) ListAll(_ context.Context) ([]identitymodel.User, error) {
+func (m *mockUserRepo) ListAll(_ context.Context, search string) ([]identitymodel.User, error) {
 	var result []identitymodel.User
 	for _, u := range m.users {
-		result = append(result, u)
+		if userMatchesSearch(u, search) {
+			result = append(result, u)
+		}
 	}
 	return result, nil
 }
 
-func (m *mockUserRepo) ListPaginated(_ context.Context, limit, offset int) ([]identitymodel.User, int, error) {
-	users, _ := m.ListAll(context.Background())
+func (m *mockUserRepo) ListPaginated(_ context.Context, search string, limit, offset int) ([]identitymodel.User, int, error) {
+	users, _ := m.ListAll(context.Background(), search)
 	total := len(users)
 	if offset > total {
 		offset = total
@@ -106,6 +109,23 @@ func (m *mockUserRepo) ListPaginated(_ context.Context, limit, offset int) ([]id
 		end = total
 	}
 	return users[offset:end], total, nil
+}
+
+func userMatchesSearch(u identitymodel.User, search string) bool {
+	if search == "" {
+		return true
+	}
+	q := strings.ToLower(search)
+	phone := ""
+	if u.PhoneNumber != nil {
+		phone = *u.PhoneNumber
+	}
+	for _, field := range []string{u.FirstName, u.LastName, u.Email, phone} {
+		if strings.Contains(strings.ToLower(field), q) {
+			return true
+		}
+	}
+	return false
 }
 
 type mockHouseLikeRepo struct {

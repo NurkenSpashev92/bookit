@@ -69,6 +69,30 @@ func (r *SubscriptionRepository) GetLatestByUserID(ctx context.Context, userID i
 	return s, store.MapNoRows(err, model.ErrSubscriptionNotFound)
 }
 
+func (r *SubscriptionRepository) GetActiveByUserID(ctx context.Context, userID int) (model.Subscription, error) {
+	var s model.Subscription
+	err := scan(r.db.QueryRow(ctx,
+		`SELECT `+columns+`
+		 FROM subscriptions
+		 WHERE user_id = $1 AND status = 'active' AND (end_date IS NULL OR end_date > NOW())
+		 ORDER BY id DESC LIMIT 1`, userID,
+	), &s)
+	return s, store.MapNoRows(err, model.ErrSubscriptionNotFound)
+}
+
+func (r *SubscriptionRepository) Deactivate(ctx context.Context, id int) error {
+	cmd, err := r.db.Exec(ctx,
+		`UPDATE subscriptions SET status = 'in_active', updated_at = NOW() WHERE id = $1`, id,
+	)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return model.ErrSubscriptionNotFound
+	}
+	return nil
+}
+
 func (r *SubscriptionRepository) ListByUserID(ctx context.Context, userID int) ([]model.Subscription, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT `+columns+` FROM subscriptions WHERE user_id = $1 ORDER BY id DESC`, userID,
@@ -115,8 +139,6 @@ func (r *SubscriptionRepository) Update(ctx context.Context, id int, s model.Sub
 	return updated, store.MapNoRows(err, model.ErrSubscriptionNotFound)
 }
 
-// Delete removes the subscription and returns the owning user_id so callers can
-// resync the user's tier without a second read.
 func (r *SubscriptionRepository) Delete(ctx context.Context, id int) (int, error) {
 	var userID int
 	err := r.db.QueryRow(ctx, `DELETE FROM subscriptions WHERE id = $1 RETURNING user_id`, id).Scan(&userID)

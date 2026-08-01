@@ -12,7 +12,6 @@ const (
 	statusEnumMsg = "status must be one of: active, in_active"
 )
 
-// SubscriptionResponse subscription record returned to clients.
 type SubscriptionResponse struct {
 	ID        int        `json:"id" example:"1"`
 	UserID    int        `json:"user_id" example:"1"`
@@ -22,6 +21,31 @@ type SubscriptionResponse struct {
 	EndDate   *time.Time `json:"end_date,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+// SubscriptionActivateRequest activate/change the current user's own plan.
+// @Description Request body for activating a subscription plan
+type SubscriptionActivateRequest struct {
+	Type         string `json:"type" example:"pro" validate:"required"`
+	DurationDays int    `json:"duration_days,omitempty" example:"30"`
+}
+
+func (r SubscriptionActivateRequest) Validate() error {
+	v := shared.NewValidator()
+	v.Required("type", r.Type)
+	if r.Type != "" && !model.Type(r.Type).Valid() {
+		v.Append(typeEnumMsg)
+	}
+	if r.DurationDays < 0 {
+		v.Append("duration_days must be positive")
+	}
+	return v.Result()
+}
+
+type SubscriptionActivationResponse struct {
+	Message       string               `json:"message" example:"subscription plan activated"`
+	AlreadyActive bool                 `json:"already_active" example:"false"`
+	Subscription  SubscriptionResponse `json:"subscription"`
 }
 
 // SubscriptionCreateRequest create a subscription for a user (admin).

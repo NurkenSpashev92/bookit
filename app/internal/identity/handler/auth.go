@@ -17,8 +17,8 @@ type UserService interface {
 	UpdateProfile(ctx context.Context, userID int, req schema.UserUpdateRequest) (*schema.AuthUser, error)
 	ChangePassword(ctx context.Context, userID int, req schema.ChangePasswordRequest) error
 	Me(ctx context.Context, accessToken string) (*schema.AuthResponse, error)
-	ListUsers(ctx context.Context) ([]schema.AdminUser, error)
-	ListUsersPaginated(ctx context.Context, limit, offset int) ([]schema.AdminUser, int, error)
+	ListUsers(ctx context.Context, search string) ([]schema.AdminUser, error)
+	ListUsersPaginated(ctx context.Context, search string, limit, offset int) ([]schema.AdminUser, int, error)
 	UpdateUserFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error)
 }
 

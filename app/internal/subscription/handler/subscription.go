@@ -12,6 +12,8 @@ import (
 
 type SubscriptionService interface {
 	GetMy(ctx context.Context, userID int) (schema.SubscriptionResponse, error)
+	Activate(ctx context.Context, userID int, req schema.SubscriptionActivateRequest) (schema.SubscriptionActivationResponse, error)
+	Cancel(ctx context.Context, userID int) error
 	GetByID(ctx context.Context, id int) (schema.SubscriptionResponse, error)
 	GetByUserID(ctx context.Context, userID int) ([]schema.SubscriptionResponse, error)
 	GetAll(ctx context.Context) ([]schema.SubscriptionResponse, error)
@@ -44,6 +46,47 @@ func (h *SubscriptionHandler) GetMy(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 	return c.JSON(sub)
+}
+
+// Activate godoc
+// @Summary      Activate or change my subscription plan
+// @Description  Activates the given plan for the current user. If the same plan is already active, returns a message with the current end date and does not create a new record. Switching to a different plan deactivates the current one, creates a new active subscription, and updates the user's subscription_type.
+// @Tags         Subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        request body schema.SubscriptionActivateRequest true "Plan to activate"
+// @Success      200  {object}  schema.SubscriptionActivationResponse
+// @Failure      400  {object}  shared.ErrorResponse
+// @Failure      401  {object}  shared.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /subscriptions/activate [post]
+func (h *SubscriptionHandler) Activate(c fiber.Ctx) error {
+	req, err := shared.Bind[schema.SubscriptionActivateRequest](c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	res, err := h.service.Activate(c.Context(), middleware.CurrentUserID(c), req)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+	return c.JSON(res)
+}
+
+// Cancel godoc
+// @Summary      Cancel my subscription plan
+// @Description  Deactivates the current user's active plan (if any) and resets their subscription_type to basic. Idempotent.
+// @Tags         Subscriptions
+// @Produce      json
+// @Success      200  {object}  shared.MessageResponse
+// @Failure      401  {object}  shared.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /subscriptions/cancel [post]
+func (h *SubscriptionHandler) Cancel(c fiber.Ctx) error {
+	if err := h.service.Cancel(c.Context(), middleware.CurrentUserID(c)); err != nil {
+		return shared.Fail(c, err)
+	}
+	return shared.OK(c, "subscription plan cancelled")
 }
 
 // List godoc
