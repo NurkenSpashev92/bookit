@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -215,23 +216,84 @@ func (r *UserRepository) ListPaginated(ctx context.Context, search string, limit
 	return users, total, rows.Err()
 }
 
-func (r *UserRepository) UpdateFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error) {
+const userAdminReturning = `id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type`
+
+// UpdateUser applies a partial admin update: only the provided (non-nil) fields
+// are written, using a dynamically built parameterized UPDATE. If no fields are
+// provided it is a no-op that returns the current user.
+func (r *UserRepository) UpdateUser(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error) {
 	var user model.User
 
-	err := r.db.QueryRow(ctx,
-		`UPDATE users
-		 SET is_active = COALESCE($1, is_active),
-		     is_superuser = COALESCE($2, is_superuser),
-		     updated_at = NOW()
-		 WHERE id = $3
-		 RETURNING id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type`,
-		req.IsActive, req.IsSuperuser, id,
-	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.PhoneNumber, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
+	setClauses := make([]string, 0, 7)
+	args := make([]interface{}, 0, 8)
+	next := 1
+	add := func(column string, value interface{}) {
+		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", column, next))
+		args = append(args, value)
+		next++
+	}
+
+	if req.FirstName != nil {
+		add("first_name", *req.FirstName)
+	}
+	if req.LastName != nil {
+		add("last_name", *req.LastName)
+	}
+	if req.MiddleName != nil {
+		add("middle_name", *req.MiddleName)
+	}
+	if req.PhoneNumber != nil {
+		var phone interface{}
+		if *req.PhoneNumber != "" {
+			phone = *req.PhoneNumber
+		}
+		add("phone_number", phone)
+	}
+	if req.Email != nil {
+		add("email", *req.Email)
+	}
+	if req.IsActive != nil {
+		add("is_active", *req.IsActive)
+	}
+	if req.IsSuperuser != nil {
+		add("is_superuser", *req.IsSuperuser)
+	}
+
+	// No fields provided: return the current user unchanged.
+	if len(setClauses) == 0 {
+		err := r.db.QueryRow(ctx,
+			`SELECT `+userAdminReturning+` FROM users WHERE id=$1`, id,
+		).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.PhoneNumber, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return user, model.ErrUserNotFound
+			}
+			return user, err
+		}
+		return user, nil
+	}
+
+	setClauses = append(setClauses, "updated_at = NOW()")
+	args = append(args, id)
+	query := `UPDATE users SET ` + strings.Join(setClauses, ", ") +
+		fmt.Sprintf(" WHERE id = $%d RETURNING ", next) + userAdminReturning
+
+	err := r.db.QueryRow(ctx, query, args...).
+		Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.PhoneNumber, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return user, model.ErrUserNotFound
 		}
-		return user, fmt.Errorf("failed to update user flags: %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
+			switch pgErr.ConstraintName {
+			case "users_email_key", "users_email_unique", "ix_users_email":
+				return user, model.ErrEmailExists
+			case "users_phone_number_key", "users_phone_number_unique":
+				return user, model.ErrPhoneExists
+			}
+		}
+		return user, fmt.Errorf("failed to update user: %w", err)
 	}
 
 	return user, nil

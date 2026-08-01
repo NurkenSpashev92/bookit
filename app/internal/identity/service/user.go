@@ -22,7 +22,7 @@ type UserRepository interface {
 	UpdateAvatar(ctx context.Context, userID int, avatar string) error
 	ListAll(ctx context.Context, search string) ([]model.User, error)
 	ListPaginated(ctx context.Context, search string, limit, offset int) ([]model.User, int, error)
-	UpdateFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error)
+	UpdateUser(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error)
 }
 
 type UserService struct {
@@ -198,8 +198,13 @@ func (s *UserService) ListUsersPaginated(ctx context.Context, search string, lim
 	return result, total, nil
 }
 
-func (s *UserService) UpdateUserFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error) {
-	user, err := s.repository.UpdateFlags(ctx, id, req)
+func (s *UserService) UpdateUser(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error) {
+	if req.Email != nil {
+		normalized := normalizeEmail(*req.Email)
+		req.Email = &normalized
+	}
+
+	user, err := s.repository.UpdateUser(ctx, id, req)
 	if err != nil {
 		return nil, err
 	}

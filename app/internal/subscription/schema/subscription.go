@@ -24,7 +24,6 @@ type SubscriptionResponse struct {
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
-// SubscriptionActivateRequest activate/change the current user's own plan.
 // @Description Request body for activating a subscription plan
 type SubscriptionActivateRequest struct {
 	Type         string `json:"type" example:"pro" validate:"required"`
@@ -49,7 +48,6 @@ type SubscriptionActivationResponse struct {
 	Subscription  SubscriptionResponse `json:"subscription"`
 }
 
-// SubscriptionCreateRequest create a subscription for a user (admin).
 // @Description Request body for creating a subscription
 type SubscriptionCreateRequest struct {
 	UserID  int        `json:"user_id" example:"1" validate:"required"`
@@ -70,7 +68,6 @@ func (r SubscriptionCreateRequest) Validate() error {
 	return v.Result()
 }
 
-// SubscriptionUpdateRequest partial update of a subscription (admin).
 // @Description Request body for updating a subscription (all fields optional)
 type SubscriptionUpdateRequest struct {
 	Type    *string    `json:"type,omitempty" example:"pro"`

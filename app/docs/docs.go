@@ -2819,6 +2819,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Admin only. When end_date is omitted it defaults to start_date + 1 month. Creating an active subscription (the default) deactivates the user's other active subscriptions and updates their subscription_type.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3104,6 +3105,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Admin only. Setting status to active deactivates the user's other active subscriptions and updates their subscription_type.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3444,6 +3446,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Admin only. Partial update of a user's profile fields (first_name, last_name, middle_name, phone_number, email) and status flags (is_active, is_superuser). All fields optional; only provided fields are changed. Changing email to one already used by another user returns 409.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3453,7 +3456,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Update user status flags",
+                "summary": "Update a user",
                 "parameters": [
                     {
                         "type": "integer",
@@ -3499,6 +3502,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/shared.ErrorResponse"
                         }
@@ -4893,9 +4902,6 @@ const docTemplate = `{
                 "country_city_name_ru": {
                     "type": "string"
                 },
-                "guests_with_pets": {
-                    "type": "boolean"
-                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -4905,6 +4911,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/schema.Image"
                     }
+                },
+                "is_active": {
+                    "type": "boolean"
                 },
                 "is_liked": {
                     "type": "boolean"
@@ -4925,9 +4934,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price": {
-                    "type": "integer"
-                },
-                "priority": {
                     "type": "integer"
                 },
                 "promotion": {
@@ -5451,9 +5457,20 @@ const docTemplate = `{
             }
         },
         "schema.UserAdminUpdateRequest": {
-            "description": "Request body for updating user status flags (all fields optional)",
+            "description": "Request body for updating a user by an admin. All fields optional; only provided fields are changed.",
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 255,
+                    "example": "user@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "John"
+                },
                 "is_active": {
                     "type": "boolean",
                     "example": true
@@ -5461,6 +5478,21 @@ const docTemplate = `{
                 "is_superuser": {
                     "type": "boolean",
                     "example": false
+                },
+                "last_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Doe"
+                },
+                "middle_name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "M"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "example": "+77001234567"
                 }
             }
         },

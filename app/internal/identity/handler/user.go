@@ -13,7 +13,7 @@ import (
 type UserAdminService interface {
 	ListUsers(ctx context.Context, search string) ([]schema.AdminUser, error)
 	ListUsersPaginated(ctx context.Context, search string, limit, offset int) ([]schema.AdminUser, int, error)
-	UpdateUserFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error)
+	UpdateUser(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error)
 }
 
 type UserHandler struct {
@@ -52,7 +52,8 @@ func (h *UserHandler) List(c fiber.Ctx) error {
 }
 
 // Update godoc
-// @Summary      Update user status flags
+// @Summary      Update a user
+// @Description  Admin only. Partial update of a user's profile fields (first_name, last_name, middle_name, phone_number, email) and status flags (is_active, is_superuser). All fields optional; only provided fields are changed. Changing email to one already used by another user returns 409.
 // @Tags         Users
 // @Accept       json
 // @Produce      json
@@ -63,6 +64,7 @@ func (h *UserHandler) List(c fiber.Ctx) error {
 // @Failure      401  {object}  shared.ErrorResponse
 // @Failure      403  {object}  shared.ErrorResponse
 // @Failure      404  {object}  shared.ErrorResponse
+// @Failure      409  {object}  shared.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /users/{id} [patch]
 func (h *UserHandler) Update(c fiber.Ctx) error {
@@ -76,7 +78,7 @@ func (h *UserHandler) Update(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 
-	user, err := h.userService.UpdateUserFlags(c.Context(), id, request)
+	user, err := h.userService.UpdateUser(c.Context(), id, request)
 	if err != nil {
 		return shared.Fail(c, err)
 	}

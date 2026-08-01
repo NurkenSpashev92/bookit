@@ -147,7 +147,7 @@ func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, u
 			SELECT
 				h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price,
 				h.address_en, h.address_kz, h.address_ru,
-				h.priority, h.guests_with_pets, h.best_house, h.promotion,
+				h.best_house, h.promotion,
 				CONCAT(c.name_kz, ', ', ct.name_kz),
 				CONCAT(c.name_ru, ', ', ct.name_ru),
 				CONCAT(c.name_en, ', ', ct.name_en),
@@ -192,7 +192,7 @@ func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, u
 			if err := rows.Scan(
 				&h.ID, &h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug, &h.Price,
 				&h.AddressEN, &h.AddressKZ, &h.AddressRU,
-				&h.Priority, &h.GuestsWithPets, &h.BestHouse, &h.Promotion,
+				&h.BestHouse, &h.Promotion,
 				&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
 				&h.OwnerFullName, &h.LikeCount, &imagesJSON,
 			); err != nil {

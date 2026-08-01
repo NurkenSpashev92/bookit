@@ -988,8 +988,6 @@ definitions:
         type: string
       country_city_name_ru:
         type: string
-      guests_with_pets:
-        type: boolean
       id:
         example: 1
         type: integer
@@ -997,6 +995,8 @@ definitions:
         items:
           $ref: '#/definitions/schema.Image'
         type: array
+      is_active:
+        type: boolean
       is_liked:
         type: boolean
       like_count:
@@ -1010,8 +1010,6 @@ definitions:
       owner_full_name:
         type: string
       price:
-        type: integer
-      priority:
         type: integer
       promotion:
         type: boolean
@@ -1387,14 +1385,36 @@ definitions:
         type: string
     type: object
   schema.UserAdminUpdateRequest:
-    description: Request body for updating user status flags (all fields optional)
+    description: Request body for updating a user by an admin. All fields optional;
+      only provided fields are changed.
     properties:
+      email:
+        example: user@example.com
+        format: email
+        maxLength: 255
+        type: string
+      first_name:
+        example: John
+        maxLength: 255
+        type: string
       is_active:
         example: true
         type: boolean
       is_superuser:
         example: false
         type: boolean
+      last_name:
+        example: Doe
+        maxLength: 255
+        type: string
+      middle_name:
+        example: M
+        maxLength: 255
+        type: string
+      phone_number:
+        example: "+77001234567"
+        maxLength: 128
+        type: string
     type: object
   schema.UserCreateRequest:
     description: Request body for user registration
@@ -3304,6 +3324,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Admin only. When end_date is omitted it defaults to start_date
+        + 1 month. Creating an active subscription (the default) deactivates the user's
+        other active subscriptions and updates their subscription_type.
       parameters:
       - description: Subscription
         in: body
@@ -3377,6 +3400,8 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Admin only. Setting status to active deactivates the user's other
+        active subscriptions and updates their subscription_type.
       parameters:
       - description: Subscription ID
         in: path
@@ -3703,6 +3728,10 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Admin only. Partial update of a user's profile fields (first_name,
+        last_name, middle_name, phone_number, email) and status flags (is_active,
+        is_superuser). All fields optional; only provided fields are changed. Changing
+        email to one already used by another user returns 409.
       parameters:
       - description: User ID
         in: path
@@ -3738,9 +3767,13 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/shared.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Update user status flags
+      summary: Update a user
       tags:
       - Users
 swagger: "2.0"

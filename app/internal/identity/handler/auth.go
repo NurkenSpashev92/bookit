@@ -19,7 +19,7 @@ type UserService interface {
 	Me(ctx context.Context, accessToken string) (*schema.AuthResponse, error)
 	ListUsers(ctx context.Context, search string) ([]schema.AdminUser, error)
 	ListUsersPaginated(ctx context.Context, search string, limit, offset int) ([]schema.AdminUser, int, error)
-	UpdateUserFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error)
+	UpdateUser(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error)
 }
 
 type AuthHandler struct {

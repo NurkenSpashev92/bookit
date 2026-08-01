@@ -80,6 +80,46 @@ func (m *mockUserRepo) Update(_ context.Context, userID int, _ identityschema.Us
 	return u, nil
 }
 
+func (m *mockUserRepo) UpdateUser(_ context.Context, id int, req identityschema.UserAdminUpdateRequest) (identitymodel.User, error) {
+	u, ok := m.users[id]
+	if !ok {
+		return identitymodel.User{}, identitymodel.ErrUserNotFound
+	}
+	if req.Email != nil && *req.Email != u.Email {
+		if _, exists := m.byEmail[*req.Email]; exists {
+			return identitymodel.User{}, identitymodel.ErrEmailExists
+		}
+		delete(m.byEmail, u.Email)
+		u.Email = *req.Email
+	}
+	if req.FirstName != nil {
+		u.FirstName = *req.FirstName
+	}
+	if req.LastName != nil {
+		u.LastName = *req.LastName
+	}
+	if req.MiddleName != nil {
+		u.MiddleName = *req.MiddleName
+	}
+	if req.PhoneNumber != nil {
+		if *req.PhoneNumber == "" {
+			u.PhoneNumber = nil
+		} else {
+			p := *req.PhoneNumber
+			u.PhoneNumber = &p
+		}
+	}
+	if req.IsActive != nil {
+		u.IsActive = *req.IsActive
+	}
+	if req.IsSuperuser != nil {
+		u.IsSuperuser = *req.IsSuperuser
+	}
+	m.users[id] = u
+	m.byEmail[u.Email] = u
+	return u, nil
+}
+
 func (m *mockUserRepo) UpdatePassword(_ context.Context, _ int, _ string) error {
 	return nil
 }

@@ -75,12 +75,20 @@ func (s *SubscriptionService) GetAllPaginated(ctx context.Context, limit, offset
 }
 
 func (s *SubscriptionService) Create(ctx context.Context, req schema.SubscriptionCreateRequest) (schema.SubscriptionResponse, error) {
+	startDate := time.Now()
+
+	endDate := req.EndDate
+	if endDate == nil {
+		computed := startDate.AddDate(0, 1, 0)
+		endDate = &computed
+	}
+
 	sub := model.Subscription{
 		UserID:    req.UserID,
 		Type:      orDefault(req.Type, model.TypeBasic),
 		Status:    orDefault(req.Status, model.StatusActive),
-		StartDate: time.Now(),
-		EndDate:   req.EndDate,
+		StartDate: startDate,
+		EndDate:   endDate,
 	}
 
 	created, err := s.repository.Create(ctx, sub)
@@ -100,16 +108,8 @@ func (s *SubscriptionService) Activate(ctx context.Context, userID int, req sche
 	current, err := s.repository.GetActiveByUserID(ctx, userID)
 	switch {
 	case err == nil && current.Type == newType:
-		return schema.SubscriptionActivationResponse{
-			Message:       "subscription plan already active",
-			AlreadyActive: true,
-			Subscription:  toResponse(current),
-		}, nil
-	case err == nil:
-		if err := s.repository.Deactivate(ctx, current.ID); err != nil {
-			return schema.SubscriptionActivationResponse{}, err
-		}
-	case !errors.Is(err, model.ErrSubscriptionNotFound):
+		return alreadyActiveResponse(current), nil
+	case err != nil && !errors.Is(err, model.ErrSubscriptionNotFound):
 		return schema.SubscriptionActivationResponse{}, err
 	}
 
@@ -128,6 +128,11 @@ func (s *SubscriptionService) Activate(ctx context.Context, userID int, req sche
 		EndDate:   &end,
 	})
 	if err != nil {
+		if errors.Is(err, model.ErrActiveSubscriptionExists) {
+			if active, rerr := s.repository.GetActiveByUserID(ctx, userID); rerr == nil {
+				return alreadyActiveResponse(active), nil
+			}
+		}
 		return schema.SubscriptionActivationResponse{}, err
 	}
 
@@ -139,6 +144,14 @@ func (s *SubscriptionService) Activate(ctx context.Context, userID int, req sche
 		Message:      "subscription plan activated",
 		Subscription: toResponse(created),
 	}, nil
+}
+
+func alreadyActiveResponse(sub model.Subscription) schema.SubscriptionActivationResponse {
+	return schema.SubscriptionActivationResponse{
+		Message:       "subscription plan already active",
+		AlreadyActive: true,
+		Subscription:  toResponse(sub),
+	}
 }
 
 func (s *SubscriptionService) Cancel(ctx context.Context, userID int) error {

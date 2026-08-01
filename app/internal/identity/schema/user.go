@@ -42,15 +42,29 @@ type AdminUser struct {
 	SubscriptionType string `json:"subscription_type" example:"basic"`
 }
 
-// UserAdminUpdateRequest partial admin update of user flags
-// @Description Request body for updating user status flags (all fields optional)
+// UserAdminUpdateRequest partial admin update of a user (profile fields + flags)
+// @Description Request body for updating a user by an admin. All fields optional; only provided fields are changed.
 type UserAdminUpdateRequest struct {
-	IsActive    *bool `json:"is_active,omitempty" example:"true"`
-	IsSuperuser *bool `json:"is_superuser,omitempty" example:"false"`
+	FirstName   *string `json:"first_name,omitempty" example:"John" maxLength:"255"`
+	LastName    *string `json:"last_name,omitempty" example:"Doe" maxLength:"255"`
+	MiddleName  *string `json:"middle_name,omitempty" example:"M" maxLength:"255"`
+	PhoneNumber *string `json:"phone_number,omitempty" example:"+77001234567" maxLength:"128"`
+	Email       *string `json:"email,omitempty" example:"user@example.com" format:"email" maxLength:"255"`
+	IsActive    *bool   `json:"is_active,omitempty" example:"true"`
+	IsSuperuser *bool   `json:"is_superuser,omitempty" example:"false"`
 }
 
 func (r UserAdminUpdateRequest) Validate() error {
-	return nil
+	v := shared.NewValidator()
+	v.MaxLenPtr("first_name", r.FirstName, 255)
+	v.MaxLenPtr("last_name", r.LastName, 255)
+	v.MaxLenPtr("middle_name", r.MiddleName, 255)
+	v.MaxLenPtr("phone_number", r.PhoneNumber, 128)
+	if r.Email != nil {
+		v.Email("email", *r.Email)
+		v.MaxLen("email", *r.Email, 255)
+	}
+	return v.Result()
 }
 
 // UserCreateRequest registration request

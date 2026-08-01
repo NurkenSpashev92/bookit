@@ -1,2 +1,0 @@
-DROP TABLE IF EXISTS faq;
-DROP TABLE IF EXISTS help_center;

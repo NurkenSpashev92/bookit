@@ -153,6 +153,7 @@ func (h *SubscriptionHandler) GetByID(c fiber.Ctx) error {
 
 // Create godoc
 // @Summary      Create subscription
+// @Description  Admin only. When end_date is omitted it defaults to start_date + 1 month. Creating an active subscription (the default) deactivates the user's other active subscriptions and updates their subscription_type.
 // @Tags         Subscriptions
 // @Accept       json
 // @Produce      json
@@ -176,6 +177,7 @@ func (h *SubscriptionHandler) Create(c fiber.Ctx) error {
 
 // Update godoc
 // @Summary      Update subscription
+// @Description  Admin only. Setting status to active deactivates the user's other active subscriptions and updates their subscription_type.
 // @Tags         Subscriptions
 // @Accept       json
 // @Produce      json

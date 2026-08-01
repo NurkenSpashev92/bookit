@@ -181,8 +181,6 @@ type HouseListItem struct {
 	AddressEN         string  `json:"address_en"`
 	AddressKZ         string  `json:"address_kz"`
 	AddressRU         string  `json:"address_ru"`
-	Priority          int     `json:"priority"`
-	GuestsWithPets    bool    `json:"guests_with_pets"`
 	BestHouse         bool    `json:"best_house"`
 	Promotion         bool    `json:"promotion"`
 	IsActive          bool    `json:"is_active"`
