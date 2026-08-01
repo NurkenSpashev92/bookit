@@ -16,10 +16,11 @@ const (
 )
 
 type Deps struct {
-	House    HouseService
-	Image    ImageService
-	Category CategoryService
-	Type     TypeService
+	House       HouseService
+	Image       ImageService
+	Category    CategoryService
+	Type        TypeService
+	Convenience ConvenienceService
 }
 
 func RegisterRoutes(api fiber.Router, deps Deps, guards shared.Guards) {
@@ -48,4 +49,12 @@ func RegisterRoutes(api fiber.Router, deps Deps, guards shared.Guards) {
 
 	shared.RegisterCRUD(api.Group("/categories"), guards, NewCategoryHandler(deps.Category))
 	shared.RegisterCRUD(api.Group("/types"), guards, NewTypeHandler(deps.Type))
+
+	convenienceHandler := NewConvenienceHandler(deps.Convenience)
+	conveniences := api.Group("/conveniences")
+	conveniences.Get("/", convenienceHandler.GetAll)
+	conveniences.Get("/:id", convenienceHandler.GetByID)
+	conveniences.Post("/", guards.Admin, convenienceHandler.Create)
+	conveniences.Patch("/:id", guards.Admin, convenienceHandler.Update)
+	conveniences.Delete("/:id", guards.Admin, convenienceHandler.Delete)
 }

@@ -25,5 +25,7 @@ func NewCache(cacheCfg *configs.CacheConfig, redisCfg *configs.RedisConfig) (*ca
 		return nil, err
 	}
 
-	return cache.New(client, cacheCfg.TTL), nil
+	local := cache.NewLocalCache(cacheCfg.LocalTTL, cacheCfg.LocalEntries)
+
+	return cache.NewWithLocal(client, cacheCfg.TTL, local), nil
 }

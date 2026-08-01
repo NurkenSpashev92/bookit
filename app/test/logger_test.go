@@ -30,6 +30,7 @@ func TestInitWritesToFile(t *testing.T) {
 	}
 
 	fiberlog.Infow("file logging works", "key", "value")
+	logger.Flush()
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -51,6 +52,60 @@ func TestInitWithoutFileReturnsNoCloser(t *testing.T) {
 	}
 	if closer != nil {
 		t.Error("closer must be nil when no log file is configured")
+	}
+}
+
+func TestInitRotatesFileBySize(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.log")
+
+	closer, err := logger.Init(logger.Config{Level: "info", File: path, MaxFileSize: 512, Backups: 2})
+	if err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	t.Cleanup(func() {
+		closer.Close()
+		fiberlog.SetOutput(os.Stdout)
+	})
+
+	for i := 0; i < 20; i++ {
+		fiberlog.Infow("rotation", "payload", strings.Repeat("x", 128))
+		logger.Flush()
+	}
+
+	if _, err := os.Stat(path + ".1"); err != nil {
+		t.Fatalf("first backup must exist: %v", err)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("active log must exist: %v", err)
+	}
+	if info.Size() > 512 {
+		t.Errorf("active log grew to %d bytes, limit is 512", info.Size())
+	}
+}
+
+func TestLogRecordSurvivesWithoutFlushWhenUrgent(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.log")
+
+	closer, err := logger.Init(logger.Config{Level: "info", File: path})
+	if err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	t.Cleanup(func() {
+		closer.Close()
+		fiberlog.SetOutput(os.Stdout)
+	})
+
+	fiberlog.Errorw("database unreachable", "error", "timeout")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read log file: %v", err)
+	}
+
+	if !strings.Contains(string(data), "database unreachable") {
+		t.Errorf("error records must be flushed immediately, got %q", data)
 	}
 }
 

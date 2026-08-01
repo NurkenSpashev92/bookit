@@ -55,11 +55,12 @@ func (j *JWTService) generateAccessToken(user model.User) (string, error) {
 	}
 
 	claims := jwt.MapClaims{
-		"sub":  user.ID,
-		"type": "access",
-		"jti":  jti,
-		"iat":  time.Now().Unix(),
-		"exp":  time.Now().Add(j.accessExpire).Unix(),
+		"sub":          user.ID,
+		"type":         "access",
+		"jti":          jti,
+		"is_superuser": user.IsSuperuser,
+		"iat":          time.Now().Unix(),
+		"exp":          time.Now().Add(j.accessExpire).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -93,28 +94,9 @@ func (j *JWTService) ValidateRefreshToken(tokenStr string) (int, error) {
 }
 
 func (j *JWTService) validateToken(tokenStr, expectedType string) (int, error) {
-	if tokenStr == "" {
-		return 0, errors.New("empty token")
-	}
-
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return []byte(j.secretKey), nil
-	})
+	claims, err := j.parseClaims(tokenStr, expectedType)
 	if err != nil {
 		return 0, err
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return 0, errors.New("invalid token claims")
-	}
-
-	tokenType, _ := claims["type"].(string)
-	if tokenType != expectedType {
-		return 0, errors.New("wrong token type")
 	}
 
 	sub, ok := claims["sub"].(float64)
@@ -125,16 +107,52 @@ func (j *JWTService) validateToken(tokenStr, expectedType string) (int, error) {
 	return int(sub), nil
 }
 
+func (j *JWTService) parseClaims(tokenStr, expectedType string) (jwt.MapClaims, error) {
+	if tokenStr == "" {
+		return nil, errors.New("empty token")
+	}
+
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(j.secretKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token claims")
+	}
+
+	tokenType, _ := claims["type"].(string)
+	if tokenType != expectedType {
+		return nil, errors.New("wrong token type")
+	}
+
+	return claims, nil
+}
+
 func (j *JWTService) GenerateToken(user model.User) (string, error) {
 	return j.generateAccessToken(user)
 }
 
 func (j *JWTService) ValidateToken(tokenStr string) (model.User, error) {
-	userID, err := j.ValidateAccessToken(tokenStr)
+	claims, err := j.parseClaims(tokenStr, "access")
 	if err != nil {
 		return model.User{}, err
 	}
-	return model.User{ID: userID}, nil
+
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		return model.User{}, errors.New("invalid sub claim")
+	}
+
+	isSuperuser, _ := claims["is_superuser"].(bool)
+
+	return model.User{ID: int(sub), IsSuperuser: isSuperuser}, nil
 }
 
 func generateJTI() (string, error) {

@@ -36,6 +36,32 @@ func (r *FAQRepository) GetAll(ctx context.Context) ([]schema.FAQ, error) {
 	return faqs, nil
 }
 
+func (r *FAQRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.FAQ, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM faq`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var faqs []schema.FAQ
+	for rows.Next() {
+		var f schema.FAQ
+		if err := rows.Scan(&f.ID, &f.QuestionKz, &f.AnswerKz, &f.QuestionRu, &f.AnswerRu, &f.QuestionEn, &f.AnswerEn); err != nil {
+			return nil, 0, err
+		}
+		faqs = append(faqs, f)
+	}
+	return faqs, total, rows.Err()
+}
+
 func (r *FAQRepository) GetByID(ctx context.Context, id int) (schema.FAQ, error) {
 	var f schema.FAQ
 	err := r.db.QueryRow(ctx, `SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq WHERE id=$1`, id).

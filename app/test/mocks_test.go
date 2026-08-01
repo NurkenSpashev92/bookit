@@ -87,6 +87,27 @@ func (m *mockUserRepo) UpdateAvatar(_ context.Context, _ int, _ string) error {
 	return nil
 }
 
+func (m *mockUserRepo) ListAll(_ context.Context) ([]identitymodel.User, error) {
+	var result []identitymodel.User
+	for _, u := range m.users {
+		result = append(result, u)
+	}
+	return result, nil
+}
+
+func (m *mockUserRepo) ListPaginated(_ context.Context, limit, offset int) ([]identitymodel.User, int, error) {
+	users, _ := m.ListAll(context.Background())
+	total := len(users)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	return users[offset:end], total, nil
+}
+
 type mockHouseLikeRepo struct {
 	likes  map[string]bool
 	counts map[string]int
@@ -164,6 +185,22 @@ func (m *mockFAQRepo) GetAll(_ context.Context) ([]contentschema.FAQ, error) {
 	return result, nil
 }
 
+func (m *mockFAQRepo) GetAllPaginated(_ context.Context, limit, offset int) ([]contentschema.FAQ, int, error) {
+	var all []contentschema.FAQ
+	for _, f := range m.faqs {
+		all = append(all, f)
+	}
+	total := len(all)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	return all[offset:end], total, nil
+}
+
 func (m *mockFAQRepo) GetByID(_ context.Context, id int) (contentschema.FAQ, error) {
 	f, ok := m.faqs[id]
 	if !ok {
@@ -233,6 +270,22 @@ func (m *mockCountryRepo) GetAll(_ context.Context) ([]locationmodel.Country, er
 		result = append(result, c)
 	}
 	return result, nil
+}
+
+func (m *mockCountryRepo) GetAllPaginated(_ context.Context, limit, offset int) ([]locationmodel.Country, int, error) {
+	var all []locationmodel.Country
+	for _, c := range m.countries {
+		all = append(all, c)
+	}
+	total := len(all)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	return all[offset:end], total, nil
 }
 
 func (m *mockCountryRepo) GetByID(_ context.Context, id int) (locationmodel.Country, error) {

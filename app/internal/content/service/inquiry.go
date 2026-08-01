@@ -8,6 +8,7 @@ import (
 
 type InquiryRepository interface {
 	GetAll(ctx context.Context) ([]schema.Inquiry, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error)
 	GetByID(ctx context.Context, id int) (schema.Inquiry, error)
 	Create(ctx context.Context, req schema.InquiryCreateRequest) (schema.Inquiry, error)
 	Update(ctx context.Context, id int, req schema.InquiryUpdateRequest) (schema.Inquiry, error)
@@ -24,6 +25,10 @@ func NewInquiryService(repo InquiryRepository) *InquiryService {
 
 func (s *InquiryService) GetAll(ctx context.Context) ([]schema.Inquiry, error) {
 	return s.repository.GetAll(ctx)
+}
+
+func (s *InquiryService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error) {
+	return s.repository.GetAllPaginated(ctx, limit, offset)
 }
 
 func (s *InquiryService) GetByID(ctx context.Context, id int) (schema.Inquiry, error) {

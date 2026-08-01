@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/Flussen/swagger-fiber-v3"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
@@ -30,9 +32,19 @@ import (
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
 
-var cachedResponseRoutes = map[string]string{
-	"/api/v1/houses":  "houses",
-	"/api/v1/houses/": "houses",
+const referenceTTL = 15 * time.Second
+
+var cachedResponseRoutes = map[string]middleware.CachedRoute{
+	"/api/v1/houses":      {Namespace: "houses"},
+	"/api/v1/houses/":     {Namespace: "houses"},
+	"/api/v1/categories":  {Namespace: "categories", TTL: referenceTTL},
+	"/api/v1/categories/": {Namespace: "categories", TTL: referenceTTL},
+	"/api/v1/countries":   {Namespace: "countries", TTL: referenceTTL},
+	"/api/v1/countries/":  {Namespace: "countries", TTL: referenceTTL},
+	"/api/v1/cities":      {Namespace: "cities", TTL: referenceTTL},
+	"/api/v1/cities/":     {Namespace: "cities", TTL: referenceTTL},
+	"/api/v1/types":       {Namespace: "types", TTL: referenceTTL},
+	"/api/v1/types/":      {Namespace: "types", TTL: referenceTTL},
 }
 
 var quietLogPaths = map[string]struct{}{
@@ -40,21 +52,22 @@ var quietLogPaths = map[string]struct{}{
 }
 
 type Services struct {
-	Cache     *cache.Cache
-	User      *identitysvc.UserService
-	JWT       *identitysvc.JWTService
-	House     *propertysvc.HouseService
-	HouseLike *interactionsvc.HouseLikeService
-	Image     *propertysvc.ImageService
-	Avatar    *identitysvc.AvatarService
-	Category  *propertysvc.CategoryService
-	Country   *locationsvc.CountryService
-	City      *locationsvc.CityService
-	Type      *propertysvc.TypeService
-	FAQ       *contentsvc.FAQService
-	Inquiry   *contentsvc.InquiryService
-	Stats     *analyticssvc.StatsService
-	Booking   *bookingsvc.BookingService
+	Cache       *cache.Cache
+	User        *identitysvc.UserService
+	JWT         *identitysvc.JWTService
+	House       *propertysvc.HouseService
+	HouseLike   *interactionsvc.HouseLikeService
+	Image       *propertysvc.ImageService
+	Avatar      *identitysvc.AvatarService
+	Category    *propertysvc.CategoryService
+	Convenience *propertysvc.ConvenienceService
+	Country     *locationsvc.CountryService
+	City        *locationsvc.CityService
+	Type        *propertysvc.TypeService
+	FAQ         *contentsvc.FAQService
+	Inquiry     *contentsvc.InquiryService
+	Stats       *analyticssvc.StatsService
+	Booking     *bookingsvc.BookingService
 }
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
@@ -63,6 +76,7 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 	guards := shared.Guards{
 		Required: middleware.AuthRequired(svc.JWT),
 		Optional: middleware.AuthOptional(svc.JWT),
+		Admin:    middleware.AuthAdmin(svc.JWT),
 	}
 
 	apiV1 := app.Group("/api/v1")
@@ -76,10 +90,11 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 	interactionh.RegisterRoutes(apiV1, svc.HouseLike, guards)
 
 	propertyh.RegisterRoutes(apiV1, propertyh.Deps{
-		House:    svc.House,
-		Image:    svc.Image,
-		Category: svc.Category,
-		Type:     svc.Type,
+		House:       svc.House,
+		Image:       svc.Image,
+		Category:    svc.Category,
+		Type:        svc.Type,
+		Convenience: svc.Convenience,
 	}, guards)
 
 	locationh.RegisterRoutes(apiV1, locationh.Deps{

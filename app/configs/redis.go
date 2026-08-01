@@ -5,7 +5,11 @@ import (
 	"time"
 )
 
-const defaultCacheTTL = 5 * time.Minute
+const (
+	defaultCacheTTL      = 5 * time.Minute
+	defaultLocalCacheTTL = 2 * time.Second
+	defaultLocalEntries  = 1024
+)
 
 type RedisConfig struct {
 	Host     string
@@ -24,14 +28,18 @@ func NewRedisConfig() *RedisConfig {
 }
 
 type CacheConfig struct {
-	Enabled bool
-	TTL     time.Duration
+	Enabled      bool
+	TTL          time.Duration
+	LocalTTL     time.Duration
+	LocalEntries int
 }
 
 func NewCacheConfig() *CacheConfig {
 	return &CacheConfig{
-		Enabled: getEnv("CACHE_ENABLED", "true") != "false",
-		TTL:     getCacheTTL(getEnv("CACHE_TTL", "300")),
+		Enabled:      getEnv("CACHE_ENABLED", "true") != "false",
+		TTL:          getCacheTTL(getEnv("CACHE_TTL", "300")),
+		LocalTTL:     getLocalTTL(getEnv("CACHE_LOCAL_TTL", "")),
+		LocalEntries: getLocalEntries(getEnv("CACHE_LOCAL_ENTRIES", "")),
 	}
 }
 
@@ -41,4 +49,20 @@ func getCacheTTL(val string) time.Duration {
 		return defaultCacheTTL
 	}
 	return time.Duration(sec) * time.Second
+}
+
+func getLocalTTL(val string) time.Duration {
+	sec, err := strconv.Atoi(val)
+	if err != nil || sec < 0 {
+		return defaultLocalCacheTTL
+	}
+	return time.Duration(sec) * time.Second
+}
+
+func getLocalEntries(val string) int {
+	count, err := strconv.Atoi(val)
+	if err != nil || count < 0 {
+		return defaultLocalEntries
+	}
+	return count
 }

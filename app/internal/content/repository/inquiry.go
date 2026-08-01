@@ -36,6 +36,32 @@ func (r *InquiryRepository) GetAll(ctx context.Context) ([]schema.Inquiry, error
 	return list, nil
 }
 
+func (r *InquiryRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM inquiries`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT id, email, phone_number, text, is_approved FROM inquiries ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var list []schema.Inquiry
+	for rows.Next() {
+		var i schema.Inquiry
+		if err := rows.Scan(&i.ID, &i.Email, &i.PhoneNumber, &i.Text, &i.IsApproved); err != nil {
+			return nil, 0, err
+		}
+		list = append(list, i)
+	}
+	return list, total, rows.Err()
+}
+
 func (r *InquiryRepository) GetByID(ctx context.Context, id int) (schema.Inquiry, error) {
 	var i schema.Inquiry
 	err := r.db.QueryRow(ctx, `SELECT id, email, phone_number, text, is_approved FROM inquiries WHERE id=$1`, id).

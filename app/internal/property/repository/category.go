@@ -45,6 +45,39 @@ func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.Catego
 	return categories, rows.Err()
 }
 
+func (r *CategoryRepository) GetCategoriesPaginated(ctx context.Context, limit, offset int) ([]schema.CategoryPaginate, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM categories WHERE is_active = TRUE`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count categories: %w", err)
+	}
+
+	query := `
+		SELECT id, name_kz, name_ru, name_en, is_active
+		FROM categories
+		WHERE is_active = TRUE
+		ORDER BY id
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var categories []schema.CategoryPaginate
+
+	for rows.Next() {
+		var c schema.CategoryPaginate
+		if err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &c.IsActive); err != nil {
+			return nil, 0, fmt.Errorf("failed to scan row: %w", err)
+		}
+		categories = append(categories, c)
+	}
+
+	return categories, total, rows.Err()
+}
+
 func (r *CategoryRepository) GetByID(ctx context.Context, id int) (model.Category, error) {
 	query := `
 		SELECT

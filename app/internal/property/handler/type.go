@@ -11,6 +11,7 @@ import (
 
 type TypeService interface {
 	GetAll(ctx context.Context) ([]schema.TypeResponse, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.TypeResponse, int, error)
 	GetByID(ctx context.Context, id int) (schema.TypeResponse, error)
 	Create(ctx context.Context, req schema.TypeCreateRequest) (schema.TypeResponse, error)
 	Update(ctx context.Context, id int, req schema.TypeUpdateRequest) (schema.TypeResponse, error)
@@ -27,18 +28,16 @@ func NewTypeHandler(typeService TypeService) *TypeHandler {
 
 // GetAll godoc
 // @Summary Get all types
+// @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Types
 // @Produce json
+// @Param page query int false "Page number (enables the paginated envelope)"
+// @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.TypeResponse
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /types [get]
 func (h *TypeHandler) GetAll(c fiber.Ctx) error {
-	types, err := h.typeService.GetAll(c.Context())
-	if err != nil {
-		return shared.Fail(c, err)
-	}
-
-	return shared.List(c, types)
+	return shared.ListMaybePaginated(c, h.typeService.GetAll, h.typeService.GetAllPaginated)
 }
 
 // GetByID godoc

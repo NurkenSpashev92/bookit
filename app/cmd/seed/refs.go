@@ -120,6 +120,26 @@ func ensureCategories(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
 	return ids, nil
 }
 
+func ensureConveniences(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
+	ids := make([]int, 0, len(defaultConveniences))
+
+	for _, name := range defaultConveniences {
+		id, err := ensureRow(ctx, conn, "convenience", name,
+			`SELECT id FROM conveniences WHERE name = $1 LIMIT 1`,
+			`INSERT INTO conveniences (name, is_active, created_at, updated_at)
+			 VALUES ($1, TRUE, NOW(), NOW())
+			 RETURNING id`,
+			name,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	return ids, nil
+}
+
 func ensureRow(
 	ctx context.Context,
 	conn *pgxpool.Pool,

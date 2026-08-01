@@ -1,59 +1,76 @@
 package logger
 
 import (
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	fiberlog "github.com/gofiber/fiber/v3/log"
 )
 
-const logFileMode = 0o644
+const (
+	bufferSize  = 256 << 10
+	flushPeriod = 500 * time.Millisecond
+	maxFileSize = 128 << 20
+	backupCount = 3
+)
 
 type Config struct {
-	Level string
-	File  string
+	Level       string
+	File        string
+	Console     bool
+	MaxFileSize int64
+	Backups     int
 }
 
+var (
+	level  atomic.Int32
+	writer atomic.Pointer[bufferedWriter]
+)
+
 func Init(cfg Config) (io.Closer, error) {
-	fiberlog.SetLevel(ParseLevel(cfg.Level))
+	applyLevel(cfg.Level)
 	fiberlog.MustSetContextTemplate(fiberlog.ContextConfig{Format: fiberlog.RequestIDFormat})
+
+	closePrevious()
 
 	if cfg.File == "" {
 		fiberlog.SetOutput(os.Stdout)
 		return nil, nil
 	}
 
-	file, err := openLogFile(cfg.File)
+	file, err := newRotatingFile(cfg.File, rotationSize(cfg.MaxFileSize), rotationBackups(cfg.Backups))
 	if err != nil {
 		fiberlog.SetOutput(os.Stdout)
 		return nil, err
 	}
 
-	fiberlog.SetOutput(io.MultiWriter(os.Stdout, file))
-
-	return file, nil
-}
-
-func openLogFile(path string) (*os.File, error) {
-	if dir := filepath.Dir(path); dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return nil, fmt.Errorf("create log directory %q: %w", dir, err)
-		}
+	var target io.Writer = file
+	if cfg.Console {
+		target = io.MultiWriter(os.Stdout, file)
 	}
 
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, logFileMode)
-	if err != nil {
-		return nil, fmt.Errorf("open log file %q: %w", path, err)
-	}
+	buffered := newBufferedWriter(target, file, bufferSize, flushPeriod)
+	writer.Store(buffered)
+	fiberlog.SetOutput(buffered)
 
-	return file, nil
+	return buffered, nil
 }
 
-func ParseLevel(level string) fiberlog.Level {
-	switch strings.ToLower(strings.TrimSpace(level)) {
+func Enabled(l fiberlog.Level) bool {
+	return l >= fiberlog.Level(level.Load())
+}
+
+func Flush() {
+	if buffered := writer.Load(); buffered != nil {
+		_ = buffered.Flush()
+	}
+}
+
+func ParseLevel(name string) fiberlog.Level {
+	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "trace":
 		return fiberlog.LevelTrace
 	case "debug":
@@ -66,5 +83,31 @@ func ParseLevel(level string) fiberlog.Level {
 		return fiberlog.LevelFatal
 	default:
 		return fiberlog.LevelInfo
+	}
+}
+
+func applyLevel(name string) {
+	parsed := ParseLevel(name)
+	fiberlog.SetLevel(parsed)
+	level.Store(int32(parsed))
+}
+
+func rotationSize(size int64) int64 {
+	if size <= 0 {
+		return maxFileSize
+	}
+	return size
+}
+
+func rotationBackups(count int) int {
+	if count <= 0 {
+		return backupCount
+	}
+	return count
+}
+
+func closePrevious() {
+	if previous := writer.Swap(nil); previous != nil {
+		_ = previous.Close()
 	}
 }

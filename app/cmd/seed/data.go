@@ -82,6 +82,27 @@ var (
 		{nameEN: "Karaganda", nameKZ: "Қарағанды", nameRU: "Караганда", postalCode: "100000"},
 		{nameEN: "Aktau", nameKZ: "Ақтау", nameRU: "Актау", postalCode: "130000"},
 		{nameEN: "Turkestan", nameKZ: "Түркістан", nameRU: "Туркестан", postalCode: "161200"},
+		{nameEN: "Aktobe", nameKZ: "Ақтөбе", nameRU: "Актобе", postalCode: "030000"},
+		{nameEN: "Taraz", nameKZ: "Тараз", nameRU: "Тараз", postalCode: "080000"},
+		{nameEN: "Oskemen", nameKZ: "Өскемен", nameRU: "Усть-Каменогорск", postalCode: "070000"},
+		{nameEN: "Pavlodar", nameKZ: "Павлодар", nameRU: "Павлодар", postalCode: "140000"},
+		{nameEN: "Semey", nameKZ: "Семей", nameRU: "Семей", postalCode: "071400"},
+		{nameEN: "Oral", nameKZ: "Орал", nameRU: "Уральск", postalCode: "090000"},
+		{nameEN: "Kostanay", nameKZ: "Қостанай", nameRU: "Костанай", postalCode: "110000"},
+		{nameEN: "Kyzylorda", nameKZ: "Қызылорда", nameRU: "Кызылорда", postalCode: "120000"},
+		{nameEN: "Atyrau", nameKZ: "Атырау", nameRU: "Атырау", postalCode: "060000"},
+		{nameEN: "Petropavl", nameKZ: "Петропавл", nameRU: "Петропавловск", postalCode: "150000"},
+		{nameEN: "Kokshetau", nameKZ: "Көкшетау", nameRU: "Кокшетау", postalCode: "020000"},
+		{nameEN: "Taldykorgan", nameKZ: "Талдықорған", nameRU: "Талдыкорган", postalCode: "040000"},
+		{nameEN: "Konayev", nameKZ: "Қонаев", nameRU: "Конаев", postalCode: "040800"},
+		{nameEN: "Zhezkazgan", nameKZ: "Жезқазған", nameRU: "Жезказган", postalCode: "100600"},
+		{nameEN: "Ekibastuz", nameKZ: "Екібастұз", nameRU: "Экибастуз", postalCode: "141200"},
+		{nameEN: "Rudny", nameKZ: "Рудный", nameRU: "Рудный", postalCode: "111500"},
+		{nameEN: "Temirtau", nameKZ: "Теміртау", nameRU: "Темиртау", postalCode: "101400"},
+		{nameEN: "Zhanaozen", nameKZ: "Жаңаөзен", nameRU: "Жанаозен", postalCode: "130200"},
+		{nameEN: "Balkhash", nameKZ: "Балқаш", nameRU: "Балхаш", postalCode: "100300"},
+		{nameEN: "Kentau", nameKZ: "Кентау", nameRU: "Кентау", postalCode: "161000"},
+		{nameEN: "Ridder", nameKZ: "Риддер", nameRU: "Риддер", postalCode: "070300"},
 	}
 
 	defaultCategories = []categorySeed{
@@ -105,6 +126,25 @@ var (
 		{nameEN: "Historic", nameKZ: "Тарихи", nameRU: "Исторические"},
 		{nameEN: "Long stay", nameKZ: "Ұзақ мерзімге", nameRU: "Долгосрочно"},
 		{nameEN: "Trending", nameKZ: "Танымал", nameRU: "Популярные"},
+		{nameEN: "Islands", nameKZ: "Аралдар", nameRU: "Острова"},
+		{nameEN: "Desert", nameKZ: "Шөл дала", nameRU: "Пустыня"},
+		{nameEN: "Farm stay", nameKZ: "Фермада", nameRU: "На ферме"},
+		{nameEN: "Vineyards", nameKZ: "Жүзімдіктер", nameRU: "Виноградники"},
+		{nameEN: "Tiny homes", nameKZ: "Кішкентай үйлер", nameRU: "Мини-дома"},
+		{nameEN: "Treehouses", nameKZ: "Ағаш үйлер", nameRU: "Дома на деревьях"},
+		{nameEN: "Castles", nameKZ: "Сарайлар", nameRU: "Замки"},
+		{nameEN: "Hot springs", nameKZ: "Ыстық бұлақтар", nameRU: "Горячие источники"},
+		{nameEN: "National parks", nameKZ: "Ұлттық парктер", nameRU: "Нацпарки"},
+		{nameEN: "Golf", nameKZ: "Гольф", nameRU: "Гольф"},
+	}
+
+	defaultConveniences = []string{
+		"Wi-Fi", "Air conditioning", "Heating", "Kitchen", "Washer",
+		"Dryer", "Free parking", "Pool", "Hot tub", "Gym",
+		"TV", "Workspace", "Elevator", "Breakfast", "BBQ grill",
+		"Fireplace", "Balcony", "Garden", "Sea view", "Mountain view",
+		"Pet friendly", "Smoke alarm", "First aid kit", "Security cameras", "Self check-in",
+		"EV charger", "Crib", "Iron", "Hair dryer", "24/7 security",
 	}
 )
 

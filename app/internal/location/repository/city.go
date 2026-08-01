@@ -51,6 +51,45 @@ func (r *CityRepository) GetAllWithCountry(ctx context.Context) ([]schema.City, 
 	return result, nil
 }
 
+func (r *CityRepository) GetAllWithCountryPaginated(ctx context.Context, limit, offset int) ([]schema.City, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx,
+		`SELECT COUNT(*) FROM cities c INNER JOIN countries ct ON c.country_id = ct.id`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count cities: %w", err)
+	}
+
+	query := `
+		SELECT
+			c.id, c.name_ru, c.name_en, c.name_kz, c.postall_code,
+			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code
+		FROM cities c
+		INNER JOIN countries ct ON c.country_id = ct.id
+		ORDER BY c.id
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query cities: %w", err)
+	}
+	defer rows.Close()
+
+	var result []schema.City
+	for rows.Next() {
+		var c schema.City
+		var ct schema.Country
+		if err := rows.Scan(
+			&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.PostallCode,
+			&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code,
+		); err != nil {
+			return nil, 0, err
+		}
+		c.Country = ct
+		result = append(result, c)
+	}
+	return result, total, rows.Err()
+}
+
 func (r *CityRepository) GetByIDWithCountry(ctx context.Context, id int) (schema.City, error) {
 	query := `
 		SELECT

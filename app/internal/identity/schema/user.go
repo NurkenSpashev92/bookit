@@ -22,6 +22,33 @@ type AuthUser struct {
 	PhoneNumber string `json:"phone_number,omitempty" example:"+77001234567"`
 	DateOfBirth string `json:"date_of_birth,omitempty" example:"1992-09-12"`
 	Avatar      string `json:"avatar,omitempty"`
+	IsSuperuser bool   `json:"is_superuser" example:"false"`
+	IsActive    bool   `json:"is_active" example:"true"`
+}
+
+// AdminUser user record returned to superusers
+// @Description User record exposed through admin endpoints
+type AdminUser struct {
+	ID          int    `json:"id" example:"1"`
+	Email       string `json:"email" example:"user@example.com"`
+	FirstName   string `json:"first_name,omitempty" example:"John"`
+	LastName    string `json:"last_name,omitempty" example:"Doe"`
+	MiddleName  string `json:"middle_name,omitempty" example:"M"`
+	Avatar      string `json:"avatar,omitempty"`
+	PhoneNumber string `json:"phone_number,omitempty" example:"+77001234567"`
+	IsSuperuser bool   `json:"is_superuser" example:"false"`
+	IsActive    bool   `json:"is_active" example:"true"`
+}
+
+// UserAdminUpdateRequest partial admin update of user flags
+// @Description Request body for updating user status flags (all fields optional)
+type UserAdminUpdateRequest struct {
+	IsActive    *bool `json:"is_active,omitempty" example:"true"`
+	IsSuperuser *bool `json:"is_superuser,omitempty" example:"false"`
+}
+
+func (r UserAdminUpdateRequest) Validate() error {
+	return nil
 }
 
 // UserCreateRequest registration request

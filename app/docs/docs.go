@@ -663,6 +663,7 @@ const docTemplate = `{
         },
         "/categories": {
             "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
                 "produces": [
                     "application/json"
                 ],
@@ -670,6 +671,20 @@ const docTemplate = `{
                     "Categories"
                 ],
                 "summary": "Get all active categories",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -865,6 +880,7 @@ const docTemplate = `{
         },
         "/cities": {
             "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
                 "produces": [
                     "application/json"
                 ],
@@ -872,6 +888,20 @@ const docTemplate = `{
                     "Cities"
                 ],
                 "summary": "Get all cities",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1065,8 +1095,226 @@ const docTemplate = `{
                 }
             }
         },
+        "/conveniences": {
+            "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conveniences"
+                ],
+                "summary": "Get all active conveniences",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.ConveniencePaginate"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conveniences"
+                ],
+                "summary": "Create convenience",
+                "parameters": [
+                    {
+                        "description": "Convenience",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ConvenienceCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schema.Convenience"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/conveniences/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conveniences"
+                ],
+                "summary": "Get convenience",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Convenience ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.Convenience"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conveniences"
+                ],
+                "summary": "Delete convenience",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Convenience ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/shared.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Conveniences"
+                ],
+                "summary": "Update convenience",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Convenience ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ConvenienceUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.Convenience"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/countries": {
             "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
                 "produces": [
                     "application/json"
                 ],
@@ -1074,6 +1322,20 @@ const docTemplate = `{
                     "Countries"
                 ],
                 "summary": "Get all countries",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1269,6 +1531,7 @@ const docTemplate = `{
         },
         "/faqs": {
             "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
                 "produces": [
                     "application/json"
                 ],
@@ -1276,6 +1539,20 @@ const docTemplate = `{
                     "FAQ"
                 ],
                 "summary": "Get all FAQs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2059,6 +2336,7 @@ const docTemplate = `{
         },
         "/inquiries": {
             "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
                 "produces": [
                     "application/json"
                 ],
@@ -2066,6 +2344,20 @@ const docTemplate = `{
                     "Inquiry"
                 ],
                 "summary": "Get all inquiries",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2469,6 +2761,7 @@ const docTemplate = `{
         },
         "/types": {
             "get": {
+                "description": "Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
                 "produces": [
                     "application/json"
                 ],
@@ -2476,6 +2769,20 @@ const docTemplate = `{
                     "Types"
                 ],
                 "summary": "Get all types",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2656,6 +2963,135 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Admin only. Without a ` + "`" + `page` + "`" + ` query param the response is a plain array. With ` + "`" + `page` + "`" + ` it is the paginated envelope (shared.PaginatedResponse).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List all users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (enables the paginated envelope)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 20, max 100)",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.AdminUser"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update user status flags",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.UserAdminUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.AdminUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/shared.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/shared.ErrorResponse"
                         }
@@ -2863,6 +3299,47 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.AdminUser": {
+            "description": "User record exposed through admin endpoints",
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_superuser": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "middle_name": {
+                    "type": "string",
+                    "example": "M"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+77001234567"
+                }
+            }
+        },
         "schema.AuthResponse": {
             "type": "object",
             "properties": {
@@ -2900,6 +3377,14 @@ const docTemplate = `{
                 "id": {
                     "type": "integer",
                     "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_superuser": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "last_name": {
                     "type": "string",
@@ -3277,6 +3762,73 @@ const docTemplate = `{
                 "postall_code": {
                     "type": "string",
                     "maxLength": 20
+                }
+            }
+        },
+        "schema.Convenience": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wi-Fi"
+                }
+            }
+        },
+        "schema.ConvenienceCreateRequest": {
+            "description": "Request body for creating a convenience",
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Wi-Fi"
+                }
+            }
+        },
+        "schema.ConveniencePaginate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wi-Fi"
+                }
+            }
+        },
+        "schema.ConvenienceUpdateRequest": {
+            "description": "Request body for updating a convenience (all fields optional)",
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Wi-Fi"
                 }
             }
         },
@@ -4326,6 +4878,20 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "Квартира"
+                }
+            }
+        },
+        "schema.UserAdminUpdateRequest": {
+            "description": "Request body for updating user status flags (all fields optional)",
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_superuser": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },

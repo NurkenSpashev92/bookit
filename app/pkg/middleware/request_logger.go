@@ -6,6 +6,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	fiberlog "github.com/gofiber/fiber/v3/log"
 	fiberlogger "github.com/gofiber/fiber/v3/middleware/logger"
+
+	"github.com/nurkenspashev92/bookit/pkg/logger"
 )
 
 type RequestLoggerConfig struct {
@@ -16,6 +18,11 @@ func RequestLogger(cfg RequestLoggerConfig) fiber.Handler {
 	return fiberlogger.New(fiberlogger.Config{
 		LoggerFunc: func(c fiber.Ctx, data *fiberlogger.Data, _ *fiberlogger.Config) error {
 			status := c.Response().StatusCode()
+
+			level := recordLevel(status, c.Path(), cfg.QuietPaths)
+			if !logger.Enabled(level) {
+				return nil
+			}
 
 			fields := []any{
 				"method", c.Method(),
@@ -34,22 +41,37 @@ func RequestLogger(cfg RequestLoggerConfig) fiber.Handler {
 				fields = append(fields, "error", data.ChainErr)
 			}
 
-			log := fiberlog.WithContext(c.Context())
-
-			switch {
-			case status >= http.StatusInternalServerError:
-				log.Errorw("request", fields...)
-			case status >= http.StatusBadRequest:
-				log.Warnw("request", fields...)
-			default:
-				if _, quiet := cfg.QuietPaths[c.Path()]; quiet {
-					log.Debugw("request", fields...)
-				} else {
-					log.Infow("request", fields...)
-				}
-			}
+			writeRecord(fiberlog.WithContext(c.Context()), level, fields)
 
 			return nil
 		},
 	})
+}
+
+func recordLevel(status int, path string, quiet map[string]struct{}) fiberlog.Level {
+	switch {
+	case status >= http.StatusInternalServerError:
+		return fiberlog.LevelError
+	case status >= http.StatusBadRequest:
+		return fiberlog.LevelWarn
+	}
+
+	if _, muted := quiet[path]; muted {
+		return fiberlog.LevelDebug
+	}
+
+	return fiberlog.LevelInfo
+}
+
+func writeRecord(log fiberlog.CommonLogger, level fiberlog.Level, fields []any) {
+	switch level {
+	case fiberlog.LevelError:
+		log.Errorw("request", fields...)
+	case fiberlog.LevelWarn:
+		log.Warnw("request", fields...)
+	case fiberlog.LevelDebug:
+		log.Debugw("request", fields...)
+	default:
+		log.Infow("request", fields...)
+	}
 }

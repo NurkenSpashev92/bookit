@@ -13,6 +13,9 @@ import (
 const (
 	minCategoriesPerHouse = 1
 	maxCategoriesPerHouse = 3
+
+	minConveniencesPerHouse = 3
+	maxConveniencesPerHouse = 8
 )
 
 const linkHouseCategorySQL = `
@@ -44,18 +47,71 @@ func linkHouseCategories(ctx context.Context, conn *pgxpool.Pool, houseIDs, cate
 }
 
 func pickCategories(categoryIDs []int) []int {
-	count := minCategoriesPerHouse + rand.Intn(maxCategoriesPerHouse-minCategoriesPerHouse+1)
-	if count > len(categoryIDs) {
-		count = len(categoryIDs)
+	return pickSubset(categoryIDs, minCategoriesPerHouse, maxCategoriesPerHouse)
+}
+
+func pickConveniences(convenienceIDs []int) []int {
+	return pickSubset(convenienceIDs, minConveniencesPerHouse, maxConveniencesPerHouse)
+}
+
+func pickSubset(ids []int, min, max int) []int {
+	count := min + rand.Intn(max-min+1)
+	if count > len(ids) {
+		count = len(ids)
 	}
 
-	shuffled := make([]int, len(categoryIDs))
-	copy(shuffled, categoryIDs)
+	shuffled := make([]int, len(ids))
+	copy(shuffled, ids)
 	rand.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 
 	return shuffled[:count]
+}
+
+const linkHouseConvenienceSQL = `
+	INSERT INTO house_convenience (house_id, convenience_id)
+	VALUES ($1, $2)
+	ON CONFLICT (house_id, convenience_id) DO NOTHING`
+
+func linkHouseConveniences(ctx context.Context, conn *pgxpool.Pool, houseIDs, convenienceIDs []int) error {
+	if len(houseIDs) == 0 || len(convenienceIDs) == 0 {
+		return nil
+	}
+
+	batch := &pgx.Batch{}
+	queued := 0
+
+	for _, houseID := range houseIDs {
+		for _, convenienceID := range pickConveniences(convenienceIDs) {
+			batch.Queue(linkHouseConvenienceSQL, houseID, convenienceID)
+			queued++
+		}
+	}
+
+	if err := execBatch(ctx, conn, batch, queued, "link house convenience"); err != nil {
+		return err
+	}
+
+	log.Printf("House-convenience links written: %d for %d houses", queued, len(houseIDs))
+	return nil
+}
+
+func backfillHouseConveniences(ctx context.Context, conn *pgxpool.Pool, convenienceIDs []int) error {
+	if len(convenienceIDs) == 0 {
+		return nil
+	}
+
+	houseIDs, err := selectHouseIDs(ctx, conn, `
+		SELECT h.id
+		FROM houses h
+		LEFT JOIN house_convenience hc ON hc.house_id = h.id
+		WHERE hc.house_id IS NULL`)
+	if err != nil {
+		return fmt.Errorf("select houses without convenience: %w", err)
+	}
+
+	return linkHouseConveniences(ctx, conn, houseIDs, convenienceIDs)
 }
 
 func backfillHouseLocations(ctx context.Context, conn *pgxpool.Pool, cities []cityRef) error {

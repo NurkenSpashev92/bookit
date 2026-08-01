@@ -36,6 +36,32 @@ func (r *TypeRepository) GetAll(ctx context.Context) ([]model.Type, error) {
 	return result, rows.Err()
 }
 
+func (r *TypeRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Type, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM types`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT id, name_kz, name_ru, name_en, is_active FROM types ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var result []model.Type
+	for rows.Next() {
+		var t model.Type
+		if err := rows.Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.IsActive); err != nil {
+			return nil, 0, err
+		}
+		result = append(result, t)
+	}
+	return result, total, rows.Err()
+}
+
 func (r *TypeRepository) GetByID(ctx context.Context, id int) (model.Type, error) {
 	var t model.Type
 	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_ru, name_en, is_active FROM types WHERE id=$1`, id).

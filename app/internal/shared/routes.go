@@ -5,6 +5,7 @@ import "github.com/gofiber/fiber/v3"
 type Guards struct {
 	Required fiber.Handler
 	Optional fiber.Handler
+	Admin    fiber.Handler
 }
 
 type CRUDHandler interface {

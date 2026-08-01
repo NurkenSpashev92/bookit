@@ -1,0 +1,48 @@
+package service
+
+import (
+	"context"
+
+	"github.com/nurkenspashev92/bookit/internal/property/schema"
+)
+
+type ConvenienceRepository interface {
+	GetConveniences(ctx context.Context) ([]schema.ConveniencePaginate, error)
+	GetConveniencesPaginated(ctx context.Context, limit, offset int) ([]schema.ConveniencePaginate, int, error)
+	GetByID(ctx context.Context, id int) (schema.Convenience, error)
+	CreateConvenience(ctx context.Context, req schema.ConvenienceCreateRequest) (schema.Convenience, error)
+	Update(ctx context.Context, id int, req schema.ConvenienceUpdateRequest) (schema.Convenience, error)
+	Delete(ctx context.Context, id int) error
+}
+
+type ConvenienceService struct {
+	repository ConvenienceRepository
+}
+
+func NewConvenienceService(repo ConvenienceRepository) *ConvenienceService {
+	return &ConvenienceService{repository: repo}
+}
+
+func (s *ConvenienceService) GetAll(ctx context.Context) ([]schema.ConveniencePaginate, error) {
+	return s.repository.GetConveniences(ctx)
+}
+
+func (s *ConvenienceService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.ConveniencePaginate, int, error) {
+	return s.repository.GetConveniencesPaginated(ctx, limit, offset)
+}
+
+func (s *ConvenienceService) GetByID(ctx context.Context, id int) (schema.Convenience, error) {
+	return s.repository.GetByID(ctx, id)
+}
+
+func (s *ConvenienceService) Create(ctx context.Context, req schema.ConvenienceCreateRequest) (schema.Convenience, error) {
+	return s.repository.CreateConvenience(ctx, req)
+}
+
+func (s *ConvenienceService) Update(ctx context.Context, id int, req schema.ConvenienceUpdateRequest) (schema.Convenience, error) {
+	return s.repository.Update(ctx, id, req)
+}
+
+func (s *ConvenienceService) Delete(ctx context.Context, id int) error {
+	return s.repository.Delete(ctx, id)
+}

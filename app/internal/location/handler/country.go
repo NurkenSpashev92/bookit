@@ -12,6 +12,7 @@ import (
 
 type CountryService interface {
 	GetAll(ctx context.Context) ([]model.Country, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Country, int, error)
 	GetByID(ctx context.Context, id int) (model.Country, error)
 	Create(ctx context.Context, req schema.CountryCreateRequest) (model.Country, error)
 	Update(ctx context.Context, id int, req schema.CountryUpdateRequest) (model.Country, error)
@@ -28,18 +29,16 @@ func NewCountryHandler(countryService CountryService) *CountryHandler {
 
 // GetCountries godoc
 // @Summary Get all countries
+// @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Countries
 // @Produce json
+// @Param page query int false "Page number (enables the paginated envelope)"
+// @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.Country
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /countries [get]
 func (h *CountryHandler) GetAll(c fiber.Ctx) error {
-	countries, err := h.countryService.GetAll(c.Context())
-	if err != nil {
-		return shared.Fail(c, err)
-	}
-
-	return shared.List(c, countries)
+	return shared.ListMaybePaginated(c, h.countryService.GetAll, h.countryService.GetAllPaginated)
 }
 
 // GetCountry godoc

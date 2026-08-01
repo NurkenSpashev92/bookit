@@ -127,6 +127,36 @@ definitions:
       width:
         type: integer
     type: object
+  schema.AdminUser:
+    description: User record exposed through admin endpoints
+    properties:
+      avatar:
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      first_name:
+        example: John
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      is_superuser:
+        example: false
+        type: boolean
+      last_name:
+        example: Doe
+        type: string
+      middle_name:
+        example: M
+        type: string
+      phone_number:
+        example: "+77001234567"
+        type: string
+    type: object
   schema.AuthResponse:
     properties:
       access_token:
@@ -154,6 +184,12 @@ definitions:
       id:
         example: 1
         type: integer
+      is_active:
+        example: true
+        type: boolean
+      is_superuser:
+        example: false
+        type: boolean
       last_name:
         example: Doe
         type: string
@@ -430,6 +466,54 @@ definitions:
         type: string
       postall_code:
         maxLength: 20
+        type: string
+    type: object
+  schema.Convenience:
+    properties:
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Wi-Fi
+        type: string
+    type: object
+  schema.ConvenienceCreateRequest:
+    description: Request body for creating a convenience
+    properties:
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Wi-Fi
+        maxLength: 255
+        type: string
+    required:
+    - name
+    type: object
+  schema.ConveniencePaginate:
+    properties:
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Wi-Fi
+        type: string
+    type: object
+  schema.ConvenienceUpdateRequest:
+    description: Request body for updating a convenience (all fields optional)
+    properties:
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Wi-Fi
+        maxLength: 255
         type: string
     type: object
   schema.Country:
@@ -1180,6 +1264,16 @@ definitions:
         maxLength: 255
         type: string
     type: object
+  schema.UserAdminUpdateRequest:
+    description: Request body for updating user status flags (all fields optional)
+    properties:
+      is_active:
+        example: true
+        type: boolean
+      is_superuser:
+        example: false
+        type: boolean
+    type: object
   schema.UserCreateRequest:
     description: Request body for user registration
     properties:
@@ -1712,6 +1806,17 @@ paths:
       - Bookings
   /categories:
     get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -1840,6 +1945,17 @@ paths:
       - Categories
   /cities:
     get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -1966,8 +2082,158 @@ paths:
       summary: Update a city
       tags:
       - Cities
+  /conveniences:
+    get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.ConveniencePaginate'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      summary: Get all active conveniences
+      tags:
+      - Conveniences
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Convenience
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.ConvenienceCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schema.Convenience'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create convenience
+      tags:
+      - Conveniences
+  /conveniences/{id}:
+    delete:
+      parameters:
+      - description: Convenience ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shared.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete convenience
+      tags:
+      - Conveniences
+    get:
+      parameters:
+      - description: Convenience ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.Convenience'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      summary: Get convenience
+      tags:
+      - Conveniences
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Convenience ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.ConvenienceUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.Convenience'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update convenience
+      tags:
+      - Conveniences
   /countries:
     get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -2096,6 +2362,17 @@ paths:
       - Countries
   /faqs:
     get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -2599,6 +2876,17 @@ paths:
       - Houses
   /inquiries:
     get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -2856,6 +3144,17 @@ paths:
       - Stats
   /types:
     get:
+      description: Without a `page` query param the response is a plain array. With
+        `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
@@ -2982,4 +3281,87 @@ paths:
       summary: Update a type
       tags:
       - Types
+  /users:
+    get:
+      description: Admin only. Without a `page` query param the response is a plain
+        array. With `page` it is the paginated envelope (shared.PaginatedResponse).
+      parameters:
+      - description: Page number (enables the paginated envelope)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.AdminUser'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List all users
+      tags:
+      - Users
+  /users/{id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.UserAdminUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.AdminUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/shared.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user status flags
+      tags:
+      - Users
 swagger: "2.0"

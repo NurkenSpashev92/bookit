@@ -14,13 +14,19 @@ const opTimeout = 200 * time.Millisecond
 
 type Cache struct {
 	client  *redis.Client
+	local   *LocalCache
 	ttl     time.Duration
 	enabled bool
 }
 
 func New(client *redis.Client, ttl time.Duration) *Cache {
+	return NewWithLocal(client, ttl, nil)
+}
+
+func NewWithLocal(client *redis.Client, ttl time.Duration, local *LocalCache) *Cache {
 	return &Cache{
 		client:  client,
+		local:   local,
 		ttl:     ttl,
 		enabled: true,
 	}
@@ -58,12 +64,16 @@ func (c *Cache) Set(ctx context.Context, key string, value interface{}) {
 	if err != nil {
 		return
 	}
-	c.SetBytes(ctx, key, data)
+	c.SetBytesTTL(ctx, key, data, 0)
 }
 
 func (c *Cache) GetBytes(ctx context.Context, key string) ([]byte, bool) {
 	if !c.enabled {
 		return nil, false
+	}
+
+	if data, found := c.local.Get(key); found {
+		return data, true
 	}
 
 	getCtx, cancel := context.WithTimeout(ctx, opTimeout)
@@ -73,24 +83,35 @@ func (c *Cache) GetBytes(ctx context.Context, key string) ([]byte, bool) {
 	if err != nil {
 		return nil, false
 	}
+
+	c.local.Set(key, data, 0)
+
 	return data, true
 }
 
-func (c *Cache) SetBytes(ctx context.Context, key string, data []byte) {
+func (c *Cache) SetBytesTTL(ctx context.Context, key string, data []byte, ttl time.Duration) {
 	if !c.enabled {
 		return
 	}
 
+	if ttl <= 0 {
+		ttl = c.ttl
+	}
+
+	c.local.Set(key, data, ttl)
+
 	setCtx, cancel := context.WithTimeout(ctx, opTimeout)
 	defer cancel()
 
-	c.client.Set(setCtx, key, data, c.ttl)
+	c.client.Set(setCtx, key, data, ttl)
 }
 
 func (c *Cache) Delete(ctx context.Context, key string) {
 	if !c.enabled {
 		return
 	}
+
+	c.local.Delete(key)
 	c.client.Del(ctx, key)
 }
 
@@ -103,6 +124,8 @@ func (c *Cache) DeleteByPrefix(prefix string) {
 	if !c.enabled {
 		return
 	}
+
+	c.local.DeletePrefix(prefix)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -126,5 +149,7 @@ func (c *Cache) Flush() {
 	if !c.enabled {
 		return
 	}
+
+	c.local.Clear()
 	c.client.FlushDB(context.Background())
 }

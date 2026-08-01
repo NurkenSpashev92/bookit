@@ -23,6 +23,11 @@ type Deps struct {
 func RegisterRoutes(api fiber.Router, deps Deps, guards shared.Guards) {
 	authHandler := NewAuthHandler(deps.User)
 	avatarHandler := NewAvatarHandler(deps.Avatar)
+	userHandler := NewUserHandler(deps.User)
+
+	users := api.Group("/users")
+	users.Get("/", guards.Admin, userHandler.List)
+	users.Patch("/:id", guards.Admin, userHandler.Update)
 
 	auth := api.Group("/auth")
 

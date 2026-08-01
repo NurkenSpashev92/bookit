@@ -140,6 +140,81 @@ func (r *UserRepository) Update(ctx context.Context, userID int, req schema.User
 	return user, nil
 }
 
+func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active
+		 FROM users
+		 ORDER BY id`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.PhoneNumber, &u.Avatar, &u.IsSuperuser, &u.IsActive); err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, u)
+	}
+
+	return users, rows.Err()
+}
+
+func (r *UserRepository) ListPaginated(ctx context.Context, limit, offset int) ([]model.User, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active
+		 FROM users
+		 ORDER BY id
+		 LIMIT $1 OFFSET $2`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.PhoneNumber, &u.Avatar, &u.IsSuperuser, &u.IsActive); err != nil {
+			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, u)
+	}
+
+	return users, total, rows.Err()
+}
+
+func (r *UserRepository) UpdateFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error) {
+	var user model.User
+
+	err := r.db.QueryRow(ctx,
+		`UPDATE users
+		 SET is_active = COALESCE($1, is_active),
+		     is_superuser = COALESCE($2, is_superuser),
+		     updated_at = NOW()
+		 WHERE id = $3
+		 RETURNING id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active`,
+		req.IsActive, req.IsSuperuser, id,
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.PhoneNumber, &user.Avatar, &user.IsSuperuser, &user.IsActive)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return user, model.ErrUserNotFound
+		}
+		return user, fmt.Errorf("failed to update user flags: %w", err)
+	}
+
+	return user, nil
+}
+
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phone string) (model.User, error) {
 	var user model.User
 	err := r.db.QueryRow(ctx,

@@ -12,6 +12,7 @@ import (
 
 type CityService interface {
 	GetAll(ctx context.Context) ([]schema.City, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.City, int, error)
 	GetByID(ctx context.Context, id int) (schema.City, error)
 	Create(ctx context.Context, req schema.CityCreateRequest) (model.City, error)
 	Update(ctx context.Context, id int, req schema.CityUpdateRequest) (model.City, error)
@@ -28,18 +29,16 @@ func NewCityHandler(cityService CityService) *CityHandler {
 
 // GetCities godoc
 // @Summary Get all cities
+// @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Cities
 // @Produce json
+// @Param page query int false "Page number (enables the paginated envelope)"
+// @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.City
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /cities [get]
 func (h *CityHandler) GetAll(c fiber.Ctx) error {
-	cities, err := h.cityService.GetAll(c.Context())
-	if err != nil {
-		return shared.Fail(c, err)
-	}
-
-	return shared.List(c, cities)
+	return shared.ListMaybePaginated(c, h.cityService.GetAll, h.cityService.GetAllPaginated)
 }
 
 // GetCity godoc

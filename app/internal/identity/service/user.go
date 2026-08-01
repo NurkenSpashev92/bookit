@@ -20,6 +20,9 @@ type UserRepository interface {
 	Update(ctx context.Context, userID int, req schema.UserUpdateRequest) (model.User, error)
 	UpdatePassword(ctx context.Context, userID int, hashedPassword string) error
 	UpdateAvatar(ctx context.Context, userID int, avatar string) error
+	ListAll(ctx context.Context) ([]model.User, error)
+	ListPaginated(ctx context.Context, limit, offset int) ([]model.User, int, error)
+	UpdateFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error)
 }
 
 type UserService struct {
@@ -167,6 +170,44 @@ func (s *UserService) Me(ctx context.Context, accessToken string) (*schema.AuthR
 	}, nil
 }
 
+func (s *UserService) ListUsers(ctx context.Context) ([]schema.AdminUser, error) {
+	users, err := s.repository.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schema.AdminUser, 0, len(users))
+	for _, user := range users {
+		result = append(result, s.mapper.ToAdminUser(user, s.awsCfg))
+	}
+
+	return result, nil
+}
+
+func (s *UserService) ListUsersPaginated(ctx context.Context, limit, offset int) ([]schema.AdminUser, int, error) {
+	users, total, err := s.repository.ListPaginated(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]schema.AdminUser, 0, len(users))
+	for _, user := range users {
+		result = append(result, s.mapper.ToAdminUser(user, s.awsCfg))
+	}
+
+	return result, total, nil
+}
+
+func (s *UserService) UpdateUserFlags(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (*schema.AdminUser, error) {
+	user, err := s.repository.UpdateFlags(ctx, id, req)
+	if err != nil {
+		return nil, err
+	}
+
+	adminUser := s.mapper.ToAdminUser(user, s.awsCfg)
+	return &adminUser, nil
+}
+
 func normalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
 }
@@ -193,5 +234,26 @@ func (m *UserMapper) ToAuthUser(user model.User, awsCfg *configs.AwsConfig) sche
 		PhoneNumber: phoneNumber,
 		DateOfBirth: dateOfBirth,
 		Avatar:      awsCfg.AwsS3URL(user.Avatar),
+		IsSuperuser: user.IsSuperuser,
+		IsActive:    user.IsActive,
+	}
+}
+
+func (m *UserMapper) ToAdminUser(user model.User, awsCfg *configs.AwsConfig) schema.AdminUser {
+	var phoneNumber string
+	if user.PhoneNumber != nil {
+		phoneNumber = *user.PhoneNumber
+	}
+
+	return schema.AdminUser{
+		ID:          user.ID,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		MiddleName:  user.MiddleName,
+		Avatar:      awsCfg.AwsS3URL(user.Avatar),
+		PhoneNumber: phoneNumber,
+		IsSuperuser: user.IsSuperuser,
+		IsActive:    user.IsActive,
 	}
 }

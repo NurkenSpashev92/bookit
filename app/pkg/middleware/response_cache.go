@@ -5,6 +5,7 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -15,13 +16,18 @@ const maxCacheableQueryLen = 512
 
 type ResponseStore interface {
 	GetBytes(ctx context.Context, key string) ([]byte, bool)
-	SetBytes(ctx context.Context, key string, data []byte)
+	SetBytesTTL(ctx context.Context, key string, data []byte, ttl time.Duration)
 	Enabled() bool
+}
+
+type CachedRoute struct {
+	Namespace string
+	TTL       time.Duration
 }
 
 type ResponseCacheConfig struct {
 	Cache  ResponseStore
-	Routes map[string]string
+	Routes map[string]CachedRoute
 }
 
 func ResponseCache(cfg ResponseCacheConfig) fiber.Handler {
@@ -30,7 +36,7 @@ func ResponseCache(cfg ResponseCacheConfig) fiber.Handler {
 	}
 
 	return func(c fiber.Ctx) error {
-		ns, ok := cfg.Routes[c.Path()]
+		route, ok := cfg.Routes[c.Path()]
 		if !ok || c.Method() != fiber.MethodGet || isAuthenticated(c) {
 			return c.Next()
 		}
@@ -40,7 +46,7 @@ func ResponseCache(cfg ResponseCacheConfig) fiber.Handler {
 			return c.Next()
 		}
 
-		key := responseCacheKey(ns, c.Path(), query, acceptedEncodings(c))
+		key := responseCacheKey(route.Namespace, c.Path(), query, acceptedEncodings(c))
 
 		if data, found := cfg.Cache.GetBytes(c.Context(), key); found {
 			if entry, valid := decodeResponse(data); valid {
@@ -60,7 +66,7 @@ func ResponseCache(cfg ResponseCacheConfig) fiber.Handler {
 				vary:            c.GetRespHeader(fiber.HeaderVary),
 				body:            c.Response().Body(),
 			}
-			cfg.Cache.SetBytes(c.Context(), key, entry.encode())
+			cfg.Cache.SetBytesTTL(c.Context(), key, entry.encode(), route.TTL)
 		}
 
 		return nil

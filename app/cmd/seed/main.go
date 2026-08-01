@@ -101,6 +101,11 @@ func run() error {
 		return err
 	}
 
+	convenienceIDs, err := ensureConveniences(ctx, conn)
+	if err != nil {
+		return err
+	}
+
 	houseIDs, err := insertHouses(ctx, conn, buildHouseRows(ownerIDs, typeIDs, cities))
 	if err != nil {
 		return err
@@ -110,10 +115,17 @@ func run() error {
 		return err
 	}
 
+	if err := linkHouseConveniences(ctx, conn, houseIDs, convenienceIDs); err != nil {
+		return err
+	}
+
 	if err := backfillHouseLocations(ctx, conn, cities); err != nil {
 		return err
 	}
 	if err := backfillHouseCategories(ctx, conn, categoryIDs); err != nil {
+		return err
+	}
+	if err := backfillHouseConveniences(ctx, conn, convenienceIDs); err != nil {
 		return err
 	}
 

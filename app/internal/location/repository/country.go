@@ -37,6 +37,32 @@ func (r *CountryRepository) GetAll(ctx context.Context) ([]model.Country, error)
 	return countries, nil
 }
 
+func (r *CountryRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Country, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM countries`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries ORDER BY id LIMIT $1 OFFSET $2`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var countries []model.Country
+	for rows.Next() {
+		var c model.Country
+		if err := rows.Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		countries = append(countries, c)
+	}
+	return countries, total, rows.Err()
+}
+
 func (r *CountryRepository) GetByID(ctx context.Context, id int) (model.Country, error) {
 	var c model.Country
 	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries WHERE id=$1`, id).

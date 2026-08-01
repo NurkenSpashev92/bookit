@@ -11,6 +11,7 @@ import (
 
 type InquiryService interface {
 	GetAll(ctx context.Context) ([]schema.Inquiry, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error)
 	GetByID(ctx context.Context, id int) (schema.Inquiry, error)
 	Create(ctx context.Context, req schema.InquiryCreateRequest) (schema.Inquiry, error)
 	Update(ctx context.Context, id int, req schema.InquiryUpdateRequest) (schema.Inquiry, error)
@@ -27,18 +28,16 @@ func NewInquiryHandler(inquiryService InquiryService) *InquiryHandler {
 
 // GetInquiries godoc
 // @Summary Get all inquiries
+// @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Inquiry
 // @Produce json
+// @Param page query int false "Page number (enables the paginated envelope)"
+// @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.Inquiry
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /inquiries [get]
 func (h *InquiryHandler) GetAll(c fiber.Ctx) error {
-	inquiries, err := h.inquiryService.GetAll(c.Context())
-	if err != nil {
-		return shared.Fail(c, err)
-	}
-
-	return shared.List(c, inquiries)
+	return shared.ListMaybePaginated(c, h.inquiryService.GetAll, h.inquiryService.GetAllPaginated)
 }
 
 // GetInquiryByID godoc

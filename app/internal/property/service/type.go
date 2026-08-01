@@ -9,6 +9,7 @@ import (
 
 type TypeRepository interface {
 	GetAll(ctx context.Context) ([]model.Type, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Type, int, error)
 	GetByID(ctx context.Context, id int) (model.Type, error)
 	Create(ctx context.Context, t model.Type) (model.Type, error)
 	Update(ctx context.Context, id int, t model.Type) (model.Type, error)
@@ -36,6 +37,20 @@ func (s *TypeService) GetAll(ctx context.Context) ([]schema.TypeResponse, error)
 	}
 
 	return responses, nil
+}
+
+func (s *TypeService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.TypeResponse, int, error) {
+	types, total, err := s.repository.GetAllPaginated(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	responses := make([]schema.TypeResponse, 0, len(types))
+	for i := range types {
+		responses = append(responses, s.mapper.ToResponse(types[i]))
+	}
+
+	return responses, total, nil
 }
 
 func (s *TypeService) GetByID(ctx context.Context, id int) (schema.TypeResponse, error) {
