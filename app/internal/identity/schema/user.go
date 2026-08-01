@@ -14,30 +14,32 @@ type User struct {
 }
 
 type AuthUser struct {
-	ID          int    `json:"id" example:"1"`
-	Email       string `json:"email" example:"user@example.com"`
-	FirstName   string `json:"first_name,omitempty" example:"John"`
-	LastName    string `json:"last_name,omitempty" example:"Doe"`
-	MiddleName  string `json:"middle_name,omitempty" example:"M"`
-	PhoneNumber string `json:"phone_number,omitempty" example:"+77001234567"`
-	DateOfBirth string `json:"date_of_birth,omitempty" example:"1992-09-12"`
-	Avatar      string `json:"avatar,omitempty"`
-	IsSuperuser bool   `json:"is_superuser" example:"false"`
-	IsActive    bool   `json:"is_active" example:"true"`
+	ID               int    `json:"id" example:"1"`
+	Email            string `json:"email" example:"user@example.com"`
+	FirstName        string `json:"first_name,omitempty" example:"John"`
+	LastName         string `json:"last_name,omitempty" example:"Doe"`
+	MiddleName       string `json:"middle_name,omitempty" example:"M"`
+	PhoneNumber      string `json:"phone_number,omitempty" example:"+77001234567"`
+	DateOfBirth      string `json:"date_of_birth,omitempty" example:"1992-09-12"`
+	Avatar           string `json:"avatar,omitempty"`
+	IsSuperuser      bool   `json:"is_superuser" example:"false"`
+	IsActive         bool   `json:"is_active" example:"true"`
+	SubscriptionType string `json:"subscription_type" example:"basic"`
 }
 
 // AdminUser user record returned to superusers
 // @Description User record exposed through admin endpoints
 type AdminUser struct {
-	ID          int    `json:"id" example:"1"`
-	Email       string `json:"email" example:"user@example.com"`
-	FirstName   string `json:"first_name,omitempty" example:"John"`
-	LastName    string `json:"last_name,omitempty" example:"Doe"`
-	MiddleName  string `json:"middle_name,omitempty" example:"M"`
-	Avatar      string `json:"avatar,omitempty"`
-	PhoneNumber string `json:"phone_number,omitempty" example:"+77001234567"`
-	IsSuperuser bool   `json:"is_superuser" example:"false"`
-	IsActive    bool   `json:"is_active" example:"true"`
+	ID               int    `json:"id" example:"1"`
+	Email            string `json:"email" example:"user@example.com"`
+	FirstName        string `json:"first_name,omitempty" example:"John"`
+	LastName         string `json:"last_name,omitempty" example:"Doe"`
+	MiddleName       string `json:"middle_name,omitempty" example:"M"`
+	Avatar           string `json:"avatar,omitempty"`
+	PhoneNumber      string `json:"phone_number,omitempty" example:"+77001234567"`
+	IsSuperuser      bool   `json:"is_superuser" example:"false"`
+	IsActive         bool   `json:"is_active" example:"true"`
+	SubscriptionType string `json:"subscription_type" example:"basic"`
 }
 
 // UserAdminUpdateRequest partial admin update of user flags

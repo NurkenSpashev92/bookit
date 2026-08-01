@@ -52,12 +52,12 @@ func (r *UserRepository) Create(ctx context.Context, user schema.UserCreateReque
 		`INSERT INTO users
 			(email, first_name, last_name, middle_name, password, date_of_birth, phone_number, is_superuser, is_active, date_joined, created_at, updated_at)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW(),NOW())
-		 RETURNING id,email,first_name,last_name,middle_name,password,date_of_birth,phone_number,is_superuser,is_active,date_joined,created_at,updated_at`,
+		 RETURNING id,email,first_name,last_name,middle_name,password,date_of_birth,phone_number,is_superuser,is_active,date_joined,created_at,updated_at,subscription_type`,
 		email, user.FirstName, user.LastName, user.MiddleName, string(hashedPassword), dateOfBirth, phoneNumber,
 		false, true,
 	).Scan(
 		&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.Password, &u.DateOfBirth, &u.PhoneNumber,
-		&u.IsSuperuser, &u.IsActive, &u.DateJoined, &u.CreatedAt, &u.UpdatedAt,
+		&u.IsSuperuser, &u.IsActive, &u.DateJoined, &u.CreatedAt, &u.UpdatedAt, &u.SubscriptionType,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -77,9 +77,9 @@ func (r *UserRepository) Create(ctx context.Context, user schema.UserCreateReque
 func (r *UserRepository) GetByID(ctx context.Context, id int) (model.User, error) {
 	var user model.User
 	err := r.db.QueryRow(ctx,
-		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active
+		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
 		 FROM users WHERE id=$1`, id,
-	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return user, model.ErrUserNotFound
@@ -93,9 +93,9 @@ func (r *UserRepository) Update(ctx context.Context, userID int, req schema.User
 	var user model.User
 
 	err := r.db.QueryRow(ctx,
-		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active
+		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
 		 FROM users WHERE id=$1`, userID,
-	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return user, model.ErrUserNotFound
@@ -142,7 +142,7 @@ func (r *UserRepository) Update(ctx context.Context, userID int, req schema.User
 
 func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
 	rows, err := r.db.Query(ctx,
-		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active
+		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
 		 FROM users
 		 ORDER BY id`,
 	)
@@ -154,7 +154,7 @@ func (r *UserRepository) ListAll(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	for rows.Next() {
 		var u model.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.PhoneNumber, &u.Avatar, &u.IsSuperuser, &u.IsActive); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.PhoneNumber, &u.Avatar, &u.IsSuperuser, &u.IsActive, &u.SubscriptionType); err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 		users = append(users, u)
@@ -170,7 +170,7 @@ func (r *UserRepository) ListPaginated(ctx context.Context, limit, offset int) (
 	}
 
 	rows, err := r.db.Query(ctx,
-		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active
+		`SELECT id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
 		 FROM users
 		 ORDER BY id
 		 LIMIT $1 OFFSET $2`,
@@ -184,7 +184,7 @@ func (r *UserRepository) ListPaginated(ctx context.Context, limit, offset int) (
 	var users []model.User
 	for rows.Next() {
 		var u model.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.PhoneNumber, &u.Avatar, &u.IsSuperuser, &u.IsActive); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.MiddleName, &u.PhoneNumber, &u.Avatar, &u.IsSuperuser, &u.IsActive, &u.SubscriptionType); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
 		}
 		users = append(users, u)
@@ -202,9 +202,9 @@ func (r *UserRepository) UpdateFlags(ctx context.Context, id int, req schema.Use
 		     is_superuser = COALESCE($2, is_superuser),
 		     updated_at = NOW()
 		 WHERE id = $3
-		 RETURNING id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active`,
+		 RETURNING id, email, first_name, last_name, middle_name, phone_number, COALESCE(avatar, ''), is_superuser, is_active, subscription_type`,
 		req.IsActive, req.IsSuperuser, id,
-	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.PhoneNumber, &user.Avatar, &user.IsSuperuser, &user.IsActive)
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.PhoneNumber, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return user, model.ErrUserNotFound
@@ -218,9 +218,9 @@ func (r *UserRepository) UpdateFlags(ctx context.Context, id int, req schema.Use
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phone string) (model.User, error) {
 	var user model.User
 	err := r.db.QueryRow(ctx,
-		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active
+		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
 		 FROM users WHERE phone_number=$1`, phone,
-	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return user, model.ErrUserNotFound
@@ -246,12 +246,26 @@ func (r *UserRepository) UpdateAvatar(ctx context.Context, userID int, avatar st
 	return err
 }
 
+func (r *UserRepository) SetSubscriptionType(ctx context.Context, userID int, subType string) error {
+	cmd, err := r.db.Exec(ctx,
+		`UPDATE users SET subscription_type=$1::subscription_type, updated_at=NOW() WHERE id=$2`,
+		subType, userID,
+	)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() == 0 {
+		return model.ErrUserNotFound
+	}
+	return nil
+}
+
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (model.User, error) {
 	var user model.User
 	err := r.db.QueryRow(ctx,
-		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active
+		`SELECT id, email, first_name, last_name, middle_name, password, phone_number, date_of_birth, COALESCE(avatar, ''), is_superuser, is_active, subscription_type
 		 FROM users WHERE email=$1`, email,
-	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive)
+	).Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.MiddleName, &user.Password, &user.PhoneNumber, &user.DateOfBirth, &user.Avatar, &user.IsSuperuser, &user.IsActive, &user.SubscriptionType)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return user, model.ErrUserNotFound

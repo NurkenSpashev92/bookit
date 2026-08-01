@@ -28,6 +28,8 @@ import (
 	propertyh "github.com/nurkenspashev92/bookit/internal/property/handler"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
 	"github.com/nurkenspashev92/bookit/internal/shared"
+	subscriptionh "github.com/nurkenspashev92/bookit/internal/subscription/handler"
+	subscriptionsvc "github.com/nurkenspashev92/bookit/internal/subscription/service"
 	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/middleware"
 )
@@ -52,22 +54,23 @@ var quietLogPaths = map[string]struct{}{
 }
 
 type Services struct {
-	Cache       *cache.Cache
-	User        *identitysvc.UserService
-	JWT         *identitysvc.JWTService
-	House       *propertysvc.HouseService
-	HouseLike   *interactionsvc.HouseLikeService
-	Image       *propertysvc.ImageService
-	Avatar      *identitysvc.AvatarService
-	Category    *propertysvc.CategoryService
-	Convenience *propertysvc.ConvenienceService
-	Country     *locationsvc.CountryService
-	City        *locationsvc.CityService
-	Type        *propertysvc.TypeService
-	FAQ         *contentsvc.FAQService
-	Inquiry     *contentsvc.InquiryService
-	Stats       *analyticssvc.StatsService
-	Booking     *bookingsvc.BookingService
+	Cache        *cache.Cache
+	User         *identitysvc.UserService
+	JWT          *identitysvc.JWTService
+	House        *propertysvc.HouseService
+	HouseLike    *interactionsvc.HouseLikeService
+	Image        *propertysvc.ImageService
+	Avatar       *identitysvc.AvatarService
+	Category     *propertysvc.CategoryService
+	Convenience  *propertysvc.ConvenienceService
+	Country      *locationsvc.CountryService
+	City         *locationsvc.CityService
+	Type         *propertysvc.TypeService
+	FAQ          *contentsvc.FAQService
+	Inquiry      *contentsvc.InquiryService
+	Stats        *analyticssvc.StatsService
+	Booking      *bookingsvc.BookingService
+	Subscription *subscriptionsvc.SubscriptionService
 }
 
 func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App {
@@ -109,6 +112,7 @@ func RegisterRoutes(app *fiber.App, db *pgxpool.Pool, svc *Services) *fiber.App 
 
 	bookingh.RegisterRoutes(apiV1, svc.Booking, guards)
 	analyticsh.RegisterRoutes(apiV1, svc.Stats, guards)
+	subscriptionh.RegisterRoutes(apiV1, svc.Subscription, guards)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 

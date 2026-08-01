@@ -226,16 +226,17 @@ func (m *UserMapper) ToAuthUser(user model.User, awsCfg *configs.AwsConfig) sche
 	}
 
 	return schema.AuthUser{
-		ID:          user.ID,
-		Email:       user.Email,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		MiddleName:  user.MiddleName,
-		PhoneNumber: phoneNumber,
-		DateOfBirth: dateOfBirth,
-		Avatar:      awsCfg.AwsS3URL(user.Avatar),
-		IsSuperuser: user.IsSuperuser,
-		IsActive:    user.IsActive,
+		ID:               user.ID,
+		Email:            user.Email,
+		FirstName:        user.FirstName,
+		LastName:         user.LastName,
+		MiddleName:       user.MiddleName,
+		PhoneNumber:      phoneNumber,
+		DateOfBirth:      dateOfBirth,
+		Avatar:           awsCfg.AwsS3URL(user.Avatar),
+		IsSuperuser:      user.IsSuperuser,
+		IsActive:         user.IsActive,
+		SubscriptionType: user.SubscriptionType,
 	}
 }
 
@@ -246,14 +247,15 @@ func (m *UserMapper) ToAdminUser(user model.User, awsCfg *configs.AwsConfig) sch
 	}
 
 	return schema.AdminUser{
-		ID:          user.ID,
-		Email:       user.Email,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		MiddleName:  user.MiddleName,
-		Avatar:      awsCfg.AwsS3URL(user.Avatar),
-		PhoneNumber: phoneNumber,
-		IsSuperuser: user.IsSuperuser,
-		IsActive:    user.IsActive,
+		ID:               user.ID,
+		Email:            user.Email,
+		FirstName:        user.FirstName,
+		LastName:         user.LastName,
+		MiddleName:       user.MiddleName,
+		Avatar:           awsCfg.AwsS3URL(user.Avatar),
+		PhoneNumber:      phoneNumber,
+		IsSuperuser:      user.IsSuperuser,
+		IsActive:         user.IsActive,
+		SubscriptionType: user.SubscriptionType,
 	}
 }

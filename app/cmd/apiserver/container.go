@@ -22,6 +22,8 @@ import (
 	locationsvc "github.com/nurkenspashev92/bookit/internal/location/service"
 	propertyrepo "github.com/nurkenspashev92/bookit/internal/property/repository"
 	propertysvc "github.com/nurkenspashev92/bookit/internal/property/service"
+	subscriptionrepo "github.com/nurkenspashev92/bookit/internal/subscription/repository"
+	subscriptionsvc "github.com/nurkenspashev92/bookit/internal/subscription/service"
 	"github.com/nurkenspashev92/bookit/pkg/aws"
 	"github.com/nurkenspashev92/bookit/pkg/cache"
 	"github.com/nurkenspashev92/bookit/pkg/store"
@@ -91,21 +93,22 @@ func buildServices(infra infrastructure) *router.Services {
 	userRepo := identityrepo.NewUserRepository(infra.db)
 
 	return &router.Services{
-		Cache:       infra.cache,
-		JWT:         jwtService,
-		User:        identitysvc.NewUserService(userRepo, jwtService, infra.awsCfg),
-		Avatar:      identitysvc.NewAvatarService(userRepo, infra.s3, infra.awsCfg),
-		House:       propertysvc.NewHouseService(propertyrepo.NewHouseRepository(infra.db, infra.awsCfg), likeRepo, bookingRepo, infra.cache),
-		Image:       propertysvc.NewImageService(propertyrepo.NewHouseImageRepository(infra.db), infra.s3, infra.cache),
-		Category:    propertysvc.NewCategoryService(propertyrepo.NewCategoryRepository(infra.db)),
-		Convenience: propertysvc.NewConvenienceService(propertyrepo.NewConvenienceRepository(infra.db)),
-		Type:        propertysvc.NewTypeService(propertyrepo.NewTypeRepository(infra.db)),
-		HouseLike:   interactionsvc.NewHouseLikeService(likeRepo),
-		Booking:     bookingsvc.NewBookingService(bookingRepo),
-		Country:     locationsvc.NewCountryService(locationrepo.NewCountryRepository(infra.db)),
-		City:        locationsvc.NewCityService(locationrepo.NewCityRepository(infra.db)),
-		FAQ:         contentsvc.NewFAQService(contentrepo.NewFAQRepository(infra.db)),
-		Inquiry:     contentsvc.NewInquiryService(contentrepo.NewInquiryRepository(infra.db)),
-		Stats:       analyticssvc.NewStatsService(analyticsrepo.NewStatsRepository(infra.db)),
+		Cache:        infra.cache,
+		JWT:          jwtService,
+		User:         identitysvc.NewUserService(userRepo, jwtService, infra.awsCfg),
+		Avatar:       identitysvc.NewAvatarService(userRepo, infra.s3, infra.awsCfg),
+		House:        propertysvc.NewHouseService(propertyrepo.NewHouseRepository(infra.db, infra.awsCfg), likeRepo, bookingRepo, infra.cache),
+		Image:        propertysvc.NewImageService(propertyrepo.NewHouseImageRepository(infra.db), infra.s3, infra.cache),
+		Category:     propertysvc.NewCategoryService(propertyrepo.NewCategoryRepository(infra.db)),
+		Convenience:  propertysvc.NewConvenienceService(propertyrepo.NewConvenienceRepository(infra.db)),
+		Type:         propertysvc.NewTypeService(propertyrepo.NewTypeRepository(infra.db)),
+		HouseLike:    interactionsvc.NewHouseLikeService(likeRepo),
+		Booking:      bookingsvc.NewBookingService(bookingRepo),
+		Country:      locationsvc.NewCountryService(locationrepo.NewCountryRepository(infra.db)),
+		City:         locationsvc.NewCityService(locationrepo.NewCityRepository(infra.db)),
+		FAQ:          contentsvc.NewFAQService(contentrepo.NewFAQRepository(infra.db)),
+		Inquiry:      contentsvc.NewInquiryService(contentrepo.NewInquiryRepository(infra.db)),
+		Stats:        analyticssvc.NewStatsService(analyticsrepo.NewStatsRepository(infra.db)),
+		Subscription: subscriptionsvc.NewSubscriptionService(subscriptionrepo.NewSubscriptionRepository(infra.db), userRepo),
 	}
 }
