@@ -1296,6 +1296,9 @@ definitions:
         type: string
       updated_at:
         type: string
+      user_full_name:
+        example: John Doe
+        type: string
       user_id:
         example: 1
         type: integer

@@ -36,12 +36,13 @@ func (s Status) Valid() bool {
 }
 
 type Subscription struct {
-	ID        int        `json:"id"`
-	UserID    int        `json:"user_id"`
-	Type      Type       `json:"type"`
-	Status    Status     `json:"status"`
-	StartDate time.Time  `json:"start_date"`
-	EndDate   *time.Time `json:"end_date,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID           int        `json:"id"`
+	UserID       int        `json:"user_id"`
+	UserFullName string     `json:"user_full_name,omitempty"`
+	Type         Type       `json:"type"`
+	Status       Status     `json:"status"`
+	StartDate    time.Time  `json:"start_date"`
+	EndDate      *time.Time `json:"end_date,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }

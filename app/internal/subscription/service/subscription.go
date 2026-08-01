@@ -221,14 +221,15 @@ func orDefault[T ~string](v string, def T) T {
 
 func toResponse(s model.Subscription) schema.SubscriptionResponse {
 	return schema.SubscriptionResponse{
-		ID:        s.ID,
-		UserID:    s.UserID,
-		Type:      string(s.Type),
-		Status:    string(s.Status),
-		StartDate: s.StartDate,
-		EndDate:   s.EndDate,
-		CreatedAt: s.CreatedAt,
-		UpdatedAt: s.UpdatedAt,
+		ID:           s.ID,
+		UserID:       s.UserID,
+		UserFullName: s.UserFullName,
+		Type:         string(s.Type),
+		Status:       string(s.Status),
+		StartDate:    s.StartDate,
+		EndDate:      s.EndDate,
+		CreatedAt:    s.CreatedAt,
+		UpdatedAt:    s.UpdatedAt,
 	}
 }
 

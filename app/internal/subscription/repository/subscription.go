@@ -11,7 +11,16 @@ import (
 	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
-const columns = `id, user_id, type, status, start_date, end_date, created_at, updated_at`
+const writeColumns = `id, user_id, type, status, start_date, end_date, created_at, updated_at`
+
+// fullNameExpr resolves the subscribed user's display name: first_name + " " + last_name
+// (trimmed); if that is empty it falls back to the email, and finally to an empty string
+// when the joined user row is missing.
+const fullNameExpr = `COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.email, '')`
+
+const readQuery = `SELECT s.id, s.user_id, s.type, s.status, s.start_date, s.end_date, s.created_at, s.updated_at,
+	` + fullNameExpr + `
+	FROM subscriptions s LEFT JOIN users u ON u.id = s.user_id`
 
 type SubscriptionRepository struct {
 	db *pgxpool.Pool
@@ -21,10 +30,10 @@ func NewSubscriptionRepository(db *pgxpool.Pool) *SubscriptionRepository {
 	return &SubscriptionRepository{db: db}
 }
 
-func scan(row interface {
+func scanFull(row interface {
 	Scan(dest ...any) error
 }, s *model.Subscription) error {
-	return row.Scan(&s.ID, &s.UserID, &s.Type, &s.Status, &s.StartDate, &s.EndDate, &s.CreatedAt, &s.UpdatedAt)
+	return row.Scan(&s.ID, &s.UserID, &s.Type, &s.Status, &s.StartDate, &s.EndDate, &s.CreatedAt, &s.UpdatedAt, &s.UserFullName)
 }
 
 func collect(rows pgx.Rows) ([]model.Subscription, error) {
@@ -33,7 +42,7 @@ func collect(rows pgx.Rows) ([]model.Subscription, error) {
 	var result []model.Subscription
 	for rows.Next() {
 		var s model.Subscription
-		if err := scan(rows, &s); err != nil {
+		if err := scanFull(rows, &s); err != nil {
 			return nil, fmt.Errorf("failed to scan subscription: %w", err)
 		}
 		result = append(result, s)
@@ -43,10 +52,15 @@ func collect(rows pgx.Rows) ([]model.Subscription, error) {
 
 func (r *SubscriptionRepository) Create(ctx context.Context, s model.Subscription) (model.Subscription, error) {
 	var created model.Subscription
-	err := scan(r.db.QueryRow(ctx,
-		`INSERT INTO subscriptions (user_id, type, status, start_date, end_date, created_at, updated_at)
-		 VALUES ($1, $2::subscription_type, $3::subscription_status, $4, $5, NOW(), NOW())
-		 RETURNING `+columns,
+	err := scanFull(r.db.QueryRow(ctx,
+		`WITH ins AS (
+			INSERT INTO subscriptions (user_id, type, status, start_date, end_date, created_at, updated_at)
+			VALUES ($1, $2::subscription_type, $3::subscription_status, $4, $5, NOW(), NOW())
+			RETURNING `+writeColumns+`
+		 )
+		 SELECT ins.id, ins.user_id, ins.type, ins.status, ins.start_date, ins.end_date, ins.created_at, ins.updated_at,
+			`+fullNameExpr+`
+		 FROM ins LEFT JOIN users u ON u.id = ins.user_id`,
 		s.UserID, string(s.Type), string(s.Status), s.StartDate, s.EndDate,
 	), &created)
 	if err != nil {
@@ -57,25 +71,24 @@ func (r *SubscriptionRepository) Create(ctx context.Context, s model.Subscriptio
 
 func (r *SubscriptionRepository) GetByID(ctx context.Context, id int) (model.Subscription, error) {
 	var s model.Subscription
-	err := scan(r.db.QueryRow(ctx, `SELECT `+columns+` FROM subscriptions WHERE id = $1`, id), &s)
+	err := scanFull(r.db.QueryRow(ctx, readQuery+` WHERE s.id = $1`, id), &s)
 	return s, store.MapNoRows(err, model.ErrSubscriptionNotFound)
 }
 
 func (r *SubscriptionRepository) GetLatestByUserID(ctx context.Context, userID int) (model.Subscription, error) {
 	var s model.Subscription
-	err := scan(r.db.QueryRow(ctx,
-		`SELECT `+columns+` FROM subscriptions WHERE user_id = $1 ORDER BY id DESC LIMIT 1`, userID,
+	err := scanFull(r.db.QueryRow(ctx,
+		readQuery+` WHERE s.user_id = $1 ORDER BY s.id DESC LIMIT 1`, userID,
 	), &s)
 	return s, store.MapNoRows(err, model.ErrSubscriptionNotFound)
 }
 
 func (r *SubscriptionRepository) GetActiveByUserID(ctx context.Context, userID int) (model.Subscription, error) {
 	var s model.Subscription
-	err := scan(r.db.QueryRow(ctx,
-		`SELECT `+columns+`
-		 FROM subscriptions
-		 WHERE user_id = $1 AND status = 'active' AND (end_date IS NULL OR end_date > NOW())
-		 ORDER BY id DESC LIMIT 1`, userID,
+	err := scanFull(r.db.QueryRow(ctx,
+		readQuery+`
+		 WHERE s.user_id = $1 AND s.status = 'active' AND (s.end_date IS NULL OR s.end_date > NOW())
+		 ORDER BY s.id DESC LIMIT 1`, userID,
 	), &s)
 	return s, store.MapNoRows(err, model.ErrSubscriptionNotFound)
 }
@@ -95,7 +108,7 @@ func (r *SubscriptionRepository) Deactivate(ctx context.Context, id int) error {
 
 func (r *SubscriptionRepository) ListByUserID(ctx context.Context, userID int) ([]model.Subscription, error) {
 	rows, err := r.db.Query(ctx,
-		`SELECT `+columns+` FROM subscriptions WHERE user_id = $1 ORDER BY id DESC`, userID,
+		readQuery+` WHERE s.user_id = $1 ORDER BY s.id DESC`, userID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list user subscriptions: %w", err)
@@ -104,7 +117,7 @@ func (r *SubscriptionRepository) ListByUserID(ctx context.Context, userID int) (
 }
 
 func (r *SubscriptionRepository) ListAll(ctx context.Context) ([]model.Subscription, error) {
-	rows, err := r.db.Query(ctx, `SELECT `+columns+` FROM subscriptions ORDER BY id DESC`)
+	rows, err := r.db.Query(ctx, readQuery+` ORDER BY s.id DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list subscriptions: %w", err)
 	}
@@ -118,7 +131,7 @@ func (r *SubscriptionRepository) ListPaginated(ctx context.Context, limit, offse
 	}
 
 	rows, err := r.db.Query(ctx,
-		`SELECT `+columns+` FROM subscriptions ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset,
+		readQuery+` ORDER BY s.id DESC LIMIT $1 OFFSET $2`, limit, offset,
 	)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list subscriptions: %w", err)
@@ -129,11 +142,16 @@ func (r *SubscriptionRepository) ListPaginated(ctx context.Context, limit, offse
 
 func (r *SubscriptionRepository) Update(ctx context.Context, id int, s model.Subscription) (model.Subscription, error) {
 	var updated model.Subscription
-	err := scan(r.db.QueryRow(ctx,
-		`UPDATE subscriptions
-		 SET type = $1::subscription_type, status = $2::subscription_status, end_date = $3, updated_at = NOW()
-		 WHERE id = $4
-		 RETURNING `+columns,
+	err := scanFull(r.db.QueryRow(ctx,
+		`WITH upd AS (
+			UPDATE subscriptions
+			SET type = $1::subscription_type, status = $2::subscription_status, end_date = $3, updated_at = NOW()
+			WHERE id = $4
+			RETURNING `+writeColumns+`
+		 )
+		 SELECT upd.id, upd.user_id, upd.type, upd.status, upd.start_date, upd.end_date, upd.created_at, upd.updated_at,
+			`+fullNameExpr+`
+		 FROM upd LEFT JOIN users u ON u.id = upd.user_id`,
 		string(s.Type), string(s.Status), s.EndDate, id,
 	), &updated)
 	return updated, store.MapNoRows(err, model.ErrSubscriptionNotFound)

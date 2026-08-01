@@ -5328,6 +5328,10 @@ const docTemplate = `{
                 "updated_at": {
                     "type": "string"
                 },
+                "user_full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
                 "user_id": {
                     "type": "integer",
                     "example": 1

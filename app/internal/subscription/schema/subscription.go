@@ -13,14 +13,15 @@ const (
 )
 
 type SubscriptionResponse struct {
-	ID        int        `json:"id" example:"1"`
-	UserID    int        `json:"user_id" example:"1"`
-	Type      string     `json:"type" example:"basic"`
-	Status    string     `json:"status" example:"active"`
-	StartDate time.Time  `json:"start_date"`
-	EndDate   *time.Time `json:"end_date,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID           int        `json:"id" example:"1"`
+	UserID       int        `json:"user_id" example:"1"`
+	UserFullName string     `json:"user_full_name" example:"John Doe"`
+	Type         string     `json:"type" example:"basic"`
+	Status       string     `json:"status" example:"active"`
+	StartDate    time.Time  `json:"start_date"`
+	EndDate      *time.Time `json:"end_date,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 // SubscriptionActivateRequest activate/change the current user's own plan.
