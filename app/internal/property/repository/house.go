@@ -269,7 +269,6 @@ func (w *whereBuilder) build(argOffset int) (string, []interface{}) {
 func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.HouseDetailResponse, error) {
 	var h schema.HouseDetailResponse
 	var imagesJSON []byte
-	var createdAt, updatedAt time.Time
 	baseURL := r.awsCfg.BaseURL()
 
 	query := `
@@ -277,19 +276,14 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.Ho
 			h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price, h.rooms_qty, h.guest_qty, h.bedroom_qty, h.bath_qty,
 			h.description_en, h.description_kz, h.description_ru,
 			h.address_en, h.address_kz, h.address_ru,
-			h.lng, h.lat, h.is_active, h.priority,
+			h.lng, h.lat, h.is_active,
 			h.comments_ru, h.comments_en, h.comments_kz,
-			h.owner_id, h.type_id, h.city_id, h.country_id, h.guests_with_pets, h.best_house, h.promotion,
-			h.district_en, h.district_kz, h.district_ru, h.phone_number, h.created_at, h.updated_at,
+			h.type_id, h.city_id, h.country_id, h.guests_with_pets, h.best_house, h.promotion,
+			h.district_en, h.district_kz, h.district_ru, h.phone_number,
 			h.like_count,
-			CONCAT(c.name_kz, ', ', ct.name_kz),
-			CONCAT(c.name_ru, ', ', ct.name_ru),
-			CONCAT(c.name_en, ', ', ct.name_en),
 			CONCAT(u.first_name, ' ', u.last_name),
 			COALESCE(img.images, '[]')
 		FROM houses h
-		LEFT JOIN countries c ON c.id = h.country_id
-		LEFT JOIN cities ct ON ct.id = h.city_id
 		LEFT JOIN users u ON u.id = h.owner_id
 		LEFT JOIN LATERAL (
 			SELECT COALESCE(json_agg(
@@ -313,23 +307,19 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.Ho
 		&h.Price, &h.RoomsQty, &h.GuestQty, &h.BedroomQty, &h.BathQty,
 		&h.DescriptionEN, &h.DescriptionKZ, &h.DescriptionRU,
 		&h.AddressEN, &h.AddressKZ, &h.AddressRU,
-		&h.Lng, &h.Lat, &h.IsActive, &h.Priority,
+		&h.Lng, &h.Lat, &h.IsActive,
 		&h.CommentsRU, &h.CommentsEN, &h.CommentsKZ,
-		&h.OwnerID, &h.TypeID, &h.CityID, &h.CountryID,
+		&h.TypeID, &h.CityID, &h.CountryID,
 		&h.GuestsWithPets, &h.BestHouse, &h.Promotion,
 		&h.DistrictEN, &h.DistrictKZ, &h.DistrictRU,
-		&h.PhoneNumber, &createdAt, &updatedAt,
+		&h.PhoneNumber,
 		&h.LikeCount,
-		&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
 		&h.OwnerFullName,
 		&imagesJSON,
 	)
 	if err != nil {
 		return h, err
 	}
-
-	h.CreatedAt = createdAt.Format(time.RFC3339)
-	h.UpdatedAt = updatedAt.Format(time.RFC3339)
 
 	if len(imagesJSON) == 0 {
 		imagesJSON = []byte("[]")

@@ -4687,20 +4687,8 @@ const docTemplate = `{
                 "comments_ru": {
                     "type": "string"
                 },
-                "country_city_name_en": {
-                    "type": "string"
-                },
-                "country_city_name_kz": {
-                    "type": "string"
-                },
-                "country_city_name_ru": {
-                    "type": "string"
-                },
                 "country_id": {
                     "type": "integer"
-                },
-                "created_at": {
-                    "type": "string"
                 },
                 "description_en": {
                     "type": "string"
@@ -4768,16 +4756,10 @@ const docTemplate = `{
                 "owner_full_name": {
                     "type": "string"
                 },
-                "owner_id": {
-                    "type": "integer"
-                },
                 "phone_number": {
                     "type": "string"
                 },
                 "price": {
-                    "type": "integer"
-                },
-                "priority": {
                     "type": "integer"
                 },
                 "promotion": {
@@ -4791,9 +4773,6 @@ const docTemplate = `{
                 },
                 "type_id": {
                     "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },
