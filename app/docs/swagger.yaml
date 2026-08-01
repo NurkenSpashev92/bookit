@@ -2638,7 +2638,7 @@ paths:
       - HealthCheck
   /houses:
     get:
-      description: Returns a filtered, paginated list of all houses
+      description: Returns a filtered, paginated list of active (approved) houses
       parameters:
       - default: 1
         description: Page number
@@ -3137,6 +3137,8 @@ paths:
       - Inquiry
   /my-houses:
     get:
+      description: Returns the current user's houses, including inactive (pending
+        approval) listings
       produces:
       - application/json
       responses:

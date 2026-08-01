@@ -53,6 +53,11 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	wb := newWhereBuilder()
 	if filter.OwnerID != nil {
 		wb.add("h.owner_id", "=", *filter.OwnerID)
+	} else {
+		// Public list (GET /houses): only approved (active) houses are visible.
+		// my-houses (OwnerID set) intentionally omits this so owners see
+		// their inactive/pending listings too.
+		wb.add("h.is_active", "=", true)
 	}
 	if filter.Name != nil {
 		wb.addILike(*filter.Name)
@@ -127,7 +132,7 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 			SELECT
 				h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price,
 				h.address_en, h.address_kz, h.address_ru,
-				h.priority, h.guests_with_pets, h.best_house, h.promotion,
+				h.priority, h.guests_with_pets, h.best_house, h.promotion, h.is_active,
 				CONCAT(c.name_kz, ', ', ct.name_kz),
 				CONCAT(c.name_ru, ', ', ct.name_ru),
 				CONCAT(c.name_en, ', ', ct.name_en),
@@ -172,7 +177,7 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 			if err := rows.Scan(
 				&h.ID, &h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug, &h.Price,
 				&h.AddressEN, &h.AddressKZ, &h.AddressRU,
-				&h.Priority, &h.GuestsWithPets, &h.BestHouse, &h.Promotion,
+				&h.Priority, &h.GuestsWithPets, &h.BestHouse, &h.Promotion, &h.IsActive,
 				&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
 				&h.OwnerFullName, &h.LikeCount, &imagesJSON,
 			); err != nil {
@@ -387,7 +392,7 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 		query,
 		h.NameEN, h.NameKZ, h.NameRU, slugValue, h.Price.Int(), h.RoomsQty.Int(), h.GuestQty.Int(), h.BedroomQty.Int(), h.BathQty.IntPtr(),
 		h.DescriptionEN, h.DescriptionKZ, h.DescriptionRU, h.AddressEN, h.AddressKZ, h.AddressRU,
-		h.Lng.Float64Ptr(), h.Lat.Float64Ptr(), true, h.Priority.Int(), h.OwnerID, h.TypeID.Int(), h.CityID.IntPtr(), h.CountryID.IntPtr(),
+		h.Lng.Float64Ptr(), h.Lat.Float64Ptr(), false, h.Priority.Int(), h.OwnerID, h.TypeID.Int(), h.CityID.IntPtr(), h.CountryID.IntPtr(),
 		h.GuestsWithPets, h.BestHouse, h.Promotion, h.DistrictEN, h.DistrictKZ, h.DistrictRU, h.PhoneNumber,
 	).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug, &house.Price, &house.RoomsQty, &house.GuestQty,

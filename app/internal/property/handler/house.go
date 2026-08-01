@@ -31,7 +31,7 @@ func NewHouseHandler(houseService HouseService) *HouseHandler {
 
 // GetHouses godoc
 // @Summary      Get all houses
-// @Description  Returns a filtered, paginated list of all houses
+// @Description  Returns a filtered, paginated list of active (approved) houses
 // @Tags         Houses
 // @Produce      json
 // @Param        page            query int    false "Page number" default(1)
@@ -53,6 +53,7 @@ func (h *HouseHandler) GetAll(c fiber.Ctx) error {
 
 // MyHouses godoc
 // @Summary      Get current user's houses
+// @Description  Returns the current user's houses, including inactive (pending approval) listings
 // @Tags         Houses
 // @Produce      json
 // @Success      200  {object} shared.PaginatedResponse

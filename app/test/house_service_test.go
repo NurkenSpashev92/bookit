@@ -64,7 +64,9 @@ func (m *mockHouseRepo) Create(_ context.Context, req propertyschema.HouseCreate
 	if m.slugs[slug] {
 		return propertymodel.House{}, propertymodel.ErrSlugExists
 	}
-	h := propertymodel.House{ID: m.nextID, NameEN: req.NameEN, Slug: slug, OwnerID: req.OwnerID}
+	// Mirror the repository: newly created houses are forced inactive
+	// (pending approval) regardless of the incoming request value.
+	h := propertymodel.House{ID: m.nextID, NameEN: req.NameEN, Slug: slug, OwnerID: req.OwnerID, IsActive: false}
 	m.houses[slug] = h
 	m.slugs[slug] = true
 	m.nextID++
@@ -127,6 +129,23 @@ func TestHouseService_Create_SetsOwnerID(t *testing.T) {
 	}
 	if house.OwnerID != 42 {
 		t.Errorf("OwnerID = %d, want 42", house.OwnerID)
+	}
+}
+
+func TestHouseService_Create_DefaultsInactive(t *testing.T) {
+	repo := newMockHouseRepo()
+	svc := propertysvc.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
+
+	// Even when the request asks for an active house, creation must force
+	// is_active=false so the listing starts pending approval.
+	house, err := svc.Create(context.Background(), propertyschema.HouseCreateRequest{
+		NameEN: "Test", Slug: "pending-house", IsActive: true,
+	}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if house.IsActive {
+		t.Error("newly created house should be inactive (pending approval)")
 	}
 }
 

@@ -1770,7 +1770,7 @@ const docTemplate = `{
         },
         "/houses": {
             "get": {
-                "description": "Returns a filtered, paginated list of all houses",
+                "description": "Returns a filtered, paginated list of active (approved) houses",
                 "produces": [
                     "application/json"
                 ],
@@ -2558,6 +2558,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Returns the current user's houses, including inactive (pending approval) listings",
                 "produces": [
                     "application/json"
                 ],

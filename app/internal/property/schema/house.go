@@ -185,6 +185,7 @@ type HouseListItem struct {
 	GuestsWithPets    bool    `json:"guests_with_pets"`
 	BestHouse         bool    `json:"best_house"`
 	Promotion         bool    `json:"promotion"`
+	IsActive          bool    `json:"is_active"`
 	CountryCityNameKZ string  `json:"country_city_name_kz"`
 	CountryCityNameRU string  `json:"country_city_name_ru"`
 	CountryCityNameEN string  `json:"country_city_name_en"`
