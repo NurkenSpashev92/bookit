@@ -8,6 +8,7 @@ import (
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type CategoryRepository struct {
@@ -20,7 +21,7 @@ func NewCategoryRepository(db *pgxpool.Pool) *CategoryRepository {
 
 func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.CategoryPaginate, error) {
 	query := `
-		SELECT id, name_kz, name_ru, name_en, is_active
+		SELECT id, name_kz, name_ru, name_en, slug, is_active
 		FROM categories
 		WHERE is_active = TRUE
 	`
@@ -35,7 +36,7 @@ func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.Catego
 
 	for rows.Next() {
 		var c schema.CategoryPaginate
-		err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &c.IsActive)
+		err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &c.Slug, &c.IsActive)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
@@ -52,7 +53,7 @@ func (r *CategoryRepository) GetCategoriesPaginated(ctx context.Context, limit, 
 	}
 
 	query := `
-		SELECT id, name_kz, name_ru, name_en, is_active
+		SELECT id, name_kz, name_ru, name_en, slug, is_active
 		FROM categories
 		WHERE is_active = TRUE
 		ORDER BY id
@@ -69,7 +70,7 @@ func (r *CategoryRepository) GetCategoriesPaginated(ctx context.Context, limit, 
 
 	for rows.Next() {
 		var c schema.CategoryPaginate
-		if err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &c.IsActive); err != nil {
+		if err := rows.Scan(&c.Id, &c.NameKz, &c.NameRu, &c.NameEn, &c.Slug, &c.IsActive); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan row: %w", err)
 		}
 		categories = append(categories, c)
@@ -85,6 +86,7 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int) (model.Categor
 			name_kz,
 			name_ru,
 			name_en,
+			slug,
 			is_active,
 			created_at,
 			updated_at
@@ -99,19 +101,20 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int) (model.Categor
 		&category.NameKz,
 		&category.NameRu,
 		&category.NameEn,
+		&category.Slug,
 		&category.IsActive,
 		&category.CreatedAt,
 		&category.UpdatedAt,
 	)
 
-	return category, err
+	return category, store.MapNoRows(err, model.ErrCategoryNotFound)
 }
 
 func (r *CategoryRepository) CreateCategory(ctx context.Context, req schema.CategoryCreateRequest) (model.Category, error) {
 	query := `
-		INSERT INTO categories (name_kz, name_ru, name_en, is_active)
-		VALUES ($1, $2, $3, COALESCE($4, TRUE))
-		RETURNING id, name_kz, name_ru, name_en, is_active, created_at, updated_at
+		INSERT INTO categories (name_kz, name_ru, name_en, slug, is_active)
+		VALUES ($1, $2, $3, $4, COALESCE($5, TRUE))
+		RETURNING id, name_kz, name_ru, name_en, slug, is_active, created_at, updated_at
 	`
 
 	var category model.Category
@@ -122,18 +125,20 @@ func (r *CategoryRepository) CreateCategory(ctx context.Context, req schema.Cate
 		req.NameKz,
 		req.NameRu,
 		req.NameEn,
+		req.Slug,
 		req.IsActive,
 	).Scan(
 		&category.ID,
 		&category.NameKz,
 		&category.NameRu,
 		&category.NameEn,
+		&category.Slug,
 		&category.IsActive,
 		&category.CreatedAt,
 		&category.UpdatedAt,
 	)
 	if err != nil {
-		return category, fmt.Errorf("failed to insert category %w", err)
+		return category, store.MapUnique(err, model.ErrCategorySlugExists)
 	}
 
 	return category, nil
@@ -146,10 +151,11 @@ func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.Cate
 			name_kz = COALESCE($1, name_kz),
 			name_ru = COALESCE($2, name_ru),
 			name_en = COALESCE($3, name_en),
-			is_active = COALESCE($4, is_active),
+			slug = COALESCE($4, slug),
+			is_active = COALESCE($5, is_active),
 			updated_at = NOW()
-		WHERE id = $5
-		RETURNING id, name_kz, name_ru, name_en, is_active, created_at, updated_at
+		WHERE id = $6
+		RETURNING id, name_kz, name_ru, name_en, slug, is_active, created_at, updated_at
 	`
 
 	var category model.Category
@@ -160,6 +166,7 @@ func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.Cate
 		req.NameKz,
 		req.NameRu,
 		req.NameEn,
+		req.Slug,
 		req.IsActive,
 		id,
 	).Scan(
@@ -167,12 +174,16 @@ func (r *CategoryRepository) Update(ctx context.Context, id int, req schema.Cate
 		&category.NameKz,
 		&category.NameRu,
 		&category.NameEn,
+		&category.Slug,
 		&category.IsActive,
 		&category.CreatedAt,
 		&category.UpdatedAt,
 	)
+	if err != nil {
+		return category, store.MapUnique(store.MapNoRows(err, model.ErrCategoryNotFound), model.ErrCategorySlugExists)
+	}
 
-	return category, err
+	return category, nil
 }
 
 func (r *CategoryRepository) Delete(ctx context.Context, id int) error {

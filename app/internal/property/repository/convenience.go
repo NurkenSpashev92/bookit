@@ -10,6 +10,7 @@ import (
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/pkg/store"
 )
 
 type ConvenienceRepository struct {
@@ -22,7 +23,7 @@ func NewConvenienceRepository(db *pgxpool.Pool) *ConvenienceRepository {
 
 func (r *ConvenienceRepository) GetConveniences(ctx context.Context) ([]schema.ConveniencePaginate, error) {
 	query := `
-		SELECT id, name, is_active
+		SELECT id, name, slug, is_active
 		FROM conveniences
 		WHERE is_active = TRUE
 	`
@@ -37,7 +38,7 @@ func (r *ConvenienceRepository) GetConveniences(ctx context.Context) ([]schema.C
 
 	for rows.Next() {
 		var c schema.ConveniencePaginate
-		if err := rows.Scan(&c.Id, &c.Name, &c.IsActive); err != nil {
+		if err := rows.Scan(&c.Id, &c.Name, &c.Slug, &c.IsActive); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 		conveniences = append(conveniences, c)
@@ -53,7 +54,7 @@ func (r *ConvenienceRepository) GetConveniencesPaginated(ctx context.Context, li
 	}
 
 	query := `
-		SELECT id, name, is_active
+		SELECT id, name, slug, is_active
 		FROM conveniences
 		WHERE is_active = TRUE
 		ORDER BY id
@@ -70,7 +71,7 @@ func (r *ConvenienceRepository) GetConveniencesPaginated(ctx context.Context, li
 
 	for rows.Next() {
 		var c schema.ConveniencePaginate
-		if err := rows.Scan(&c.Id, &c.Name, &c.IsActive); err != nil {
+		if err := rows.Scan(&c.Id, &c.Name, &c.Slug, &c.IsActive); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan row: %w", err)
 		}
 		conveniences = append(conveniences, c)
@@ -81,14 +82,14 @@ func (r *ConvenienceRepository) GetConveniencesPaginated(ctx context.Context, li
 
 func (r *ConvenienceRepository) GetByID(ctx context.Context, id int) (schema.Convenience, error) {
 	query := `
-		SELECT id, name, is_active
+		SELECT id, name, slug, is_active
 		FROM conveniences
 		WHERE id = $1
 	`
 
 	var c schema.Convenience
 
-	err := r.db.QueryRow(ctx, query, id).Scan(&c.Id, &c.Name, &c.IsActive)
+	err := r.db.QueryRow(ctx, query, id).Scan(&c.Id, &c.Name, &c.Slug, &c.IsActive)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return c, model.ErrConvenienceNotFound
@@ -101,16 +102,16 @@ func (r *ConvenienceRepository) GetByID(ctx context.Context, id int) (schema.Con
 
 func (r *ConvenienceRepository) CreateConvenience(ctx context.Context, req schema.ConvenienceCreateRequest) (schema.Convenience, error) {
 	query := `
-		INSERT INTO conveniences (name, is_active)
-		VALUES ($1, COALESCE($2, TRUE))
-		RETURNING id, name, is_active
+		INSERT INTO conveniences (name, slug, is_active)
+		VALUES ($1, $2, COALESCE($3, TRUE))
+		RETURNING id, name, slug, is_active
 	`
 
 	var c schema.Convenience
 
-	err := r.db.QueryRow(ctx, query, req.Name, req.IsActive).Scan(&c.Id, &c.Name, &c.IsActive)
+	err := r.db.QueryRow(ctx, query, req.Name, req.Slug, req.IsActive).Scan(&c.Id, &c.Name, &c.Slug, &c.IsActive)
 	if err != nil {
-		return c, fmt.Errorf("failed to insert convenience %w", err)
+		return c, store.MapUnique(err, model.ErrConvenienceSlugExists)
 	}
 
 	return c, nil
@@ -121,20 +122,21 @@ func (r *ConvenienceRepository) Update(ctx context.Context, id int, req schema.C
 		UPDATE conveniences
 		SET
 			name = COALESCE($1, name),
-			is_active = COALESCE($2, is_active),
+			slug = COALESCE($2, slug),
+			is_active = COALESCE($3, is_active),
 			updated_at = NOW()
-		WHERE id = $3
-		RETURNING id, name, is_active
+		WHERE id = $4
+		RETURNING id, name, slug, is_active
 	`
 
 	var c schema.Convenience
 
-	err := r.db.QueryRow(ctx, query, req.Name, req.IsActive, id).Scan(&c.Id, &c.Name, &c.IsActive)
+	err := r.db.QueryRow(ctx, query, req.Name, req.Slug, req.IsActive, id).Scan(&c.Id, &c.Name, &c.Slug, &c.IsActive)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return c, model.ErrConvenienceNotFound
 		}
-		return c, err
+		return c, store.MapUnique(err, model.ErrConvenienceSlugExists)
 	}
 
 	return c, nil

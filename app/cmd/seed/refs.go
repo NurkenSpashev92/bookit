@@ -8,6 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 func ensureTypes(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
@@ -16,10 +18,11 @@ func ensureTypes(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
 	for _, houseType := range defaultTypes {
 		id, err := ensureRow(ctx, conn, "type", houseType.nameEN,
 			`SELECT id FROM types WHERE name_en = $1 LIMIT 1`,
-			`INSERT INTO types (name_en, name_kz, name_ru, is_active, created_at, updated_at)
-			 VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+			`INSERT INTO types (name_en, name_kz, name_ru, slug, is_active, created_at, updated_at)
+			 VALUES ($1, $2, $3, $4, TRUE, NOW(), NOW())
 			 RETURNING id`,
 			houseType.nameEN, houseType.nameKZ, houseType.nameRU,
+			utils.GenerateSlug("", houseType.nameEN, houseType.nameKZ, houseType.nameRU),
 		)
 		if err != nil {
 			return nil, err
@@ -106,10 +109,11 @@ func ensureCategories(ctx context.Context, conn *pgxpool.Pool) ([]int, error) {
 	for _, category := range defaultCategories {
 		id, err := ensureRow(ctx, conn, "category", category.nameEN,
 			`SELECT id FROM categories WHERE name_en = $1 LIMIT 1`,
-			`INSERT INTO categories (name_en, name_kz, name_ru, is_active, created_at, updated_at)
-			 VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+			`INSERT INTO categories (name_en, name_kz, name_ru, slug, is_active, created_at, updated_at)
+			 VALUES ($1, $2, $3, $4, TRUE, NOW(), NOW())
 			 RETURNING id`,
 			category.nameEN, category.nameKZ, category.nameRU,
+			utils.GenerateSlug("", category.nameEN, category.nameKZ, category.nameRU),
 		)
 		if err != nil {
 			return nil, err
@@ -126,10 +130,10 @@ func ensureConveniences(ctx context.Context, conn *pgxpool.Pool) ([]int, error) 
 	for _, name := range defaultConveniences {
 		id, err := ensureRow(ctx, conn, "convenience", name,
 			`SELECT id FROM conveniences WHERE name = $1 LIMIT 1`,
-			`INSERT INTO conveniences (name, is_active, created_at, updated_at)
-			 VALUES ($1, TRUE, NOW(), NOW())
+			`INSERT INTO conveniences (name, slug, is_active, created_at, updated_at)
+			 VALUES ($1, $2, TRUE, NOW(), NOW())
 			 RETURNING id`,
-			name,
+			name, utils.GenerateSlug("", name, "", ""),
 		)
 		if err != nil {
 			return nil, err

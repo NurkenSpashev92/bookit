@@ -5,6 +5,7 @@ import "time"
 type Convenience struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name,omitempty"`
+	Slug      string    `json:"slug,omitempty"`
 	IsActive  *bool     `json:"is_active,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

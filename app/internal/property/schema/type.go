@@ -7,6 +7,7 @@ type TypeResponse struct {
 	NameKz   string `json:"name_kz" example:"Пәтер"`
 	NameRu   string `json:"name_ru" example:"Квартира"`
 	NameEn   string `json:"name_en" example:"Apartment"`
+	Slug     string `json:"slug" example:"apartment"`
 	IsActive bool   `json:"is_active" example:"true"`
 }
 
@@ -16,6 +17,7 @@ type TypeCreateRequest struct {
 	NameKz   string `json:"name_kz" maxLength:"255" example:"Пәтер" validate:"required"`
 	NameRu   string `json:"name_ru" maxLength:"255" example:"Квартира" validate:"required"`
 	NameEn   string `json:"name_en" maxLength:"255" example:"Apartment" validate:"required"`
+	Slug     string `json:"slug,omitempty" maxLength:"255" example:"apartment"`
 	IsActive *bool  `json:"is_active" example:"true"`
 }
 
@@ -36,6 +38,7 @@ type TypeUpdateRequest struct {
 	NameKz   *string `json:"name_kz,omitempty" maxLength:"255" example:"Пәтер"`
 	NameRu   *string `json:"name_ru,omitempty" maxLength:"255" example:"Квартира"`
 	NameEn   *string `json:"name_en,omitempty" maxLength:"255" example:"Apartment"`
+	Slug     *string `json:"slug,omitempty" maxLength:"255" example:"apartment"`
 	IsActive *bool   `json:"is_active,omitempty" example:"true"`
 }
 
@@ -44,5 +47,6 @@ func (r TypeUpdateRequest) Validate() error {
 	v.MaxLenPtr("name_kz", r.NameKz, 255)
 	v.MaxLenPtr("name_ru", r.NameRu, 255)
 	v.MaxLenPtr("name_en", r.NameEn, 255)
+	v.MaxLenPtr("slug", r.Slug, 255)
 	return v.Result()
 }

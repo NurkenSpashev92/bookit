@@ -9,4 +9,8 @@ var (
 	ErrCategoryRefInvalid  = shared.Invalid("one of category_ids does not exist")
 	ErrTypeNotFound        = shared.NotFound("type not found")
 	ErrConvenienceNotFound = shared.NotFound("convenience not found")
+
+	ErrCategorySlugExists    = shared.Conflict("category slug already exists")
+	ErrTypeSlugExists        = shared.Conflict("type slug already exists")
+	ErrConvenienceSlugExists = shared.Conflict("convenience slug already exists")
 )

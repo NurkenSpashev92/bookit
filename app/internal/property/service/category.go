@@ -5,6 +5,7 @@ import (
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 type CategoryRepository interface {
@@ -37,10 +38,15 @@ func (s *CategoryService) GetByID(ctx context.Context, id int) (model.Category, 
 }
 
 func (s *CategoryService) Create(ctx context.Context, req schema.CategoryCreateRequest) (model.Category, error) {
+	req.Slug = utils.GenerateSlug(req.Slug, req.NameEn, req.NameKz, req.NameRu)
 	return s.repository.CreateCategory(ctx, req)
 }
 
 func (s *CategoryService) Update(ctx context.Context, id int, req schema.CategoryUpdateRequest) (model.Category, error) {
+	if req.Slug != nil {
+		slug := utils.GenerateSlug(*req.Slug, "", "", "")
+		req.Slug = &slug
+	}
 	return s.repository.Update(ctx, id, req)
 }
 

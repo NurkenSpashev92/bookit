@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 type ConvenienceRepository interface {
@@ -36,10 +37,15 @@ func (s *ConvenienceService) GetByID(ctx context.Context, id int) (schema.Conven
 }
 
 func (s *ConvenienceService) Create(ctx context.Context, req schema.ConvenienceCreateRequest) (schema.Convenience, error) {
+	req.Slug = utils.GenerateSlug(req.Slug, req.Name, "", "")
 	return s.repository.CreateConvenience(ctx, req)
 }
 
 func (s *ConvenienceService) Update(ctx context.Context, id int, req schema.ConvenienceUpdateRequest) (schema.Convenience, error) {
+	if req.Slug != nil {
+		slug := utils.GenerateSlug(*req.Slug, "", "", "")
+		req.Slug = &slug
+	}
 	return s.repository.Update(ctx, id, req)
 }
 

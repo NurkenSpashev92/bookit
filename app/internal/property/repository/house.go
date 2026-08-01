@@ -81,8 +81,8 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	if filter.GuestsWithPets != nil && *filter.GuestsWithPets {
 		wb.add("h.guests_with_pets", "=", true)
 	}
-	if filter.TypeID != nil {
-		wb.add("h.type_id", "=", *filter.TypeID)
+	if filter.TypeSlug != nil {
+		wb.addExpr("h.type_id = (SELECT id FROM types WHERE slug = $%d)", *filter.TypeSlug)
 	}
 	if filter.CountryID != nil {
 		wb.add("h.country_id", "=", *filter.CountryID)
@@ -90,8 +90,8 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	if filter.CityID != nil {
 		wb.add("h.city_id", "=", *filter.CityID)
 	}
-	if filter.CategoryID != nil {
-		wb.addArg(*filter.CategoryID)
+	if filter.CategorySlug != nil {
+		wb.addArg(*filter.CategorySlug)
 	}
 
 	g, gctx := errgroup.WithContext(ctx)
@@ -100,8 +100,8 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	g.Go(func() error {
 		countWhere, countArgs := wb.build(0)
 		countCatJoin := ""
-		if filter.CategoryID != nil {
-			countCatJoin = fmt.Sprintf("INNER JOIN house_category hc ON hc.house_id = h.id AND hc.category_id = $%d", len(countArgs))
+		if filter.CategorySlug != nil {
+			countCatJoin = fmt.Sprintf("INNER JOIN house_category hc ON hc.house_id = h.id AND hc.category_id = (SELECT id FROM categories WHERE slug = $%d)", len(countArgs))
 		}
 		q := fmt.Sprintf(`SELECT COUNT(*) FROM houses h %s %s`, countCatJoin, countWhere)
 		return r.db.QueryRow(gctx, q, countArgs...).Scan(&total)
@@ -113,8 +113,8 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 		allArgs := append([]interface{}{baseURL}, selectArgs...)
 
 		selectCatJoin := ""
-		if filter.CategoryID != nil {
-			selectCatJoin = fmt.Sprintf("INNER JOIN house_category hc ON hc.house_id = h.id AND hc.category_id = $%d", len(allArgs))
+		if filter.CategorySlug != nil {
+			selectCatJoin = fmt.Sprintf("INNER JOIN house_category hc ON hc.house_id = h.id AND hc.category_id = (SELECT id FROM categories WHERE slug = $%d)", len(allArgs))
 		}
 
 		pagination := ""
@@ -222,6 +222,16 @@ func (w *whereBuilder) add(col, op string, val interface{}) {
 
 func (w *whereBuilder) addArg(val interface{}) {
 	w.values = append(w.values, val)
+}
+
+// addExpr adds a raw condition whose format string contains one `$%d`
+// placeholder for the bound value (e.g. a slug resolved to an id via subquery).
+func (w *whereBuilder) addExpr(format string, val interface{}) {
+	w.values = append(w.values, val)
+	w.conditions = append(w.conditions, condition{
+		format:    format,
+		valueIdxs: []int{len(w.values) - 1},
+	})
 }
 
 func (w *whereBuilder) addILike(val string) {

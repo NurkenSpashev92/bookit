@@ -19,7 +19,7 @@ func NewTypeRepository(db *pgxpool.Pool) *TypeRepository {
 }
 
 func (r *TypeRepository) GetAll(ctx context.Context) ([]model.Type, error) {
-	rows, err := r.db.Query(ctx, `SELECT id, name_kz, name_ru, name_en, is_active FROM types`)
+	rows, err := r.db.Query(ctx, `SELECT id, name_kz, name_ru, name_en, slug, is_active FROM types`)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (r *TypeRepository) GetAll(ctx context.Context) ([]model.Type, error) {
 	var result []model.Type
 	for rows.Next() {
 		var t model.Type
-		if err := rows.Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.IsActive); err != nil {
+		if err := rows.Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.Slug, &t.IsActive); err != nil {
 			return nil, err
 		}
 		result = append(result, t)
@@ -43,7 +43,7 @@ func (r *TypeRepository) GetAllPaginated(ctx context.Context, limit, offset int)
 	}
 
 	rows, err := r.db.Query(ctx,
-		`SELECT id, name_kz, name_ru, name_en, is_active FROM types ORDER BY id LIMIT $1 OFFSET $2`,
+		`SELECT id, name_kz, name_ru, name_en, slug, is_active FROM types ORDER BY id LIMIT $1 OFFSET $2`,
 		limit, offset,
 	)
 	if err != nil {
@@ -54,7 +54,7 @@ func (r *TypeRepository) GetAllPaginated(ctx context.Context, limit, offset int)
 	var result []model.Type
 	for rows.Next() {
 		var t model.Type
-		if err := rows.Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.IsActive); err != nil {
+		if err := rows.Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.Slug, &t.IsActive); err != nil {
 			return nil, 0, err
 		}
 		result = append(result, t)
@@ -64,29 +64,29 @@ func (r *TypeRepository) GetAllPaginated(ctx context.Context, limit, offset int)
 
 func (r *TypeRepository) GetByID(ctx context.Context, id int) (model.Type, error) {
 	var t model.Type
-	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_ru, name_en, is_active FROM types WHERE id=$1`, id).
-		Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.IsActive)
+	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_ru, name_en, slug, is_active FROM types WHERE id=$1`, id).
+		Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.Slug, &t.IsActive)
 	return t, store.MapNoRows(err, model.ErrTypeNotFound)
 }
 
 func (r *TypeRepository) Create(ctx context.Context, t model.Type) (model.Type, error) {
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO types (name_kz, name_ru, name_en, is_active, created_at, updated_at)
-		 VALUES ($1,$2,$3,$4,NOW(),NOW())
-		 RETURNING id, name_kz, name_ru, name_en, is_active`,
-		t.NameKz, t.NameRu, t.NameEn, t.IsActive,
-	).Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.IsActive)
-	return t, err
+		`INSERT INTO types (name_kz, name_ru, name_en, slug, is_active, created_at, updated_at)
+		 VALUES ($1,$2,$3,$4,$5,NOW(),NOW())
+		 RETURNING id, name_kz, name_ru, name_en, slug, is_active`,
+		t.NameKz, t.NameRu, t.NameEn, t.Slug, t.IsActive,
+	).Scan(&t.ID, &t.NameKz, &t.NameRu, &t.NameEn, &t.Slug, &t.IsActive)
+	return t, store.MapUnique(err, model.ErrTypeSlugExists)
 }
 
 func (r *TypeRepository) Update(ctx context.Context, id int, t model.Type) (model.Type, error) {
 	t.UpdatedAt = time.Now()
 	_, err := r.db.Exec(ctx,
-		`UPDATE types SET name_kz=$1, name_ru=$2, name_en=$3, is_active=$4, updated_at=NOW() WHERE id=$5`,
-		t.NameKz, t.NameRu, t.NameEn, t.IsActive, id,
+		`UPDATE types SET name_kz=$1, name_ru=$2, name_en=$3, slug=$4, is_active=$5, updated_at=NOW() WHERE id=$6`,
+		t.NameKz, t.NameRu, t.NameEn, t.Slug, t.IsActive, id,
 	)
 	t.ID = id
-	return t, err
+	return t, store.MapUnique(err, model.ErrTypeSlugExists)
 }
 
 func (r *TypeRepository) Delete(ctx context.Context, id int) error {

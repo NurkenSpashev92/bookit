@@ -5,6 +5,7 @@ import (
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
 	"github.com/nurkenspashev92/bookit/internal/property/schema"
+	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 type TypeRepository interface {
@@ -100,6 +101,7 @@ func (m *TypeMapper) ApplyCreateRequest(t *model.Type, req schema.TypeCreateRequ
 	t.NameKz = req.NameKz
 	t.NameRu = req.NameRu
 	t.NameEn = req.NameEn
+	t.Slug = utils.GenerateSlug(req.Slug, req.NameEn, req.NameKz, req.NameRu)
 
 	if req.IsActive != nil {
 		t.IsActive = *req.IsActive
@@ -116,6 +118,9 @@ func (m *TypeMapper) ApplyUpdateRequest(t *model.Type, req schema.TypeUpdateRequ
 	if req.NameEn != nil {
 		t.NameEn = *req.NameEn
 	}
+	if req.Slug != nil {
+		t.Slug = utils.GenerateSlug(*req.Slug, "", "", "")
+	}
 	if req.IsActive != nil {
 		t.IsActive = *req.IsActive
 	}
@@ -127,6 +132,7 @@ func (m *TypeMapper) ToResponse(t model.Type) schema.TypeResponse {
 		NameKz:   t.NameKz,
 		NameRu:   t.NameRu,
 		NameEn:   t.NameEn,
+		Slug:     t.Slug,
 		IsActive: t.IsActive,
 	}
 }

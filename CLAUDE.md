@@ -442,3 +442,100 @@ func TestHouseService_Create(t *testing.T) {
 * Always think about context cancellation and timeouts
 * Always prefer explicit code over magic
 * Always keep code easy to read and easy to test
+
+---
+
+## Architecture Map — where things live (AI navigation)
+
+Read this first when locating or adding code. All paths are under `app/`.
+
+### Composition root & process
+* `cmd/apiserver/main.go` — process lifecycle only (start/stop/signals)
+* `cmd/apiserver/container.go` — **the only place** that constructs repositories
+  and services and wires them into `router.Services`
+* `cmd/router/router.go` — middleware chain + calls each domain's
+  `RegisterRoutes`. Holds `cachedResponseRoutes` (path→namespace/TTL) and
+  `Guards{Required, Optional, Admin}`. No paths or handler construction here.
+* `cmd/seed/` — demo-data generator (`data.go` seed lists, `refs.go` upserts,
+  `relations.go` house↔category/convenience links, `images.go` bounded S3 upload)
+
+### Domains — `internal/<domain>/`
+`analytics · booking · content · identity · interaction · location · property`
+Each domain owns the full vertical stack:
+* `handler/` — HTTP parse/validate/call-service/respond + `routes.go` registrar
+  (`RegisterRoutes(api, deps, guards)`); handlers depend on a **local interface**,
+  never on `*service.X`
+* `schema/` — request/response DTOs (validation tags + `Validate()`)
+* `service/` — business logic; works through interfaces; no HTTP
+* `repository/` — plain SQL (pgx); the only place with SQL
+* `model/` — entities + `errors.go` (typed domain errors)
+* `port/` — interfaces to OTHER domains (dependency inversion; keeps import
+  graph acyclic). Example: `property/port/{booking_checker,like_checker}.go`
+* `factory/` / `mapper/` where present — entity creation / DTO↔model mapping
+
+### Cross-cutting
+* `internal/shared/` — handler kit reused by every domain:
+  `Bind[T]`, `ParamInt/ParamString`, `QueryIntInRange`, `Fail/OK/Created/List/Items[T]`,
+  `RegisterCRUD`, `Guards`, error kinds (`Invalid/Unauthorized/Forbidden/NotFound/Conflict`,
+  `StatusOf`, `MessageOf`), pagination (`WantsPagination`, `ParsePageParams`,
+  `PageEnvelope`, `Paginated`, `ListMaybePaginated[T]`)
+* `internal/initializers/` — `cache.go` (Redis+local), `fiber.go` (app bootstrap)
+* `internal/platform/healthcheck/` — liveness/readiness
+* `pkg/` — framework-agnostic infra: `aws` (S3), `cache` (two-tier), `imageproc`,
+  `logger` (buffered + rotating), `middleware` (auth/cors/recover/response_cache/
+  upload/request_logger), `store` (pg pool, `MapNoRows`), `upload` (per-resource
+  image uploader), `utils` (`slug`)
+* `configs/` — env loading (`NewDBConfig`, `NewRedisConfig`, `NewCacheConfig`,
+  `NewLogConfig`, `NewAwsConfig`)
+* `migrations/` — golang-migrate SQL (`NNNNNN_name.{up,down}.sql`)
+* `docs/` — generated Swagger (do not hand-edit)
+
+### Where to add a new feature
+* New endpoint on an existing resource → that domain's `handler/` + its `routes.go`
+* New reference/dictionary resource → `service`+`repository`+`handler`, register
+  reads public / writes admin via `shared.RegisterCRUD`
+* New cross-domain dependency → declare a `port/` interface, inject the concrete
+  service in `container.go`
+* New table/column → a migration pair, never manual DDL
+
+---
+
+## Patterns used in this codebase (reuse these, don't reinvent)
+
+* **Optional pagination**: list handlers return a plain array by default and a
+  `PaginatedResponse` envelope when `?page=` is present. Use the single generic
+  `shared.ListMaybePaginated(c, svc.GetAll, svc.GetAllPaginated)` — do **not**
+  re-inline the `if WantsPagination { … }` block per handler.
+* **Errors**: return typed `shared.*` errors from services; handlers call only
+  `shared.Fail(c, err)`. Repositories translate storage errors with
+  `store.MapNoRows(err, model.ErrX)`. Never map errors to status codes in handlers.
+* **CRUD dictionaries**: `shared.RegisterCRUD(group, guards, handler)` — public
+  reads, `guards.Admin` writes.
+* **Two-tier cache** (`pkg/cache`): `Cache` (Redis L2) fronted by `LocalCache`
+  (in-process L1, TTL capped ~2s). Read via `GetBytes`; write via
+  `SetBytes`/`SetBytesTTL`; invalidate via `InvalidateNamespace(ns)` (clears both
+  `ns:` and `resp:ns:`). Cache-heavy reads use `singleflight` to collapse stampedes
+  (see `HouseService.GetAllPaginated`).
+* **HTTP response cache**: declarative — add the route to `cachedResponseRoutes`
+  in `router.go` with a namespace + TTL; middleware caches anonymous GET 200s only.
+  Every cached namespace MUST have write-path `InvalidateNamespace`.
+* **Concurrency**: independent I/O in a request → `errgroup` (see house list
+  count∥select, analytics charts). Bound CPU/upload fan-out with `group.SetLimit(n)`.
+  Fire-and-forget background work → the `recordViewAsync` model: bounded semaphore
+  channel + **detached** `context.Background()` + timeout + non-blocking send that
+  drops under load. Never reuse the request `ctx` in a goroutine that outlives the response.
+* **Nested reads**: fold child collections into one SQL query via LATERAL +
+  `json_agg` (see house images) — never per-row loops.
+
+## Performance conventions
+
+* Add `WHERE is_active` (and matching partial/composite indexes) to public list
+  queries; suggest `(filter_col, id DESC)` composites for filter+ordering paths.
+* Prefer `= ANY($ids::int[])` scoped to the current page over fetching a full set
+  to annotate a page (e.g. liked-house membership).
+* Avoid per-request `UPDATE` on wide hot tables (counter churn → MVCC bloat);
+  derive counts from event tables or a narrow `*_counters` table.
+* Cache expensive auth-only aggregates (stats) at the service level by owner key
+  with a short TTL; TTL-based expiry is fine when exact freshness isn't required.
+* See **`OPTIMIZATION.md`** (repo root) for the full, ranked, `file:line`-grounded
+  performance audit and the recommended low-risk quick-win batch.
