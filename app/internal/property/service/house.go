@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
@@ -74,7 +75,7 @@ func (s *HouseService) GetAllPaginated(ctx context.Context, userID int, filter s
 		houses := make([]schema.HouseListItem, len(cached.Houses))
 		copy(houses, cached.Houses)
 		if userID > 0 {
-			if likedIDs, err := s.likeRepository.GetUserLikedHouseIDs(ctx, userID); err == nil {
+			if likedIDs, err := s.likeRepository.GetUserLikedHouseIDs(ctx, userID, pageHouseIDs(houses)); err == nil {
 				applyLiked(houses, likedIDs)
 			}
 		}
@@ -103,7 +104,7 @@ func (s *HouseService) GetAllPaginated(ctx context.Context, userID int, filter s
 	copy(houses, loaded.Houses)
 
 	if userID > 0 {
-		if likedIDs, lErr := s.likeRepository.GetUserLikedHouseIDs(ctx, userID); lErr == nil {
+		if likedIDs, lErr := s.likeRepository.GetUserLikedHouseIDs(ctx, userID, pageHouseIDs(houses)); lErr == nil {
 			applyLiked(houses, likedIDs)
 		}
 	}
@@ -175,12 +176,27 @@ func (s *HouseService) GetBySlug(ctx context.Context, slugVal string, userID int
 	}
 
 	if userID > 0 {
-		liked, _, lErr := s.likeRepository.StatusWithCount(ctx, userID, slugVal)
-		if lErr == nil {
-			house.IsLiked = liked
-		}
+		var liked bool
+		var myBooking *schema.HouseBooking
 
-		myBooking, _ := s.getActiveBooking(ctx, house.ID, userID)
+		g, gctx := errgroup.WithContext(ctx)
+		g.Go(func() error {
+			l, _, lErr := s.likeRepository.StatusWithCountByID(gctx, userID, house.ID)
+			if lErr == nil {
+				liked = l
+			}
+			return nil
+		})
+		g.Go(func() error {
+			b, bErr := s.getActiveBooking(gctx, house.ID, userID)
+			if bErr == nil {
+				myBooking = b
+			}
+			return nil
+		})
+		_ = g.Wait()
+
+		house.IsLiked = liked
 		if myBooking != nil {
 			house.IsBooked = true
 			house.MyBooking = myBooking
@@ -188,6 +204,14 @@ func (s *HouseService) GetBySlug(ctx context.Context, slugVal string, userID int
 	}
 
 	return house, nil
+}
+
+func pageHouseIDs(items []schema.HouseListItem) []int {
+	ids := make([]int, len(items))
+	for i := range items {
+		ids[i] = items[i].ID
+	}
+	return ids
 }
 
 func (s *HouseService) Create(ctx context.Context, req schema.HouseCreateRequest, ownerID int, isAdmin bool) (model.House, error) {

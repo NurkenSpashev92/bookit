@@ -207,6 +207,10 @@ func (m *mockHouseLikeRepo) StatusWithCount(_ context.Context, userID int, slug 
 	return m.likes[k], m.counts[slug], nil
 }
 
+func (m *mockHouseLikeRepo) StatusWithCountByID(_ context.Context, _, _ int) (bool, int, error) {
+	return false, 0, nil
+}
+
 func (m *mockHouseLikeRepo) GetUserLikedHouses(_ context.Context, _ int, _ string) ([]propertyschema.HouseListItem, error) {
 	return []propertyschema.HouseListItem{}, nil
 }
@@ -215,17 +219,8 @@ func (m *mockHouseLikeRepo) GetUserLikedHousesPaginated(_ context.Context, _ int
 	return []propertyschema.HouseListItem{}, 0, nil
 }
 
-func (m *mockHouseLikeRepo) GetUserLikedHouseIDs(_ context.Context, userID int) ([]int, error) {
-	var ids []int
-	for k := range m.likes {
-		var uid int
-		var slug string
-		fmt.Sscanf(k, "%d:%s", &uid, &slug)
-		if uid == userID {
-			ids = append(ids, uid)
-		}
-	}
-	return ids, nil
+func (m *mockHouseLikeRepo) GetUserLikedHouseIDs(_ context.Context, _ int, _ []int) ([]int, error) {
+	return nil, nil
 }
 
 type mockFAQRepo struct {

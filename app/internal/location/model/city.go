@@ -7,6 +7,7 @@ type City struct {
 	NameRU      string    `json:"name_ru"`
 	NameEN      string    `json:"name_en"`
 	NameKZ      string    `json:"name_kz"`
+	Slug        string    `json:"slug"`
 	PostallCode string    `json:"postall_code,omitempty"`
 	CountryID   int       `json:"country_id"`
 	CreatedAt   time.Time `json:"created_at"`

@@ -13,7 +13,6 @@ type HouseLikeRepository interface {
 	StatusWithCount(ctx context.Context, userID int, slug string) (bool, int, error)
 	GetUserLikedHouses(ctx context.Context, userID int, search string) ([]propertyschema.HouseListItem, error)
 	GetUserLikedHousesPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]propertyschema.HouseListItem, int, error)
-	GetUserLikedHouseIDs(ctx context.Context, userID int) ([]int, error)
 }
 
 type HouseLikeService struct {

@@ -7,6 +7,7 @@ type Country struct {
 	NameKZ    string    `json:"name_kz"`
 	NameEN    string    `json:"name_en"`
 	NameRU    string    `json:"name_ru"`
+	Slug      string    `json:"slug"`
 	Code      string    `json:"code,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

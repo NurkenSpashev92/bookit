@@ -9,6 +9,7 @@ import (
 
 	"github.com/nurkenspashev92/bookit/internal/location/model"
 	"github.com/nurkenspashev92/bookit/internal/location/schema"
+	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 type CountryRepository struct {
@@ -29,7 +30,7 @@ func (r *CountryRepository) GetAll(ctx context.Context, search string) ([]model.
 		args = append(args, "%"+search+"%")
 	}
 
-	rows, err := r.db.Query(ctx, `SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries`+where, args...)
+	rows, err := r.db.Query(ctx, `SELECT id, name_kz, name_en, name_ru, code, slug, created_at, updated_at FROM countries`+where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func (r *CountryRepository) GetAll(ctx context.Context, search string) ([]model.
 	var countries []model.Country
 	for rows.Next() {
 		var c model.Country
-		err := rows.Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.CreatedAt, &c.UpdatedAt)
+		err := rows.Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.Slug, &c.CreatedAt, &c.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func (r *CountryRepository) GetAllPaginated(ctx context.Context, search string, 
 
 	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx,
-		fmt.Sprintf(`SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries%s ORDER BY id LIMIT $%d OFFSET $%d`, where, len(args)-1, len(args)),
+		fmt.Sprintf(`SELECT id, name_kz, name_en, name_ru, code, slug, created_at, updated_at FROM countries%s ORDER BY id LIMIT $%d OFFSET $%d`, where, len(args)-1, len(args)),
 		args...,
 	)
 	if err != nil {
@@ -73,7 +74,7 @@ func (r *CountryRepository) GetAllPaginated(ctx context.Context, search string, 
 	var countries []model.Country
 	for rows.Next() {
 		var c model.Country
-		if err := rows.Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.Slug, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		countries = append(countries, c)
@@ -83,19 +84,20 @@ func (r *CountryRepository) GetAllPaginated(ctx context.Context, search string, 
 
 func (r *CountryRepository) GetByID(ctx context.Context, id int) (model.Country, error) {
 	var c model.Country
-	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries WHERE id=$1`, id).
-		Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.CreatedAt, &c.UpdatedAt)
+	err := r.db.QueryRow(ctx, `SELECT id, name_kz, name_en, name_ru, code, slug, created_at, updated_at FROM countries WHERE id=$1`, id).
+		Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.Slug, &c.CreatedAt, &c.UpdatedAt)
 	return c, err
 }
 
 func (r *CountryRepository) Create(ctx context.Context, req schema.CountryCreateRequest) (model.Country, error) {
 	var c model.Country
+	slug := utils.GenerateSlug(req.Slug, req.NameEN, req.NameKZ, req.NameRU)
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO countries (name_kz, name_en, name_ru, code, created_at, updated_at)
-		 VALUES ($1,$2,$3,$4,NOW(),NOW())
-		 RETURNING id, name_kz, name_en, name_ru, code, created_at, updated_at`,
-		req.NameKZ, req.NameEN, req.NameRU, req.Code,
-	).Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.CreatedAt, &c.UpdatedAt)
+		`INSERT INTO countries (name_kz, name_en, name_ru, code, slug, created_at, updated_at)
+		 VALUES ($1,$2,$3,$4,$5,NOW(),NOW())
+		 RETURNING id, name_kz, name_en, name_ru, code, slug, created_at, updated_at`,
+		req.NameKZ, req.NameEN, req.NameRU, req.Code, slug,
+	).Scan(&c.ID, &c.NameKZ, &c.NameEN, &c.NameRU, &c.Code, &c.Slug, &c.CreatedAt, &c.UpdatedAt)
 	return c, err
 }
 
@@ -117,11 +119,14 @@ func (r *CountryRepository) Update(ctx context.Context, id int, req schema.Count
 	if req.Code != nil {
 		c.Code = *req.Code
 	}
+	if req.Slug != nil {
+		c.Slug = *req.Slug
+	}
 	c.UpdatedAt = time.Now()
 
 	_, err = r.db.Exec(ctx,
-		`UPDATE countries SET name_kz=$1, name_en=$2, name_ru=$3, code=$4, updated_at=$5 WHERE id=$6`,
-		c.NameKZ, c.NameEN, c.NameRU, c.Code, c.UpdatedAt, id,
+		`UPDATE countries SET name_kz=$1, name_en=$2, name_ru=$3, code=$4, slug=$5, updated_at=$6 WHERE id=$7`,
+		c.NameKZ, c.NameEN, c.NameRU, c.Code, c.Slug, c.UpdatedAt, id,
 	)
 	return c, err
 }

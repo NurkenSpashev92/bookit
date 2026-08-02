@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/nurkenspashev92/bookit/pkg/aws"
@@ -145,4 +147,40 @@ func uploadHouseImages(
 	}
 
 	return rows
+}
+
+func insertImages(ctx context.Context, conn *pgxpool.Pool, rows []imageRow) error {
+	if len(rows) == 0 {
+		return nil
+	}
+
+	batch := &pgx.Batch{}
+
+	for _, r := range rows {
+		batch.Queue(`
+			INSERT INTO images (original, thumbnail, mimetype, width, height, size, house_id)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+			r.original, r.thumbnail, r.mime, r.width, r.height, r.size, r.houseID,
+		)
+	}
+
+	results := conn.SendBatch(ctx, batch)
+
+	var execErr error
+	for range rows {
+		if _, err := results.Exec(); err != nil && execErr == nil {
+			execErr = fmt.Errorf("insert image: %w", err)
+		}
+	}
+
+	closeErr := results.Close()
+	if execErr != nil {
+		return execErr
+	}
+	if closeErr != nil {
+		return fmt.Errorf("close images batch: %w", closeErr)
+	}
+
+	log.Printf("Images inserted: %d", len(rows))
+	return nil
 }

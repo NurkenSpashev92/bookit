@@ -34,39 +34,38 @@ func (r *HouseLikeRepository) getHouseIDBySlug(ctx context.Context, slug string)
 }
 
 func (r *HouseLikeRepository) LikeReturningCount(ctx context.Context, userID int, slug string) (int, error) {
-	houseID, err := r.getHouseIDBySlug(ctx, slug)
-	if err != nil {
-		return 0, err
-	}
-
 	var count int
 	query := `
-		WITH ins AS (
-			INSERT INTO house_likes (user_id, house_id) VALUES ($1, $2)
+		WITH h AS (
+			SELECT id FROM houses WHERE slug=$2
+		), ins AS (
+			INSERT INTO house_likes (user_id, house_id)
+			SELECT $1, id FROM h
 			ON CONFLICT DO NOTHING
-			RETURNING house_id
 		)
-		SELECT like_count FROM houses WHERE id = $2
+		SELECT like_count FROM houses WHERE id = (SELECT id FROM h)
 	`
-	err = r.db.QueryRow(ctx, query, userID, houseID).Scan(&count)
+	err := r.db.QueryRow(ctx, query, userID, slug).Scan(&count)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, model.ErrHouseNotFound
+	}
 	return count, err
 }
 
 func (r *HouseLikeRepository) UnlikeReturningCount(ctx context.Context, userID int, slug string) (int, error) {
-	houseID, err := r.getHouseIDBySlug(ctx, slug)
-	if err != nil {
-		return 0, err
-	}
-
 	var count int
 	query := `
-		WITH del AS (
-			DELETE FROM house_likes WHERE user_id=$1 AND house_id=$2
-			RETURNING house_id
+		WITH h AS (
+			SELECT id FROM houses WHERE slug=$2
+		), del AS (
+			DELETE FROM house_likes WHERE user_id=$1 AND house_id=(SELECT id FROM h)
 		)
-		SELECT like_count FROM houses WHERE id = $2
+		SELECT like_count FROM houses WHERE id = (SELECT id FROM h)
 	`
-	err = r.db.QueryRow(ctx, query, userID, houseID).Scan(&count)
+	err := r.db.QueryRow(ctx, query, userID, slug).Scan(&count)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, model.ErrHouseNotFound
+	}
 	return count, err
 }
 
@@ -75,7 +74,10 @@ func (r *HouseLikeRepository) StatusWithCount(ctx context.Context, userID int, s
 	if err != nil {
 		return false, 0, err
 	}
+	return r.StatusWithCountByID(ctx, userID, houseID)
+}
 
+func (r *HouseLikeRepository) StatusWithCountByID(ctx context.Context, userID, houseID int) (bool, int, error) {
 	var liked bool
 	var count int
 	query := `
@@ -83,7 +85,7 @@ func (r *HouseLikeRepository) StatusWithCount(ctx context.Context, userID int, s
 			EXISTS(SELECT 1 FROM house_likes WHERE user_id=$1 AND house_id=$2),
 			(SELECT like_count FROM houses WHERE id=$2)
 	`
-	err = r.db.QueryRow(ctx, query, userID, houseID).Scan(&liked, &count)
+	err := r.db.QueryRow(ctx, query, userID, houseID).Scan(&liked, &count)
 	return liked, count, err
 }
 
@@ -96,10 +98,14 @@ func (r *HouseLikeRepository) CountByHouse(ctx context.Context, houseID int) (in
 	return count, err
 }
 
-func (r *HouseLikeRepository) GetUserLikedHouseIDs(ctx context.Context, userID int) ([]int, error) {
+func (r *HouseLikeRepository) GetUserLikedHouseIDs(ctx context.Context, userID int, houseIDs []int) ([]int, error) {
+	if len(houseIDs) == 0 {
+		return nil, nil
+	}
+
 	rows, err := r.db.Query(ctx,
-		`SELECT house_id FROM house_likes WHERE user_id=$1 ORDER BY created_at DESC`,
-		userID,
+		`SELECT house_id FROM house_likes WHERE user_id=$1 AND house_id = ANY($2)`,
+		userID, houseIDs,
 	)
 	if err != nil {
 		return nil, err
@@ -165,6 +171,8 @@ func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, u
 				h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price,
 				h.address_en, h.address_kz, h.address_ru,
 				h.best_house, h.promotion,
+				h.is_verified, h.is_sale, h.is_newest, h.is_hot, h.is_featured, h.is_discount,
+				h.is_active,
 				CONCAT(c.name_kz, ', ', ct.name_kz),
 				CONCAT(c.name_ru, ', ', ct.name_ru),
 				CONCAT(c.name_en, ', ', ct.name_en),
@@ -180,16 +188,16 @@ func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, u
 				SELECT COALESCE(json_agg(
 					json_build_object(
 						'id', i.id,
-						'original', $2 || i.original,
 						'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $2 || i.thumbnail ELSE '' END,
 						'mime_type', i.mimetype,
 						'size', i.size,
+						'is_label', i.is_label,
 						'house_id', i.house_id
 					)
 				) FILTER (WHERE i.id IS NOT NULL), '[]') as images
 				FROM (
-					SELECT id, original, thumbnail, mimetype, size, house_id
-					FROM images WHERE house_id = h.id ORDER BY id LIMIT 5
+					SELECT id, thumbnail, mimetype, size, is_label, house_id
+					FROM images WHERE house_id = h.id ORDER BY (is_label IS TRUE) DESC, id LIMIT 5
 				) i
 			) img ON true
 			WHERE hl.user_id = $1%s
@@ -210,6 +218,8 @@ func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, u
 				&h.ID, &h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug, &h.Price,
 				&h.AddressEN, &h.AddressKZ, &h.AddressRU,
 				&h.BestHouse, &h.Promotion,
+				&h.IsVerified, &h.IsSale, &h.IsNewest, &h.IsHot, &h.IsFeatured, &h.IsDiscount,
+				&h.IsActive,
 				&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
 				&h.OwnerFullName, &h.LikeCount, &imagesJSON,
 			); err != nil {

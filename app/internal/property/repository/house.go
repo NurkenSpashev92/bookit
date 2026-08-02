@@ -105,11 +105,11 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	if filter.TypeSlug != nil {
 		wb.addExpr("h.type_id = (SELECT id FROM types WHERE slug = $%d)", *filter.TypeSlug)
 	}
-	if filter.CountryID != nil {
-		wb.add("h.country_id", "=", *filter.CountryID)
+	if filter.CountrySlug != nil {
+		wb.addExpr("h.country_id = (SELECT id FROM countries WHERE slug = $%d)", *filter.CountrySlug)
 	}
-	if filter.CityID != nil {
-		wb.add("h.city_id", "=", *filter.CityID)
+	if filter.CitySlug != nil {
+		wb.addExpr("h.city_id = (SELECT id FROM cities WHERE slug = $%d)", *filter.CitySlug)
 	}
 	if filter.CategorySlug != nil {
 		wb.addArg(*filter.CategorySlug)

@@ -10,6 +10,7 @@ import (
 	"github.com/nurkenspashev92/bookit/internal/location/model"
 	"github.com/nurkenspashev92/bookit/internal/location/schema"
 	"github.com/nurkenspashev92/bookit/pkg/store"
+	"github.com/nurkenspashev92/bookit/pkg/utils"
 )
 
 type CityRepository struct {
@@ -32,8 +33,8 @@ func (r *CityRepository) GetAllWithCountry(ctx context.Context, search string) (
 
 	query := `
 		SELECT
-			c.id, c.name_ru, c.name_en, c.name_kz, c.postall_code,
-			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code
+			c.id, c.name_ru, c.name_en, c.name_kz, c.slug, c.postall_code,
+			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code, ct.slug
 		FROM cities c
 		INNER JOIN countries ct ON c.country_id = ct.id` + where
 
@@ -48,8 +49,8 @@ func (r *CityRepository) GetAllWithCountry(ctx context.Context, search string) (
 		var c schema.City
 		var ct schema.Country
 		if err := rows.Scan(
-			&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.PostallCode,
-			&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code,
+			&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.Slug, &c.PostallCode,
+			&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code, &ct.Slug,
 		); err != nil {
 			return nil, err
 		}
@@ -76,8 +77,8 @@ func (r *CityRepository) GetAllWithCountryPaginated(ctx context.Context, search 
 	args = append(args, limit, offset)
 	query := fmt.Sprintf(`
 		SELECT
-			c.id, c.name_ru, c.name_en, c.name_kz, c.postall_code,
-			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code
+			c.id, c.name_ru, c.name_en, c.name_kz, c.slug, c.postall_code,
+			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code, ct.slug
 		FROM cities c
 		INNER JOIN countries ct ON c.country_id = ct.id%s
 		ORDER BY c.id
@@ -95,8 +96,8 @@ func (r *CityRepository) GetAllWithCountryPaginated(ctx context.Context, search 
 		var c schema.City
 		var ct schema.Country
 		if err := rows.Scan(
-			&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.PostallCode,
-			&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code,
+			&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.Slug, &c.PostallCode,
+			&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code, &ct.Slug,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -109,8 +110,8 @@ func (r *CityRepository) GetAllWithCountryPaginated(ctx context.Context, search 
 func (r *CityRepository) GetByIDWithCountry(ctx context.Context, id int) (schema.City, error) {
 	query := `
 		SELECT
-			c.id, c.name_ru, c.name_en, c.name_kz, c.postall_code,
-			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code
+			c.id, c.name_ru, c.name_en, c.name_kz, c.slug, c.postall_code,
+			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code, ct.slug
 		FROM cities c
 		INNER JOIN countries ct ON c.country_id = ct.id
 		WHERE c.id = $1
@@ -119,8 +120,8 @@ func (r *CityRepository) GetByIDWithCountry(ctx context.Context, id int) (schema
 	var c schema.City
 	var ct schema.Country
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.PostallCode,
-		&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code,
+		&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.Slug, &c.PostallCode,
+		&ct.ID, &ct.NameKZ, &ct.NameEN, &ct.NameRU, &ct.Code, &ct.Slug,
 	)
 	if err != nil {
 		return c, store.MapNoRows(err, model.ErrCityNotFound)
@@ -131,19 +132,20 @@ func (r *CityRepository) GetByIDWithCountry(ctx context.Context, id int) (schema
 
 func (r *CityRepository) GetByID(ctx context.Context, id int) (model.City, error) {
 	var c model.City
-	err := r.db.QueryRow(ctx, `SELECT id, name_ru, name_en, name_kz, postall_code, country_id, created_at, updated_at FROM cities WHERE id=$1`, id).
-		Scan(&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.PostallCode, &c.CountryID, &c.CreatedAt, &c.UpdatedAt)
+	err := r.db.QueryRow(ctx, `SELECT id, name_ru, name_en, name_kz, slug, postall_code, country_id, created_at, updated_at FROM cities WHERE id=$1`, id).
+		Scan(&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.Slug, &c.PostallCode, &c.CountryID, &c.CreatedAt, &c.UpdatedAt)
 	return c, err
 }
 
 func (r *CityRepository) Create(ctx context.Context, req schema.CityCreateRequest) (model.City, error) {
 	var c model.City
+	slug := utils.GenerateSlug(req.Slug, req.NameEN, req.NameKZ, req.NameRU)
 	err := r.db.QueryRow(ctx,
-		`INSERT INTO cities (name_ru, name_en, name_kz, postall_code, country_id, created_at, updated_at)
-		 VALUES ($1,$2,$3,$4,$5,NOW(),NOW())
-		 RETURNING id, name_ru, name_en, name_kz, postall_code, country_id, created_at, updated_at`,
-		req.NameRU, req.NameEN, req.NameKZ, req.PostallCode, req.CountryID,
-	).Scan(&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.PostallCode, &c.CountryID, &c.CreatedAt, &c.UpdatedAt)
+		`INSERT INTO cities (name_ru, name_en, name_kz, slug, postall_code, country_id, created_at, updated_at)
+		 VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
+		 RETURNING id, name_ru, name_en, name_kz, slug, postall_code, country_id, created_at, updated_at`,
+		req.NameRU, req.NameEN, req.NameKZ, slug, req.PostallCode, req.CountryID,
+	).Scan(&c.ID, &c.NameRU, &c.NameEN, &c.NameKZ, &c.Slug, &c.PostallCode, &c.CountryID, &c.CreatedAt, &c.UpdatedAt)
 	return c, err
 }
 
@@ -168,11 +170,14 @@ func (r *CityRepository) Update(ctx context.Context, id int, req schema.CityUpda
 	if req.CountryID != nil {
 		c.CountryID = *req.CountryID
 	}
+	if req.Slug != nil {
+		c.Slug = *req.Slug
+	}
 	c.UpdatedAt = time.Now()
 
 	_, err = r.db.Exec(ctx,
-		`UPDATE cities SET name_ru=$1, name_en=$2, name_kz=$3, postall_code=$4, country_id=$5, updated_at=$6 WHERE id=$7`,
-		c.NameRU, c.NameEN, c.NameKZ, c.PostallCode, c.CountryID, c.UpdatedAt, id,
+		`UPDATE cities SET name_ru=$1, name_en=$2, name_kz=$3, slug=$4, postall_code=$5, country_id=$6, updated_at=$7 WHERE id=$8`,
+		c.NameRU, c.NameEN, c.NameKZ, c.Slug, c.PostallCode, c.CountryID, c.UpdatedAt, id,
 	)
 	return c, err
 }

@@ -12,6 +12,63 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var (
+	namesEN = []string{
+		"Cozy Apartment", "Beach Villa", "Mountain Lodge", "City Penthouse", "Lake House",
+		"Forest Cabin", "Seaside Cottage", "Luxury Suite", "Garden Flat", "Rooftop Loft",
+		"Country House", "Modern Studio", "Royal Palace", "Ocean View", "Sunset Villa",
+		"River House", "Snow Lodge", "Desert Oasis", "Harbor View", "Hilltop Estate",
+	}
+	namesKZ = []string{
+		"Жайлы пәтер", "Жағажай виллаcы", "Тау лоджы", "Қалалық пентхаус", "Көл үйі",
+		"Орман үйі", "Теңіз коттеджі", "Люкс номер", "Бау пәтер", "Шатыр лофт",
+		"Ауыл үйі", "Заманауи студия", "Ханшайым сарайы", "Мұхит көрінісі", "Күн батысы",
+		"Өзен үйі", "Қар лоджы", "Шөл оазисі", "Айлақ көрінісі", "Тау шыңы",
+	}
+	namesRU = []string{
+		"Уютная квартира", "Пляжная вилла", "Горный лодж", "Городской пентхаус", "Дом у озера",
+		"Лесной домик", "Морской коттедж", "Люкс-сьют", "Садовая квартира", "Лофт на крыше",
+		"Загородный дом", "Современная студия", "Королевский дворец", "Вид на океан", "Вилла заката",
+		"Речной дом", "Снежный лодж", "Оазис в пустыне", "Вид на гавань", "Усадьба на холме",
+	}
+
+	descriptionsEN = []string{
+		"A wonderful place to stay with your family and friends.",
+		"Perfect getaway for a relaxing vacation.",
+		"Enjoy the breathtaking views and modern amenities.",
+		"Spacious and comfortable accommodation in a prime location.",
+		"Experience luxury living at its finest.",
+	}
+	descriptionsKZ = []string{
+		"Отбасыңызбен және достарыңызбен тұруға тамаша орын.",
+		"Демалыс үшін тамаша орын.",
+		"Тамаша көріністер мен заманауи ыңғайлылықтарды пайдаланыңыз.",
+		"Бірінші дәрежелі орналасқан кең және жайлы тұрғын үй.",
+		"Ең жоғары деңгейдегі сәнді өмірді сезініңіз.",
+	}
+	descriptionsRU = []string{
+		"Прекрасное место для проживания с семьей и друзьями.",
+		"Идеальное место для расслабляющего отдыха.",
+		"Наслаждайтесь потрясающими видами и современными удобствами.",
+		"Просторное и комфортное жилье в отличном месте.",
+		"Испытайте роскошную жизнь на высшем уровне.",
+	}
+
+	addressesEN = []string{
+		"123 Main Street", "456 Oak Avenue", "789 Pine Road", "321 Elm Boulevard", "654 Maple Lane",
+	}
+	addressesKZ = []string{
+		"Абай көшесі 123", "Тоқтар көшесі 456", "Назарбаев даңғылы 789", "Бейбітшілік көшесі 321", "Республика көшесі 654",
+	}
+	addressesRU = []string{
+		"ул. Абая 123", "ул. Токтара 456", "пр. Назарбаева 789", "ул. Мира 321", "ул. Республики 654",
+	}
+
+	districtsEN = []string{"Downtown", "Uptown", "Midtown", "Suburbs", "Old Town"}
+	districtsKZ = []string{"Орталық", "Жоғары қала", "Орта қала", "Іргетас", "Ескі қала"}
+	districtsRU = []string{"Центр", "Верхний город", "Средний город", "Пригород", "Старый город"}
+)
+
 type houseRow struct {
 	nameEN, nameKZ, nameRU string
 	slug                   string
@@ -154,40 +211,4 @@ func scanHouseIDs(results pgx.BatchResults, rows []houseRow) (ids []int, skipped
 	}
 
 	return ids, skipped, nil
-}
-
-func insertImages(ctx context.Context, conn *pgxpool.Pool, rows []imageRow) error {
-	if len(rows) == 0 {
-		return nil
-	}
-
-	batch := &pgx.Batch{}
-
-	for _, r := range rows {
-		batch.Queue(`
-			INSERT INTO images (original, thumbnail, mimetype, width, height, size, house_id)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-			r.original, r.thumbnail, r.mime, r.width, r.height, r.size, r.houseID,
-		)
-	}
-
-	results := conn.SendBatch(ctx, batch)
-
-	var execErr error
-	for range rows {
-		if _, err := results.Exec(); err != nil && execErr == nil {
-			execErr = fmt.Errorf("insert image: %w", err)
-		}
-	}
-
-	closeErr := results.Close()
-	if execErr != nil {
-		return execErr
-	}
-	if closeErr != nil {
-		return fmt.Errorf("close images batch: %w", closeErr)
-	}
-
-	log.Printf("Images inserted: %d", len(rows))
-	return nil
 }

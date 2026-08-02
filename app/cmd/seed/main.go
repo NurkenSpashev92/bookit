@@ -106,6 +106,10 @@ func run() error {
 		return err
 	}
 
+	if err := ensureFAQs(ctx, conn); err != nil {
+		return err
+	}
+
 	houseIDs, err := insertHouses(ctx, conn, buildHouseRows(ownerIDs, typeIDs, cities))
 	if err != nil {
 		return err

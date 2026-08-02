@@ -7,6 +7,7 @@ type Country struct {
 	NameKZ string `json:"name_kz" form:"name_kz" example:"Қазақстан"`
 	NameEN string `json:"name_en" form:"name_en" example:"Kazakhstan"`
 	NameRU string `json:"name_ru" form:"name_ru" example:"Казахстан"`
+	Slug   string `json:"slug" example:"kazakhstan"`
 	Code   string `json:"code" form:"code" example:"KZ"`
 }
 
@@ -14,6 +15,7 @@ type CountryCreateRequest struct {
 	NameKZ string `json:"name_kz" form:"name_kz" maxLength:"255" example:"Қазақстан" validate:"required"`
 	NameEN string `json:"name_en" form:"name_en" maxLength:"255" example:"Kazakhstan" validate:"required"`
 	NameRU string `json:"name_ru" form:"name_ru" maxLength:"255" example:"Казахстан" validate:"required"`
+	Slug   string `json:"slug" form:"slug" maxLength:"255"`
 	Code   string `json:"code" form:"code" maxLength:"10" example:"KZ"`
 }
 
@@ -33,6 +35,7 @@ type CountryUpdateRequest struct {
 	NameKZ *string `json:"name_kz,omitempty" form:"name_kz" maxLength:"255" example:"Қазақстан"`
 	NameEN *string `json:"name_en,omitempty" form:"name_en" maxLength:"255" example:"Kazakhstan"`
 	NameRU *string `json:"name_ru,omitempty" form:"name_ru" maxLength:"255" example:"Казахстан"`
+	Slug   *string `json:"slug,omitempty" form:"slug" maxLength:"255"`
 	Code   *string `json:"code,omitempty" form:"code" maxLength:"10" example:"KZ"`
 }
 
