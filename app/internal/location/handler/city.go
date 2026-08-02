@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -11,8 +12,8 @@ import (
 )
 
 type CityService interface {
-	GetAll(ctx context.Context) ([]schema.City, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.City, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.City, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.City, int, error)
 	GetByID(ctx context.Context, id int) (schema.City, error)
 	Create(ctx context.Context, req schema.CityCreateRequest) (model.City, error)
 	Update(ctx context.Context, id int, req schema.CityUpdateRequest) (model.City, error)
@@ -32,13 +33,23 @@ func NewCityHandler(cityService CityService) *CityHandler {
 // @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Cities
 // @Produce json
+// @Param search query string false "Search by name/postal code"
 // @Param page query int false "Page number (enables the paginated envelope)"
 // @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.City
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /cities [get]
 func (h *CityHandler) GetAll(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.cityService.GetAll, h.cityService.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.City, error) {
+			return h.cityService.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.City, int, error) {
+			return h.cityService.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // GetCity godoc

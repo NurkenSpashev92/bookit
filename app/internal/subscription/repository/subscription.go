@@ -133,22 +133,42 @@ func (r *SubscriptionRepository) ListByUserID(ctx context.Context, userID int) (
 	return collect(rows)
 }
 
-func (r *SubscriptionRepository) ListAll(ctx context.Context) ([]model.Subscription, error) {
-	rows, err := r.db.Query(ctx, readQuery+` ORDER BY s.id DESC`)
+const subscriptionSearchWhere = ` WHERE (u.first_name ILIKE $1 OR u.last_name ILIKE $1 OR u.email ILIKE $1 OR s.type::text ILIKE $1 OR s.status::text ILIKE $1)`
+
+const subscriptionCountQuery = `SELECT COUNT(*) FROM subscriptions s LEFT JOIN users u ON u.id = s.user_id`
+
+func (r *SubscriptionRepository) ListAll(ctx context.Context, search string) ([]model.Subscription, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = subscriptionSearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
+	rows, err := r.db.Query(ctx, readQuery+where+` ORDER BY s.id DESC`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list subscriptions: %w", err)
 	}
 	return collect(rows)
 }
 
-func (r *SubscriptionRepository) ListPaginated(ctx context.Context, limit, offset int) ([]model.Subscription, int, error) {
+func (r *SubscriptionRepository) ListPaginated(ctx context.Context, search string, limit, offset int) ([]model.Subscription, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = subscriptionSearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM subscriptions`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, subscriptionCountQuery+where, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count subscriptions: %w", err)
 	}
 
+	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx,
-		readQuery+` ORDER BY s.id DESC LIMIT $1 OFFSET $2`, limit, offset,
+		fmt.Sprintf(readQuery+where+` ORDER BY s.id DESC LIMIT $%d OFFSET $%d`, len(args)-1, len(args)),
+		args...,
 	)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list subscriptions: %w", err)

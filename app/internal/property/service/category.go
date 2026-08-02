@@ -9,8 +9,8 @@ import (
 )
 
 type CategoryRepository interface {
-	GetCategories(ctx context.Context) ([]schema.CategoryPaginate, error)
-	GetCategoriesPaginated(ctx context.Context, limit, offset int) ([]schema.CategoryPaginate, int, error)
+	GetCategories(ctx context.Context, search string) ([]schema.CategoryPaginate, error)
+	GetCategoriesPaginated(ctx context.Context, search string, limit, offset int) ([]schema.CategoryPaginate, int, error)
 	GetByID(ctx context.Context, id int) (model.Category, error)
 	CreateCategory(ctx context.Context, req schema.CategoryCreateRequest) (model.Category, error)
 	Update(ctx context.Context, id int, req schema.CategoryUpdateRequest) (model.Category, error)
@@ -25,12 +25,12 @@ func NewCategoryService(repo CategoryRepository) *CategoryService {
 	return &CategoryService{repository: repo}
 }
 
-func (s *CategoryService) GetAll(ctx context.Context) ([]schema.CategoryPaginate, error) {
-	return s.repository.GetCategories(ctx)
+func (s *CategoryService) GetAll(ctx context.Context, search string) ([]schema.CategoryPaginate, error) {
+	return s.repository.GetCategories(ctx, search)
 }
 
-func (s *CategoryService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.CategoryPaginate, int, error) {
-	return s.repository.GetCategoriesPaginated(ctx, limit, offset)
+func (s *CategoryService) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.CategoryPaginate, int, error) {
+	return s.repository.GetCategoriesPaginated(ctx, search, limit, offset)
 }
 
 func (s *CategoryService) GetByID(ctx context.Context, id int) (model.Category, error) {

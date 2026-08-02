@@ -20,16 +20,24 @@ func NewCityRepository(db *pgxpool.Pool) *CityRepository {
 	return &CityRepository{db: db}
 }
 
-func (r *CityRepository) GetAllWithCountry(ctx context.Context) ([]schema.City, error) {
+const citySearchWhere = " WHERE (c.name_kz ILIKE $1 OR c.name_ru ILIKE $1 OR c.name_en ILIKE $1 OR c.postall_code ILIKE $1)"
+
+func (r *CityRepository) GetAllWithCountry(ctx context.Context, search string) ([]schema.City, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = citySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	query := `
 		SELECT
 			c.id, c.name_ru, c.name_en, c.name_kz, c.postall_code,
 			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code
 		FROM cities c
-		INNER JOIN countries ct ON c.country_id = ct.id
-	`
+		INNER JOIN countries ct ON c.country_id = ct.id` + where
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query cities: %w", err)
 	}
@@ -51,24 +59,32 @@ func (r *CityRepository) GetAllWithCountry(ctx context.Context) ([]schema.City, 
 	return result, nil
 }
 
-func (r *CityRepository) GetAllWithCountryPaginated(ctx context.Context, limit, offset int) ([]schema.City, int, error) {
+func (r *CityRepository) GetAllWithCountryPaginated(ctx context.Context, search string, limit, offset int) ([]schema.City, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = citySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
 	if err := r.db.QueryRow(ctx,
-		`SELECT COUNT(*) FROM cities c INNER JOIN countries ct ON c.country_id = ct.id`).Scan(&total); err != nil {
+		`SELECT COUNT(*) FROM cities c INNER JOIN countries ct ON c.country_id = ct.id`+where, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count cities: %w", err)
 	}
 
-	query := `
+	args = append(args, limit, offset)
+	query := fmt.Sprintf(`
 		SELECT
 			c.id, c.name_ru, c.name_en, c.name_kz, c.postall_code,
 			ct.id, ct.name_kz, ct.name_en, ct.name_ru, ct.code
 		FROM cities c
-		INNER JOIN countries ct ON c.country_id = ct.id
+		INNER JOIN countries ct ON c.country_id = ct.id%s
 		ORDER BY c.id
-		LIMIT $1 OFFSET $2
-	`
+		LIMIT $%d OFFSET $%d`,
+		where, len(args)-1, len(args))
 
-	rows, err := r.db.Query(ctx, query, limit, offset)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query cities: %w", err)
 	}

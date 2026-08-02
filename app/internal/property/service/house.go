@@ -17,6 +17,7 @@ type HouseRepository interface {
 	GetAllPaginated(ctx context.Context, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error)
 	GetByOwnerPaginated(ctx context.Context, ownerID, limit, offset int) ([]schema.HouseListItem, int, error)
 	GetBySlug(ctx context.Context, slug string) (schema.HouseDetailResponse, error)
+	OwnerIDBySlug(ctx context.Context, slug string) (int, error)
 	RecordView(ctx context.Context, slug string, userID *int, ip string)
 	Create(ctx context.Context, req schema.HouseCreateRequest) (model.House, error)
 	Update(ctx context.Context, slug string, req schema.HouseUpdateRequest) (model.House, error)
@@ -139,17 +140,39 @@ func (s *HouseService) GetMyHouses(ctx context.Context, ownerID, limit, offset i
 	return s.repository.GetByOwnerPaginated(ctx, ownerID, limit, offset)
 }
 
-func (s *HouseService) GetBySlug(ctx context.Context, slugVal string, userID int, ip string) (schema.HouseDetailResponse, error) {
-	house, err := s.repository.GetBySlug(ctx, slugVal)
-	if err != nil {
-		return house, err
-	}
+func (s *HouseService) GetForModeration(ctx context.Context, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error) {
+	filter.Moderation = true
+	return s.repository.GetAllPaginated(ctx, filter, limit, offset)
+}
 
+func (s *HouseService) GetBySlug(ctx context.Context, slugVal string, userID int, ip string) (schema.HouseDetailResponse, error) {
 	var uid *int
 	if userID > 0 {
 		uid = &userID
 	}
 	s.recordViewAsync(slugVal, uid, ip)
+
+	cacheKey := "houses:detail:" + slugVal
+
+	var house schema.HouseDetailResponse
+	if !s.cache.Get(ctx, cacheKey, &house) {
+		v, err, _ := s.sf.Do(cacheKey, func() (any, error) {
+			var inner schema.HouseDetailResponse
+			if s.cache.Get(ctx, cacheKey, &inner) {
+				return inner, nil
+			}
+			h, err := s.repository.GetBySlug(ctx, slugVal)
+			if err != nil {
+				return nil, err
+			}
+			s.cache.Set(ctx, cacheKey, h)
+			return h, nil
+		})
+		if err != nil {
+			return schema.HouseDetailResponse{}, err
+		}
+		house = v.(schema.HouseDetailResponse)
+	}
 
 	if userID > 0 {
 		liked, _, lErr := s.likeRepository.StatusWithCount(ctx, userID, slugVal)
@@ -167,8 +190,18 @@ func (s *HouseService) GetBySlug(ctx context.Context, slugVal string, userID int
 	return house, nil
 }
 
-func (s *HouseService) Create(ctx context.Context, req schema.HouseCreateRequest, ownerID int) (model.House, error) {
+func (s *HouseService) Create(ctx context.Context, req schema.HouseCreateRequest, ownerID int, isAdmin bool) (model.House, error) {
 	req.OwnerID = ownerID
+	if !isAdmin {
+		req.IsActive = false
+		req.BestHouse = false
+		req.Promotion = false
+		req.IsVerified = false
+		req.IsSale = false
+		req.IsHot = false
+		req.IsFeatured = false
+		req.IsDiscount = false
+	}
 	house, err := s.repository.Create(ctx, req)
 	if err != nil {
 		return house, err
@@ -177,7 +210,26 @@ func (s *HouseService) Create(ctx context.Context, req schema.HouseCreateRequest
 	return house, nil
 }
 
-func (s *HouseService) Update(ctx context.Context, slugVal string, req schema.HouseUpdateRequest) (model.House, error) {
+func (s *HouseService) Update(ctx context.Context, slugVal string, req schema.HouseUpdateRequest, actorID int, isAdmin bool) (model.House, error) {
+	ownerID, err := s.repository.OwnerIDBySlug(ctx, slugVal)
+	if err != nil {
+		return model.House{}, err
+	}
+	if !isAdmin && actorID != ownerID {
+		return model.House{}, model.ErrHouseForbidden
+	}
+	if !isAdmin {
+		req.IsActive = nil
+		req.BestHouse = nil
+		req.Promotion = nil
+		req.IsVerified = nil
+		req.IsSale = nil
+		req.IsNewest = nil
+		req.IsHot = nil
+		req.IsFeatured = nil
+		req.IsDiscount = nil
+	}
+
 	house, err := s.repository.Update(ctx, slugVal, req)
 	if err == nil {
 		s.cache.InvalidateNamespace("houses")
@@ -185,12 +237,20 @@ func (s *HouseService) Update(ctx context.Context, slugVal string, req schema.Ho
 	return house, err
 }
 
-func (s *HouseService) Delete(ctx context.Context, slugVal string) error {
-	err := s.repository.Delete(ctx, slugVal)
-	if err == nil {
-		s.cache.InvalidateNamespace("houses")
+func (s *HouseService) Delete(ctx context.Context, slugVal string, actorID int, isAdmin bool) error {
+	ownerID, err := s.repository.OwnerIDBySlug(ctx, slugVal)
+	if err != nil {
+		return err
 	}
-	return err
+	if !isAdmin && actorID != ownerID {
+		return model.ErrHouseForbidden
+	}
+
+	if err := s.repository.Delete(ctx, slugVal); err != nil {
+		return err
+	}
+	s.cache.InvalidateNamespace("houses")
+	return nil
 }
 
 func (s *HouseService) CheckSlug(ctx context.Context, rawSlug string) (bool, string, error) {

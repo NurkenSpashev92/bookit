@@ -3,73 +3,80 @@ package schema
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
 type House struct {
-	NameEN         string              `json:"name_en" form:"name_en" swaggertype:"string" example:"Beach House"`
-	NameKZ         string              `json:"name_kz" form:"name_kz" swaggertype:"string" example:"Жағажай үйі"`
-	NameRU         string              `json:"name_ru" form:"name_ru" swaggertype:"string" example:"Пляжный дом"`
-	Slug           string              `json:"slug" form:"slug" swaggertype:"string" example:"beach-house"`
-	Price          shared.FlexInt      `json:"price" form:"price" swaggertype:"integer" example:"50000" minimum:"0"`
-	RoomsQty       shared.FlexInt      `json:"rooms_qty" form:"rooms_qty" swaggertype:"integer" example:"3" minimum:"0"`
-	GuestQty       shared.FlexInt      `json:"guest_qty" form:"guest_qty" swaggertype:"integer" example:"6" minimum:"0"`
-	BedroomQty     shared.FlexInt      `json:"bedroom_qty" form:"bedroom_qty" swaggertype:"integer" example:"2" minimum:"0"`
-	BathQty        *shared.FlexInt     `json:"bath_qty" form:"bath_qty" swaggertype:"integer" example:"1" minimum:"0"`
-	DescriptionEN  string              `json:"description_en" form:"description_en" swaggertype:"string"`
-	DescriptionKZ  string              `json:"description_kz" form:"description_kz" swaggertype:"string"`
-	DescriptionRU  string              `json:"description_ru" form:"description_ru" swaggertype:"string"`
-	AddressEN      string              `json:"address_en" form:"address_en" swaggertype:"string" maxLength:"255"`
-	AddressKZ      string              `json:"address_kz" form:"address_kz" swaggertype:"string" maxLength:"255"`
-	AddressRU      string              `json:"address_ru" form:"address_ru" swaggertype:"string" maxLength:"255"`
-	Lng            *shared.FlexFloat64 `json:"lng" form:"lng" swaggertype:"number"`
-	Lat            *shared.FlexFloat64 `json:"lat" form:"lat" swaggertype:"number"`
-	IsActive       bool                `json:"is_active" form:"is_active"`
-	Priority       shared.FlexInt      `json:"priority" form:"priority" swaggertype:"integer" minimum:"0"`
-	OwnerID        shared.FlexInt      `json:"owner_id" form:"owner_id" swaggertype:"integer"`
-	TypeID         shared.FlexInt      `json:"type_id" form:"type_id" swaggertype:"integer"`
-	CityID         *shared.FlexInt     `json:"city_id" form:"city_id" swaggertype:"integer"`
-	CountryID      *shared.FlexInt     `json:"country_id" form:"country_id" swaggertype:"integer"`
-	GuestsWithPets bool                `json:"guests_with_pets" form:"guests_with_pets"`
-	BestHouse      bool                `json:"best_house" form:"best_house"`
-	Promotion      bool                `json:"promotion" form:"promotion"`
-	DistrictEN     string              `json:"district_en" form:"district_en" swaggertype:"string" maxLength:"255"`
-	DistrictKZ     string              `json:"district_kz" form:"district_kz" swaggertype:"string" maxLength:"255"`
-	DistrictRU     string              `json:"district_ru" form:"district_ru" swaggertype:"string" maxLength:"255"`
-	PhoneNumber    string              `json:"phone_number" form:"phone_number" swaggertype:"string" maxLength:"20"`
-	Images         []Image             `json:"images" form:"images"`
+	NameEN           string              `json:"name_en" form:"name_en" swaggertype:"string" example:"Beach House"`
+	NameKZ           string              `json:"name_kz" form:"name_kz" swaggertype:"string" example:"Жағажай үйі"`
+	NameRU           string              `json:"name_ru" form:"name_ru" swaggertype:"string" example:"Пляжный дом"`
+	Slug             string              `json:"slug" form:"slug" swaggertype:"string" example:"beach-house"`
+	Price            shared.FlexInt      `json:"price" form:"price" swaggertype:"integer" example:"50000" minimum:"0"`
+	RoomsQty         shared.FlexInt      `json:"rooms_qty" form:"rooms_qty" swaggertype:"integer" example:"3" minimum:"0"`
+	GuestQty         shared.FlexInt      `json:"guest_qty" form:"guest_qty" swaggertype:"integer" example:"6" minimum:"0"`
+	BedroomQty       shared.FlexInt      `json:"bedroom_qty" form:"bedroom_qty" swaggertype:"integer" example:"2" minimum:"0"`
+	BathQty          *shared.FlexInt     `json:"bath_qty" form:"bath_qty" swaggertype:"integer" example:"1" minimum:"0"`
+	DescriptionEN    string              `json:"description_en" form:"description_en" swaggertype:"string"`
+	DescriptionKZ    string              `json:"description_kz" form:"description_kz" swaggertype:"string"`
+	DescriptionRU    string              `json:"description_ru" form:"description_ru" swaggertype:"string"`
+	AddressEN        string              `json:"address_en" form:"address_en" swaggertype:"string" maxLength:"255"`
+	AddressKZ        string              `json:"address_kz" form:"address_kz" swaggertype:"string" maxLength:"255"`
+	AddressRU        string              `json:"address_ru" form:"address_ru" swaggertype:"string" maxLength:"255"`
+	Lng              *shared.FlexFloat64 `json:"lng" form:"lng" swaggertype:"number"`
+	Lat              *shared.FlexFloat64 `json:"lat" form:"lat" swaggertype:"number"`
+	IsActive         bool                `json:"is_active" form:"is_active"`
+	Priority         shared.FlexInt      `json:"priority" form:"priority" swaggertype:"integer" minimum:"0"`
+	OwnerID          shared.FlexInt      `json:"owner_id" form:"owner_id" swaggertype:"integer"`
+	TypeID           shared.FlexInt      `json:"type_id" form:"type_id" swaggertype:"integer"`
+	CityID           *shared.FlexInt     `json:"city_id" form:"city_id" swaggertype:"integer"`
+	CountryID        *shared.FlexInt     `json:"country_id" form:"country_id" swaggertype:"integer"`
+	GuestsWithPets   bool                `json:"guests_with_pets" form:"guests_with_pets"`
+	GuestsWithBabies bool                `json:"guests_with_babies" form:"guests_with_babies"`
+	BestHouse        bool                `json:"best_house" form:"best_house"`
+	Promotion        bool                `json:"promotion" form:"promotion"`
+	DistrictEN       string              `json:"district_en" form:"district_en" swaggertype:"string" maxLength:"255"`
+	DistrictKZ       string              `json:"district_kz" form:"district_kz" swaggertype:"string" maxLength:"255"`
+	DistrictRU       string              `json:"district_ru" form:"district_ru" swaggertype:"string" maxLength:"255"`
+	PhoneNumber      string              `json:"phone_number" form:"phone_number" swaggertype:"string" maxLength:"20"`
+	Images           []Image             `json:"images" form:"images"`
 }
 
 // HouseCreateRequest create house request body
 // @Description Request body for creating a new house
 type HouseCreateRequest struct {
-	NameEN         string              `json:"name_en" form:"name_en" swaggertype:"string" maxLength:"255" validate:"required"`
-	NameKZ         string              `json:"name_kz" form:"name_kz" swaggertype:"string" maxLength:"255" validate:"required"`
-	NameRU         string              `json:"name_ru" form:"name_ru" swaggertype:"string" maxLength:"255" validate:"required"`
-	Slug           string              `json:"slug" form:"slug" swaggertype:"string" maxLength:"255"`
-	Price          shared.FlexInt      `json:"price" form:"price" swaggertype:"integer" minimum:"0" validate:"required"`
-	RoomsQty       shared.FlexInt      `json:"rooms_qty" form:"rooms_qty" swaggertype:"integer" minimum:"0"`
-	GuestQty       shared.FlexInt      `json:"guest_qty" form:"guest_qty" swaggertype:"integer" minimum:"0"`
-	BedroomQty     shared.FlexInt      `json:"bedroom_qty" form:"bedroom_qty" swaggertype:"integer" minimum:"0"`
-	BathQty        *shared.FlexInt     `json:"bath_qty" form:"bath_qty" swaggertype:"integer" minimum:"0"`
-	DescriptionEN  string              `json:"description_en" form:"description_en" swaggertype:"string" validate:"required"`
-	DescriptionKZ  string              `json:"description_kz" form:"description_kz" swaggertype:"string" validate:"required"`
-	DescriptionRU  string              `json:"description_ru" form:"description_ru" swaggertype:"string" validate:"required"`
-	AddressEN      string              `json:"address_en" form:"address_en" swaggertype:"string" maxLength:"255" validate:"required"`
-	AddressKZ      string              `json:"address_kz" form:"address_kz" swaggertype:"string" maxLength:"255" validate:"required"`
-	AddressRU      string              `json:"address_ru" form:"address_ru" swaggertype:"string" maxLength:"255" validate:"required"`
-	Lng            *shared.FlexFloat64 `json:"lng" form:"lng" swaggertype:"number"`
-	Lat            *shared.FlexFloat64 `json:"lat" form:"lat" swaggertype:"number"`
-	IsActive       bool                `json:"is_active" form:"is_active"`
-	Priority       shared.FlexInt      `json:"priority" form:"priority" swaggertype:"integer" minimum:"0"`
-	OwnerID        int                 `json:"owner_id" form:"owner_id" swaggerignore:"true"`
-	TypeID         shared.FlexInt      `json:"type_id" form:"type_id" swaggertype:"integer" validate:"required"`
-	CityID         *shared.FlexInt     `json:"city_id" form:"city_id" swaggertype:"integer"`
-	CountryID      *shared.FlexInt     `json:"country_id" form:"country_id" swaggertype:"integer"`
-	GuestsWithPets bool                `json:"guests_with_pets" form:"guests_with_pets"`
-	BestHouse      bool                `json:"best_house" form:"best_house"`
-	Promotion      bool                `json:"promotion" form:"promotion"`
-	DistrictEN     string              `json:"district_en" form:"district_en" swaggertype:"string" maxLength:"255"`
-	DistrictKZ     string              `json:"district_kz" form:"district_kz" swaggertype:"string" maxLength:"255"`
-	DistrictRU     string              `json:"district_ru" form:"district_ru" swaggertype:"string" maxLength:"255"`
-	PhoneNumber    string              `json:"phone_number" form:"phone_number" swaggertype:"string" maxLength:"20"`
-	CategoryIDs    []int               `json:"category_ids" form:"category_ids" validate:"required"`
+	NameEN           string              `json:"name_en" form:"name_en" swaggertype:"string" maxLength:"255" validate:"required"`
+	NameKZ           string              `json:"name_kz" form:"name_kz" swaggertype:"string" maxLength:"255" validate:"required"`
+	NameRU           string              `json:"name_ru" form:"name_ru" swaggertype:"string" maxLength:"255" validate:"required"`
+	Slug             string              `json:"slug" form:"slug" swaggertype:"string" maxLength:"255"`
+	Price            shared.FlexInt      `json:"price" form:"price" swaggertype:"integer" minimum:"0" validate:"required"`
+	RoomsQty         shared.FlexInt      `json:"rooms_qty" form:"rooms_qty" swaggertype:"integer" minimum:"0"`
+	GuestQty         shared.FlexInt      `json:"guest_qty" form:"guest_qty" swaggertype:"integer" minimum:"0"`
+	BedroomQty       shared.FlexInt      `json:"bedroom_qty" form:"bedroom_qty" swaggertype:"integer" minimum:"0"`
+	BathQty          *shared.FlexInt     `json:"bath_qty" form:"bath_qty" swaggertype:"integer" minimum:"0"`
+	DescriptionEN    string              `json:"description_en" form:"description_en" swaggertype:"string" validate:"required"`
+	DescriptionKZ    string              `json:"description_kz" form:"description_kz" swaggertype:"string" validate:"required"`
+	DescriptionRU    string              `json:"description_ru" form:"description_ru" swaggertype:"string" validate:"required"`
+	AddressEN        string              `json:"address_en" form:"address_en" swaggertype:"string" maxLength:"255" validate:"required"`
+	AddressKZ        string              `json:"address_kz" form:"address_kz" swaggertype:"string" maxLength:"255" validate:"required"`
+	AddressRU        string              `json:"address_ru" form:"address_ru" swaggertype:"string" maxLength:"255" validate:"required"`
+	Lng              *shared.FlexFloat64 `json:"lng" form:"lng" swaggertype:"number"`
+	Lat              *shared.FlexFloat64 `json:"lat" form:"lat" swaggertype:"number"`
+	IsActive         bool                `json:"is_active" form:"is_active"`
+	Priority         shared.FlexInt      `json:"priority" form:"priority" swaggertype:"integer" minimum:"0"`
+	OwnerID          int                 `json:"owner_id" form:"owner_id" swaggerignore:"true"`
+	TypeID           shared.FlexInt      `json:"type_id" form:"type_id" swaggertype:"integer" validate:"required"`
+	CityID           *shared.FlexInt     `json:"city_id" form:"city_id" swaggertype:"integer"`
+	CountryID        *shared.FlexInt     `json:"country_id" form:"country_id" swaggertype:"integer"`
+	GuestsWithPets   bool                `json:"guests_with_pets" form:"guests_with_pets"`
+	GuestsWithBabies bool                `json:"guests_with_babies" form:"guests_with_babies"`
+	BestHouse        bool                `json:"best_house" form:"best_house"`
+	Promotion        bool                `json:"promotion" form:"promotion"`
+	IsVerified       bool                `json:"is_verified" form:"is_verified"`
+	IsSale           bool                `json:"is_sale" form:"is_sale"`
+	IsHot            bool                `json:"is_hot" form:"is_hot"`
+	IsFeatured       bool                `json:"is_featured" form:"is_featured"`
+	IsDiscount       bool                `json:"is_discount" form:"is_discount"`
+	DistrictEN       string              `json:"district_en" form:"district_en" swaggertype:"string" maxLength:"255"`
+	DistrictKZ       string              `json:"district_kz" form:"district_kz" swaggertype:"string" maxLength:"255"`
+	DistrictRU       string              `json:"district_ru" form:"district_ru" swaggertype:"string" maxLength:"255"`
+	PhoneNumber      string              `json:"phone_number" form:"phone_number" swaggertype:"string" maxLength:"20"`
+	CategoryIDs      []int               `json:"category_ids" form:"category_ids" validate:"required"`
 }
 
 func (r HouseCreateRequest) Validate() error {
@@ -109,35 +116,42 @@ func (r HouseCreateRequest) Validate() error {
 // HouseUpdateRequest partial update house request body
 // @Description Request body for updating a house (all fields optional)
 type HouseUpdateRequest struct {
-	NameEN         *string             `json:"name_en,omitempty" form:"name_en" swaggertype:"string" maxLength:"255"`
-	NameKZ         *string             `json:"name_kz,omitempty" form:"name_kz" swaggertype:"string" maxLength:"255"`
-	NameRU         *string             `json:"name_ru,omitempty" form:"name_ru" swaggertype:"string" maxLength:"255"`
-	Slug           *string             `json:"slug" form:"slug" swaggertype:"string" maxLength:"255"`
-	Price          *shared.FlexInt     `json:"price,omitempty" form:"price" swaggertype:"integer" minimum:"0"`
-	RoomsQty       *shared.FlexInt     `json:"rooms_qty,omitempty" form:"rooms_qty" swaggertype:"integer" minimum:"0"`
-	GuestQty       *shared.FlexInt     `json:"guest_qty,omitempty" form:"guest_qty" swaggertype:"integer" minimum:"0"`
-	BedroomQty     *shared.FlexInt     `json:"bedroom_qty,omitempty" form:"bedroom_qty" swaggertype:"integer" minimum:"0"`
-	BathQty        *shared.FlexInt     `json:"bath_qty,omitempty" form:"bath_qty" swaggertype:"integer" minimum:"0"`
-	DescriptionEN  *string             `json:"description_en,omitempty" form:"description_en" swaggertype:"string"`
-	DescriptionKZ  *string             `json:"description_kz,omitempty" form:"description_kz" swaggertype:"string"`
-	DescriptionRU  *string             `json:"description_ru,omitempty" form:"description_ru" swaggertype:"string"`
-	AddressEN      *string             `json:"address_en,omitempty" form:"address_en" swaggertype:"string" maxLength:"255"`
-	AddressKZ      *string             `json:"address_kz,omitempty" form:"address_kz" swaggertype:"string" maxLength:"255"`
-	AddressRU      *string             `json:"address_ru,omitempty" form:"address_ru" swaggertype:"string" maxLength:"255"`
-	Lng            *shared.FlexFloat64 `json:"lng,omitempty" form:"lng" swaggertype:"number"`
-	Lat            *shared.FlexFloat64 `json:"lat,omitempty" form:"lat" swaggertype:"number"`
-	IsActive       *bool               `json:"is_active,omitempty" form:"is_active"`
-	Priority       *shared.FlexInt     `json:"priority,omitempty" form:"priority" swaggertype:"integer" minimum:"0"`
-	TypeID         *shared.FlexInt     `json:"type_id,omitempty" form:"type_id" swaggertype:"integer"`
-	CityID         *shared.FlexInt     `json:"city_id,omitempty" form:"city_id" swaggertype:"integer"`
-	CountryID      *shared.FlexInt     `json:"country_id,omitempty" form:"country_id" swaggertype:"integer"`
-	GuestsWithPets *bool               `json:"guests_with_pets,omitempty" form:"guests_with_pets"`
-	BestHouse      *bool               `json:"best_house,omitempty" form:"best_house"`
-	Promotion      *bool               `json:"promotion,omitempty" form:"promotion"`
-	DistrictEN     *string             `json:"district_en,omitempty" form:"district_en" swaggertype:"string" maxLength:"255"`
-	DistrictKZ     *string             `json:"district_kz,omitempty" form:"district_kz" swaggertype:"string" maxLength:"255"`
-	DistrictRU     *string             `json:"district_ru,omitempty" form:"district_ru" swaggertype:"string" maxLength:"255"`
-	PhoneNumber    *string             `json:"phone_number,omitempty" form:"phone_number" swaggertype:"string" maxLength:"20"`
+	NameEN           *string             `json:"name_en,omitempty" form:"name_en" swaggertype:"string" maxLength:"255"`
+	NameKZ           *string             `json:"name_kz,omitempty" form:"name_kz" swaggertype:"string" maxLength:"255"`
+	NameRU           *string             `json:"name_ru,omitempty" form:"name_ru" swaggertype:"string" maxLength:"255"`
+	Slug             *string             `json:"slug" form:"slug" swaggertype:"string" maxLength:"255"`
+	Price            *shared.FlexInt     `json:"price,omitempty" form:"price" swaggertype:"integer" minimum:"0"`
+	RoomsQty         *shared.FlexInt     `json:"rooms_qty,omitempty" form:"rooms_qty" swaggertype:"integer" minimum:"0"`
+	GuestQty         *shared.FlexInt     `json:"guest_qty,omitempty" form:"guest_qty" swaggertype:"integer" minimum:"0"`
+	BedroomQty       *shared.FlexInt     `json:"bedroom_qty,omitempty" form:"bedroom_qty" swaggertype:"integer" minimum:"0"`
+	BathQty          *shared.FlexInt     `json:"bath_qty,omitempty" form:"bath_qty" swaggertype:"integer" minimum:"0"`
+	DescriptionEN    *string             `json:"description_en,omitempty" form:"description_en" swaggertype:"string"`
+	DescriptionKZ    *string             `json:"description_kz,omitempty" form:"description_kz" swaggertype:"string"`
+	DescriptionRU    *string             `json:"description_ru,omitempty" form:"description_ru" swaggertype:"string"`
+	AddressEN        *string             `json:"address_en,omitempty" form:"address_en" swaggertype:"string" maxLength:"255"`
+	AddressKZ        *string             `json:"address_kz,omitempty" form:"address_kz" swaggertype:"string" maxLength:"255"`
+	AddressRU        *string             `json:"address_ru,omitempty" form:"address_ru" swaggertype:"string" maxLength:"255"`
+	Lng              *shared.FlexFloat64 `json:"lng,omitempty" form:"lng" swaggertype:"number"`
+	Lat              *shared.FlexFloat64 `json:"lat,omitempty" form:"lat" swaggertype:"number"`
+	IsActive         *bool               `json:"is_active,omitempty" form:"is_active"`
+	Priority         *shared.FlexInt     `json:"priority,omitempty" form:"priority" swaggertype:"integer" minimum:"0"`
+	TypeID           *shared.FlexInt     `json:"type_id,omitempty" form:"type_id" swaggertype:"integer"`
+	CityID           *shared.FlexInt     `json:"city_id,omitempty" form:"city_id" swaggertype:"integer"`
+	CountryID        *shared.FlexInt     `json:"country_id,omitempty" form:"country_id" swaggertype:"integer"`
+	GuestsWithPets   *bool               `json:"guests_with_pets,omitempty" form:"guests_with_pets"`
+	GuestsWithBabies *bool               `json:"guests_with_babies,omitempty" form:"guests_with_babies"`
+	BestHouse        *bool               `json:"best_house,omitempty" form:"best_house"`
+	Promotion        *bool               `json:"promotion,omitempty" form:"promotion"`
+	IsVerified       *bool               `json:"is_verified,omitempty" form:"is_verified"`
+	IsSale           *bool               `json:"is_sale,omitempty" form:"is_sale"`
+	IsNewest         *bool               `json:"is_newest,omitempty" form:"is_newest"`
+	IsHot            *bool               `json:"is_hot,omitempty" form:"is_hot"`
+	IsFeatured       *bool               `json:"is_featured,omitempty" form:"is_featured"`
+	IsDiscount       *bool               `json:"is_discount,omitempty" form:"is_discount"`
+	DistrictEN       *string             `json:"district_en,omitempty" form:"district_en" swaggertype:"string" maxLength:"255"`
+	DistrictKZ       *string             `json:"district_kz,omitempty" form:"district_kz" swaggertype:"string" maxLength:"255"`
+	DistrictRU       *string             `json:"district_ru,omitempty" form:"district_ru" swaggertype:"string" maxLength:"255"`
+	PhoneNumber      *string             `json:"phone_number,omitempty" form:"phone_number" swaggertype:"string" maxLength:"20"`
 }
 
 func (r HouseUpdateRequest) Validate() error {
@@ -183,6 +197,12 @@ type HouseListItem struct {
 	AddressRU         string  `json:"address_ru"`
 	BestHouse         bool    `json:"best_house"`
 	Promotion         bool    `json:"promotion"`
+	IsVerified        bool    `json:"is_verified"`
+	IsSale            bool    `json:"is_sale"`
+	IsNewest          bool    `json:"is_newest"`
+	IsHot             bool    `json:"is_hot"`
+	IsFeatured        bool    `json:"is_featured"`
+	IsDiscount        bool    `json:"is_discount"`
 	IsActive          bool    `json:"is_active"`
 	CountryCityNameKZ string  `json:"country_city_name_kz"`
 	CountryCityNameRU string  `json:"country_city_name_ru"`
@@ -194,44 +214,53 @@ type HouseListItem struct {
 }
 
 type HouseDetailResponse struct {
-	ID             int           `json:"id"`
-	NameEN         string        `json:"name_en"`
-	NameKZ         string        `json:"name_kz"`
-	NameRU         string        `json:"name_ru"`
-	Slug           string        `json:"slug"`
-	Price          int           `json:"price"`
-	RoomsQty       int           `json:"rooms_qty"`
-	GuestQty       int           `json:"guest_qty"`
-	BedroomQty     int           `json:"bedroom_qty"`
-	BathQty        *int          `json:"bath_qty,omitempty"`
-	DescriptionEN  string        `json:"description_en"`
-	DescriptionKZ  string        `json:"description_kz"`
-	DescriptionRU  string        `json:"description_ru"`
-	AddressEN      string        `json:"address_en"`
-	AddressKZ      string        `json:"address_kz"`
-	AddressRU      string        `json:"address_ru"`
-	Lng            *float64      `json:"lng,omitempty"`
-	Lat            *float64      `json:"lat,omitempty"`
-	IsActive       bool          `json:"is_active"`
-	CommentsRU     *string       `json:"comments_ru,omitempty"`
-	CommentsEN     *string       `json:"comments_en,omitempty"`
-	CommentsKZ     *string       `json:"comments_kz,omitempty"`
-	TypeID         int           `json:"type_id"`
-	CityID         *int          `json:"city_id,omitempty"`
-	CountryID      *int          `json:"country_id,omitempty"`
-	GuestsWithPets bool          `json:"guests_with_pets"`
-	BestHouse      bool          `json:"best_house"`
-	Promotion      bool          `json:"promotion"`
-	DistrictEN     string        `json:"district_en,omitempty"`
-	DistrictKZ     string        `json:"district_kz,omitempty"`
-	DistrictRU     string        `json:"district_ru,omitempty"`
-	PhoneNumber    string        `json:"phone_number,omitempty"`
-	LikeCount      int           `json:"like_count"`
-	IsLiked        bool          `json:"is_liked"`
-	OwnerFullName  string        `json:"owner_full_name,omitempty"`
-	IsBooked       bool          `json:"is_booked"`
-	MyBooking      *HouseBooking `json:"my_booking,omitempty"`
-	Images         []Image       `json:"images"`
+	ID                int           `json:"id"`
+	NameEN            string        `json:"name_en"`
+	NameKZ            string        `json:"name_kz"`
+	NameRU            string        `json:"name_ru"`
+	Slug              string        `json:"slug"`
+	Price             int           `json:"price"`
+	RoomsQty          int           `json:"rooms_qty"`
+	GuestQty          int           `json:"guest_qty"`
+	BedroomQty        int           `json:"bedroom_qty"`
+	BathQty           *int          `json:"bath_qty,omitempty"`
+	DescriptionEN     string        `json:"description_en"`
+	DescriptionKZ     string        `json:"description_kz"`
+	DescriptionRU     string        `json:"description_ru"`
+	AddressEN         string        `json:"address_en"`
+	AddressKZ         string        `json:"address_kz"`
+	AddressRU         string        `json:"address_ru"`
+	Lng               *float64      `json:"lng,omitempty"`
+	Lat               *float64      `json:"lat,omitempty"`
+	IsActive          bool          `json:"is_active"`
+	CommentsRU        *string       `json:"comments_ru,omitempty"`
+	CommentsEN        *string       `json:"comments_en,omitempty"`
+	CommentsKZ        *string       `json:"comments_kz,omitempty"`
+	TypeID            int           `json:"type_id"`
+	CityID            *int          `json:"city_id,omitempty"`
+	CountryID         *int          `json:"country_id,omitempty"`
+	GuestsWithPets    bool          `json:"guests_with_pets"`
+	GuestsWithBabies  bool          `json:"guests_with_babies"`
+	BestHouse         bool          `json:"best_house"`
+	Promotion         bool          `json:"promotion"`
+	IsVerified        bool          `json:"is_verified"`
+	IsSale            bool          `json:"is_sale"`
+	IsNewest          bool          `json:"is_newest"`
+	IsHot             bool          `json:"is_hot"`
+	IsFeatured        bool          `json:"is_featured"`
+	IsDiscount        bool          `json:"is_discount"`
+	DistrictEN        string        `json:"district_en,omitempty"`
+	DistrictKZ        string        `json:"district_kz,omitempty"`
+	DistrictRU        string        `json:"district_ru,omitempty"`
+	PhoneNumber       string        `json:"phone_number,omitempty"`
+	LikeCount         int           `json:"like_count"`
+	IsLiked           bool          `json:"is_liked"`
+	OwnerFullName     string        `json:"owner_full_name,omitempty"`
+	OwnerPaymentQR    string        `json:"owner_payment_qr,omitempty"`
+	OwnerPaymentPhone string        `json:"owner_payment_phone,omitempty"`
+	IsBooked          bool          `json:"is_booked"`
+	MyBooking         *HouseBooking `json:"my_booking,omitempty"`
+	Images            []Image       `json:"images"`
 }
 
 type HouseBooking struct {

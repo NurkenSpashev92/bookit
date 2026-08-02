@@ -44,4 +44,10 @@ func RegisterRoutes(api fiber.Router, deps Deps, guards shared.Guards) {
 		timeout.New(avatarHandler.Upload, timeout.Config{Timeout: avatarUploadTimeout}),
 	)
 	auth.Delete("/me/avatar", guards.Required, avatarHandler.Delete)
+	auth.Post("/me/payment-qr",
+		guards.Required,
+		middleware.UploadLimits(avatarUploadLimit),
+		timeout.New(avatarHandler.UploadQR, timeout.Config{Timeout: avatarUploadTimeout}),
+	)
+	auth.Delete("/me/payment-qr", guards.Required, avatarHandler.DeleteQR)
 }

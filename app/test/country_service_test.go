@@ -34,7 +34,7 @@ func TestCountryService_CRUD(t *testing.T) {
 		t.Errorf("Code = %q", got.Code)
 	}
 
-	all, err := svc.GetAll(ctx)
+	all, err := svc.GetAll(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}

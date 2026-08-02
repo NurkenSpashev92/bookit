@@ -9,8 +9,8 @@ import (
 )
 
 type TypeRepository interface {
-	GetAll(ctx context.Context) ([]model.Type, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Type, int, error)
+	GetAll(ctx context.Context, search string) ([]model.Type, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]model.Type, int, error)
 	GetByID(ctx context.Context, id int) (model.Type, error)
 	Create(ctx context.Context, t model.Type) (model.Type, error)
 	Update(ctx context.Context, id int, t model.Type) (model.Type, error)
@@ -26,8 +26,8 @@ func NewTypeService(repo TypeRepository) *TypeService {
 	return &TypeService{repository: repo}
 }
 
-func (s *TypeService) GetAll(ctx context.Context) ([]schema.TypeResponse, error) {
-	types, err := s.repository.GetAll(ctx)
+func (s *TypeService) GetAll(ctx context.Context, search string) ([]schema.TypeResponse, error) {
+	types, err := s.repository.GetAll(ctx, search)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +40,8 @@ func (s *TypeService) GetAll(ctx context.Context) ([]schema.TypeResponse, error)
 	return responses, nil
 }
 
-func (s *TypeService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.TypeResponse, int, error) {
-	types, total, err := s.repository.GetAllPaginated(ctx, limit, offset)
+func (s *TypeService) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.TypeResponse, int, error) {
+	types, total, err := s.repository.GetAllPaginated(ctx, search, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}

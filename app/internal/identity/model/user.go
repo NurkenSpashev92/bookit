@@ -12,6 +12,8 @@ type User struct {
 	DateOfBirth      *time.Time `json:"date_of_birth,omitempty"`
 	PhoneNumber      *string    `json:"phone_number,omitempty"`
 	Avatar           string     `json:"avatar,omitempty"`
+	PaymentQR        string     `json:"payment_qr,omitempty"`
+	PaymentPhone     *string    `json:"payment_phone,omitempty"`
 	IsSuperuser      bool       `json:"is_superuser"`
 	IsActive         bool       `json:"is_active"`
 	SubscriptionType string     `json:"subscription_type"`

@@ -14,10 +14,11 @@ import (
 type HouseService interface {
 	GetAllPaginated(ctx context.Context, userID int, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error)
 	GetMyHouses(ctx context.Context, ownerID, limit, offset int) ([]schema.HouseListItem, int, error)
+	GetForModeration(ctx context.Context, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error)
 	GetBySlug(ctx context.Context, slug string, userID int, ip string) (schema.HouseDetailResponse, error)
-	Create(ctx context.Context, req schema.HouseCreateRequest, ownerID int) (model.House, error)
-	Update(ctx context.Context, slug string, req schema.HouseUpdateRequest) (model.House, error)
-	Delete(ctx context.Context, slug string) error
+	Create(ctx context.Context, req schema.HouseCreateRequest, ownerID int, isAdmin bool) (model.House, error)
+	Update(ctx context.Context, slug string, req schema.HouseUpdateRequest, actorID int, isAdmin bool) (model.House, error)
+	Delete(ctx context.Context, slug string, actorID int, isAdmin bool) error
 	CheckSlug(ctx context.Context, rawSlug string) (bool, string, error)
 }
 
@@ -77,6 +78,31 @@ func (h *HouseHandler) MyHouses(c fiber.Ctx) error {
 	return c.JSON(shared.Paginated(shared.Items(houses), total, page))
 }
 
+// Moderation godoc
+// @Summary      List houses for moderation (admin)
+// @Description  Admin only. Returns ALL houses including inactive/pending ones. Filter by ?is_active=true|false; omit to see all. Activate a house via PATCH /houses/{slug} with {"is_active": true}.
+// @Tags         Houses
+// @Produce      json
+// @Param        is_active  query bool  false "Filter by active status (omit = all)"
+// @Param        page       query int   false "Page"
+// @Param        page_size  query int   false "Items per page"
+// @Success      200  {object} shared.PaginatedResponse
+// @Failure      401  {object} shared.ErrorResponse
+// @Failure      403  {object} shared.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /houses/moderation [get]
+func (h *HouseHandler) Moderation(c fiber.Ctx) error {
+	page := shared.Page(c)
+	filter := schema.ParseHouseFilter(c)
+
+	houses, total, err := h.houseService.GetForModeration(c.Context(), filter, page.Limit, page.Start())
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return c.JSON(shared.Paginated(shared.Items(houses), total, page))
+}
+
 // GetBySlug godoc
 // @Summary      Get house by slug
 // @Tags         Houses
@@ -122,7 +148,7 @@ func (h *HouseHandler) Create(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 
-	house, err := h.houseService.Create(c.Context(), request, user.ID)
+	house, err := h.houseService.Create(c.Context(), request, user.ID, user.IsSuperuser)
 	if err != nil {
 		return shared.Fail(c, err)
 	}
@@ -144,6 +170,11 @@ func (h *HouseHandler) Create(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /houses/{slug} [patch]
 func (h *HouseHandler) Update(c fiber.Ctx) error {
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
 	slug, err := shared.ParamString(c, "slug")
 	if err != nil {
 		return shared.Fail(c, err)
@@ -154,7 +185,7 @@ func (h *HouseHandler) Update(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 
-	house, err := h.houseService.Update(c.Context(), slug, request)
+	house, err := h.houseService.Update(c.Context(), slug, request, user.ID, user.IsSuperuser)
 	if err != nil {
 		return shared.Fail(c, err)
 	}
@@ -173,12 +204,17 @@ func (h *HouseHandler) Update(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /houses/{slug} [delete]
 func (h *HouseHandler) Delete(c fiber.Ctx) error {
+	user, err := middleware.CurrentUser(c)
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
 	slug, err := shared.ParamString(c, "slug")
 	if err != nil {
 		return shared.Fail(c, err)
 	}
 
-	if err := h.houseService.Delete(c.Context(), slug); err != nil {
+	if err := h.houseService.Delete(c.Context(), slug, user.ID, user.IsSuperuser); err != nil {
 		return shared.Fail(c, err)
 	}
 

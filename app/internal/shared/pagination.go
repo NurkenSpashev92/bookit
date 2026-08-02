@@ -9,12 +9,10 @@ import (
 )
 
 const (
-	PageSizeKey     = "page_size"
-	PageKey         = "page"
-	DefaultPage     = 1
-	DefaultPageSize = 10
-	// ListDefaultPageSize is the fallback page size for the optional pagination
-	// on reference list endpoints (categories, types, countries, ...).
+	PageSizeKey         = "page_size"
+	PageKey             = "page"
+	DefaultPage         = 1
+	DefaultPageSize     = 10
 	ListDefaultPageSize = 20
 	MaxPageSize         = 100
 	maxPageNumber       = 1_000_000
@@ -45,7 +43,6 @@ func Page(c fiber.Ctx) *paginate.PageInfo {
 	return paginate.NewPageInfo(DefaultPage, DefaultPageSize, 0, nil)
 }
 
-// PageParams holds the optional pagination request parsed from query params.
 type PageParams struct {
 	Page     int
 	PageSize int
@@ -54,16 +51,10 @@ type PageParams struct {
 func (p PageParams) Limit() int  { return p.PageSize }
 func (p PageParams) Offset() int { return (p.Page - 1) * p.PageSize }
 
-// WantsPagination reports whether the request opted into the paginated
-// envelope by supplying a `page` query param. When false, list handlers keep
-// returning the plain JSON array for backward compatibility.
 func WantsPagination(c fiber.Ctx) bool {
 	return c.Query(PageKey) != ""
 }
 
-// ParsePageParams reads `page` (default 1) and `page_size` (default 20, capped
-// at 100) from the query string. Out-of-range or invalid values fall back to
-// the defaults, while a page_size above the cap is clamped to MaxPageSize.
 func ParsePageParams(c fiber.Ctx) PageParams {
 	page := QueryIntInRange(c, PageKey, DefaultPage, 1, maxPageNumber)
 
@@ -78,10 +69,6 @@ func ParsePageParams(c fiber.Ctx) PageParams {
 	return PageParams{Page: page, PageSize: pageSize}
 }
 
-// ListMaybePaginated serves a list endpoint that returns a plain JSON array by
-// default and the paginated envelope when the request opts in via `page`. The
-// caller supplies the two service methods; everything else (param parsing,
-// error handling, envelope building) is shared.
 func ListMaybePaginated[T any](
 	c fiber.Ctx,
 	getAll func(context.Context) ([]T, error),
@@ -105,7 +92,6 @@ func ListMaybePaginated[T any](
 	return List(c, items)
 }
 
-// PageEnvelope builds the PaginatedResponse envelope from parsed page params.
 func PageEnvelope(data interface{}, total int, p PageParams) PaginatedResponse {
 	return newPaginatedResponse(data, total, p.Page, p.PageSize)
 }

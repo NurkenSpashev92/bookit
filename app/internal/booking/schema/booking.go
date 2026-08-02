@@ -2,8 +2,6 @@ package schema
 
 import "github.com/nurkenspashev92/bookit/internal/shared"
 
-// BookingCreateRequest create booking request
-// @Description Request body for creating a booking
 type BookingCreateRequest struct {
 	HouseSlug  string `json:"house_slug" example:"beach-house" validate:"required"`
 	StartDate  string `json:"start_date" example:"2026-04-10" format:"date" validate:"required"`
@@ -50,8 +48,6 @@ type BookingResponse struct {
 	UpdatedAt     string `json:"updated_at"`
 }
 
-// BookingUpdateStatusRequest update booking status (for owner)
-// @Description Request body for updating booking status
 type BookingUpdateStatusRequest struct {
 	Status string `json:"status" example:"confirmed" validate:"required"`
 }

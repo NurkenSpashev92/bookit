@@ -27,7 +27,8 @@ type houseRow struct {
 	ownerID, typeID   int
 	cityID, countryID *int
 
-	guestsWithPets, bestHouse, promotion bool
+	guestsWithPets, bestHouse, promotion                        bool
+	isVerified, isSale, isNewest, isHot, isFeatured, isDiscount bool
 }
 
 const insertHouseSQL = `
@@ -37,8 +38,9 @@ const insertHouseSQL = `
 		address_en, address_kz, address_ru,
 		lng, lat, is_active, priority, owner_id, type_id, city_id, country_id,
 		guests_with_pets, best_house, promotion,
-		district_en, district_kz, district_ru, phone_number
-	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
+		district_en, district_kz, district_ru, phone_number,
+		is_verified, is_sale, is_newest, is_hot, is_featured, is_discount
+	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36)
 	ON CONFLICT (slug) DO NOTHING
 	RETURNING id`
 
@@ -83,6 +85,12 @@ func buildHouseRows(ownerIDs, typeIDs []int, cities []cityRef) []houseRow {
 			guestsWithPets: rand.Intn(2) == 1,
 			bestHouse:      rand.Intn(5) == 0,
 			promotion:      rand.Intn(5) == 0,
+			isVerified:     rand.Intn(3) == 0,
+			isSale:         rand.Intn(5) == 0,
+			isNewest:       rand.Intn(4) == 0,
+			isHot:          rand.Intn(6) == 0,
+			isFeatured:     rand.Intn(6) == 0,
+			isDiscount:     rand.Intn(5) == 0,
 		})
 	}
 
@@ -109,6 +117,7 @@ func insertHouses(ctx context.Context, conn *pgxpool.Pool, rows []houseRow) ([]i
 			r.lng, r.lat, true, r.priority, r.ownerID, r.typeID, r.cityID, r.countryID,
 			r.guestsWithPets, r.bestHouse, r.promotion,
 			r.districtEN, r.districtKZ, r.districtRU, housePhoneNumber,
+			r.isVerified, r.isSale, r.isNewest, r.isHot, r.isFeatured, r.isDiscount,
 		)
 	}
 

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -10,8 +11,8 @@ import (
 )
 
 type ConvenienceService interface {
-	GetAll(ctx context.Context) ([]schema.ConveniencePaginate, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.ConveniencePaginate, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.ConveniencePaginate, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.ConveniencePaginate, int, error)
 	GetByID(ctx context.Context, id int) (schema.Convenience, error)
 	Create(ctx context.Context, req schema.ConvenienceCreateRequest) (schema.Convenience, error)
 	Update(ctx context.Context, id int, req schema.ConvenienceUpdateRequest) (schema.Convenience, error)
@@ -31,13 +32,23 @@ func NewConvenienceHandler(convenienceService ConvenienceService) *ConvenienceHa
 // @Description  Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags         Conveniences
 // @Produce      json
+// @Param        search     query string false "Search by name/slug"
 // @Param        page       query int false "Page number (enables the paginated envelope)"
 // @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success      200  {array}   schema.ConveniencePaginate
 // @Failure      500  {object}  shared.ErrorResponse
 // @Router       /conveniences [get]
 func (h *ConvenienceHandler) GetAll(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.convenienceService.GetAll, h.convenienceService.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.ConveniencePaginate, error) {
+			return h.convenienceService.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.ConveniencePaginate, int, error) {
+			return h.convenienceService.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // GetByID godoc

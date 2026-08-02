@@ -47,16 +47,29 @@ func (r *HouseRepository) GetByOwnerPaginated(ctx context.Context, ownerID, limi
 	return r.queryHousesPaginated(ctx, f, limit, offset)
 }
 
+func (r *HouseRepository) OwnerIDBySlug(ctx context.Context, slug string) (int, error) {
+	var ownerID int
+	err := r.db.QueryRow(ctx, `SELECT owner_id FROM houses WHERE slug=$1`, slug).Scan(&ownerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, model.ErrHouseNotFound
+		}
+		return 0, err
+	}
+	return ownerID, nil
+}
+
 func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schema.HouseFilter, limit, offset int) ([]schema.HouseListItem, int, error) {
 	baseURL := r.awsCfg.BaseURL()
 
 	wb := newWhereBuilder()
 	if filter.OwnerID != nil {
 		wb.add("h.owner_id", "=", *filter.OwnerID)
+	} else if filter.Moderation {
+		if filter.IsActive != nil {
+			wb.add("h.is_active", "=", *filter.IsActive)
+		}
 	} else {
-		// Public list (GET /houses): only approved (active) houses are visible.
-		// my-houses (OwnerID set) intentionally omits this so owners see
-		// their inactive/pending listings too.
 		wb.add("h.is_active", "=", true)
 	}
 	if filter.Name != nil {
@@ -85,6 +98,9 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 	}
 	if filter.GuestsWithPets != nil && *filter.GuestsWithPets {
 		wb.add("h.guests_with_pets", "=", true)
+	}
+	if filter.GuestsWithBabies != nil && *filter.GuestsWithBabies {
+		wb.add("h.guests_with_babies", "=", true)
 	}
 	if filter.TypeSlug != nil {
 		wb.addExpr("h.type_id = (SELECT id FROM types WHERE slug = $%d)", *filter.TypeSlug)
@@ -132,7 +148,9 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 			SELECT
 				h.id, h.name_en, h.name_kz, h.name_ru, h.slug, h.price,
 				h.address_en, h.address_kz, h.address_ru,
-				h.best_house, h.promotion, h.is_active,
+				h.best_house, h.promotion,
+				h.is_verified, h.is_sale, h.is_newest, h.is_hot, h.is_featured, h.is_discount,
+				h.is_active,
 				CONCAT(c.name_kz, ', ', ct.name_kz),
 				CONCAT(c.name_ru, ', ', ct.name_ru),
 				CONCAT(c.name_en, ', ', ct.name_en),
@@ -148,16 +166,16 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 				SELECT COALESCE(json_agg(
 					json_build_object(
 						'id', i.id,
-						'original', $1 || i.original,
 						'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $1 || i.thumbnail ELSE '' END,
 						'mime_type', i.mimetype,
 						'size', i.size,
+						'is_label', i.is_label,
 						'house_id', i.house_id
 					)
 				) FILTER (WHERE i.id IS NOT NULL), '[]') as images
 				FROM (
-					SELECT id, original, thumbnail, mimetype, size, house_id
-					FROM images WHERE house_id = h.id ORDER BY id LIMIT 5
+					SELECT id, thumbnail, mimetype, size, is_label, house_id
+					FROM images WHERE house_id = h.id ORDER BY (is_label IS TRUE) DESC, id LIMIT 5
 				) i
 			) img ON true
 			%s
@@ -177,7 +195,9 @@ func (r *HouseRepository) queryHousesPaginated(ctx context.Context, filter schem
 			if err := rows.Scan(
 				&h.ID, &h.NameEN, &h.NameKZ, &h.NameRU, &h.Slug, &h.Price,
 				&h.AddressEN, &h.AddressKZ, &h.AddressRU,
-				&h.BestHouse, &h.Promotion, &h.IsActive,
+				&h.BestHouse, &h.Promotion,
+				&h.IsVerified, &h.IsSale, &h.IsNewest, &h.IsHot, &h.IsFeatured, &h.IsDiscount,
+				&h.IsActive,
 				&h.CountryCityNameKZ, &h.CountryCityNameRU, &h.CountryCityNameEN,
 				&h.OwnerFullName, &h.LikeCount, &imagesJSON,
 			); err != nil {
@@ -229,8 +249,6 @@ func (w *whereBuilder) addArg(val interface{}) {
 	w.values = append(w.values, val)
 }
 
-// addExpr adds a raw condition whose format string contains one `$%d`
-// placeholder for the bound value (e.g. a slug resolved to an id via subquery).
 func (w *whereBuilder) addExpr(format string, val interface{}) {
 	w.values = append(w.values, val)
 	w.conditions = append(w.conditions, condition{
@@ -278,10 +296,13 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.Ho
 			h.address_en, h.address_kz, h.address_ru,
 			h.lng, h.lat, h.is_active,
 			h.comments_ru, h.comments_en, h.comments_kz,
-			h.type_id, h.city_id, h.country_id, h.guests_with_pets, h.best_house, h.promotion,
+			h.type_id, h.city_id, h.country_id, h.guests_with_pets, h.guests_with_babies, h.best_house, h.promotion,
+			h.is_verified, h.is_sale, h.is_newest, h.is_hot, h.is_featured, h.is_discount,
 			h.district_en, h.district_kz, h.district_ru, h.phone_number,
 			h.like_count,
 			CONCAT(u.first_name, ' ', u.last_name),
+			CASE WHEN u.payment_qr IS NOT NULL AND u.payment_qr <> '' THEN $2 || u.payment_qr ELSE '' END,
+			COALESCE(u.payment_phone, ''),
 			COALESCE(img.images, '[]')
 		FROM houses h
 		LEFT JOIN users u ON u.id = h.owner_id
@@ -293,8 +314,10 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.Ho
 					'thumbnail', CASE WHEN i.thumbnail IS NOT NULL AND i.thumbnail <> '' THEN $2 || i.thumbnail ELSE '' END,
 					'mime_type', i.mimetype,
 					'size', i.size,
+					'is_label', i.is_label,
 					'house_id', i.house_id
 				)
+				ORDER BY (i.is_label IS TRUE) DESC, i.id
 			) FILTER (WHERE i.id IS NOT NULL), '[]') as images
 			FROM images i
 			WHERE i.house_id = h.id
@@ -310,11 +333,14 @@ func (r *HouseRepository) GetBySlug(ctx context.Context, slug string) (schema.Ho
 		&h.Lng, &h.Lat, &h.IsActive,
 		&h.CommentsRU, &h.CommentsEN, &h.CommentsKZ,
 		&h.TypeID, &h.CityID, &h.CountryID,
-		&h.GuestsWithPets, &h.BestHouse, &h.Promotion,
+		&h.GuestsWithPets, &h.GuestsWithBabies, &h.BestHouse, &h.Promotion,
+		&h.IsVerified, &h.IsSale, &h.IsNewest, &h.IsHot, &h.IsFeatured, &h.IsDiscount,
 		&h.DistrictEN, &h.DistrictKZ, &h.DistrictRU,
 		&h.PhoneNumber,
 		&h.LikeCount,
 		&h.OwnerFullName,
+		&h.OwnerPaymentQR,
+		&h.OwnerPaymentPhone,
 		&imagesJSON,
 	)
 	if err != nil {
@@ -370,12 +396,14 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 			name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
 			description_en, description_kz, description_ru, address_en, address_kz, address_ru,
 			lng, lat, is_active, priority, owner_id, type_id, city_id, country_id,
-			guests_with_pets, best_house, promotion, district_en, district_kz, district_ru, phone_number
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
+			guests_with_pets, guests_with_babies, best_house, promotion, district_en, district_kz, district_ru, phone_number,
+			is_verified, is_sale, is_hot, is_featured, is_discount
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36)
 		RETURNING id, name_en, name_kz, name_ru, slug, price, rooms_qty, guest_qty, bedroom_qty, bath_qty,
 			description_en, description_kz, description_ru, address_en, address_kz, address_ru,
 			lng, lat, is_active, priority, owner_id, type_id, city_id, country_id,
-			guests_with_pets, best_house, promotion, district_en, district_kz, district_ru, phone_number,
+			guests_with_pets, guests_with_babies, best_house, promotion, district_en, district_kz, district_ru, phone_number,
+			is_verified, is_sale, is_newest, is_hot, is_featured, is_discount,
 			created_at, updated_at
 	`
 	if err := tx.QueryRow(ctx,
@@ -383,13 +411,15 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 		h.NameEN, h.NameKZ, h.NameRU, slugValue, h.Price.Int(), h.RoomsQty.Int(), h.GuestQty.Int(), h.BedroomQty.Int(), h.BathQty.IntPtr(),
 		h.DescriptionEN, h.DescriptionKZ, h.DescriptionRU, h.AddressEN, h.AddressKZ, h.AddressRU,
 		h.Lng.Float64Ptr(), h.Lat.Float64Ptr(), false, h.Priority.Int(), h.OwnerID, h.TypeID.Int(), h.CityID.IntPtr(), h.CountryID.IntPtr(),
-		h.GuestsWithPets, h.BestHouse, h.Promotion, h.DistrictEN, h.DistrictKZ, h.DistrictRU, h.PhoneNumber,
+		h.GuestsWithPets, h.GuestsWithBabies, h.BestHouse, h.Promotion, h.DistrictEN, h.DistrictKZ, h.DistrictRU, h.PhoneNumber,
+		h.IsVerified, h.IsSale, h.IsHot, h.IsFeatured, h.IsDiscount,
 	).Scan(
 		&house.ID, &house.NameEN, &house.NameKZ, &house.NameRU, &house.Slug, &house.Price, &house.RoomsQty, &house.GuestQty,
 		&house.BedroomQty, &house.BathQty, &house.DescriptionEN, &house.DescriptionKZ, &house.DescriptionRU,
 		&house.AddressEN, &house.AddressKZ, &house.AddressRU, &house.Lng, &house.Lat,
 		&house.IsActive, &house.Priority, &house.OwnerID, &house.TypeID, &house.CityID, &house.CountryID,
-		&house.GuestsWithPets, &house.BestHouse, &house.Promotion, &house.DistrictEN, &house.DistrictKZ, &house.DistrictRU, &house.PhoneNumber,
+		&house.GuestsWithPets, &house.GuestsWithBabies, &house.BestHouse, &house.Promotion, &house.DistrictEN, &house.DistrictKZ, &house.DistrictRU, &house.PhoneNumber,
+		&house.IsVerified, &house.IsSale, &house.IsNewest, &house.IsHot, &house.IsFeatured, &house.IsDiscount,
 		&house.CreatedAt, &house.UpdatedAt,
 	); err != nil {
 		var pgErr *pgconn.PgError
@@ -423,7 +453,6 @@ func (r *HouseRepository) Create(ctx context.Context, h schema.HouseCreateReques
 	return house, nil
 }
 
-// linkHouseCategories replaces house-category links inside the caller transaction.
 func linkHouseCategories(ctx context.Context, tx pgx.Tx, houseID int, categoryIDs []int) error {
 	if _, err := tx.Exec(ctx, `DELETE FROM house_category WHERE house_id = $1`, houseID); err != nil {
 		return fmt.Errorf("failed to reset categories: %w", err)
@@ -478,7 +507,8 @@ func (r *HouseRepository) getForUpdate(ctx context.Context, slug string) (model.
 			address_en, address_kz, address_ru,
 			lng, lat, is_active, priority,
 			comments_ru, comments_en, comments_kz,
-			owner_id, type_id, city_id, country_id, guests_with_pets, best_house, promotion,
+			owner_id, type_id, city_id, country_id, guests_with_pets, guests_with_babies, best_house, promotion,
+			is_verified, is_sale, is_newest, is_hot, is_featured, is_discount,
 			district_en, district_kz, district_ru, phone_number, created_at, updated_at
 		FROM houses WHERE slug=$1
 	`
@@ -490,7 +520,8 @@ func (r *HouseRepository) getForUpdate(ctx context.Context, slug string) (model.
 		&house.Lng, &house.Lat, &house.IsActive, &house.Priority,
 		&house.CommentsRU, &house.CommentsEN, &house.CommentsKZ,
 		&house.OwnerID, &house.TypeID, &house.CityID, &house.CountryID,
-		&house.GuestsWithPets, &house.BestHouse, &house.Promotion,
+		&house.GuestsWithPets, &house.GuestsWithBabies, &house.BestHouse, &house.Promotion,
+		&house.IsVerified, &house.IsSale, &house.IsNewest, &house.IsHot, &house.IsFeatured, &house.IsDiscount,
 		&house.DistrictEN, &house.DistrictKZ, &house.DistrictRU,
 		&house.PhoneNumber, &house.CreatedAt, &house.UpdatedAt,
 	)
@@ -524,9 +555,10 @@ func (r *HouseRepository) Update(ctx context.Context, slug string, h schema.Hous
 			name_en=$1, name_kz=$2, name_ru=$3, slug=$4, price=$5, rooms_qty=$6, guest_qty=$7, bedroom_qty=$8, bath_qty=$9,
 			description_en=$10, description_kz=$11, description_ru=$12,
 			address_en=$13, address_kz=$14, address_ru=$15,
-			lng=$16, lat=$17, is_active=$18, type_id=$19, city_id=$20, country_id=$21, guests_with_pets=$22, best_house=$23,
-			promotion=$24, district_en=$25, district_kz=$26, district_ru=$27, phone_number=$28, updated_at=$29
-		WHERE id=$30
+			lng=$16, lat=$17, is_active=$18, type_id=$19, city_id=$20, country_id=$21, guests_with_pets=$22, guests_with_babies=$23, best_house=$24,
+			promotion=$25, district_en=$26, district_kz=$27, district_ru=$28, phone_number=$29,
+			is_verified=$30, is_sale=$31, is_newest=$32, is_hot=$33, is_featured=$34, is_discount=$35, updated_at=$36
+		WHERE id=$37
 	`
 
 	_, err = r.db.Exec(ctx, query,
@@ -535,9 +567,11 @@ func (r *HouseRepository) Update(ctx context.Context, slug string, h schema.Hous
 		house.DescriptionEN, house.DescriptionKZ, house.DescriptionRU,
 		house.AddressEN, house.AddressKZ, house.AddressRU,
 		house.Lng, house.Lat, house.IsActive, house.TypeID,
-		house.CityID, house.CountryID, house.GuestsWithPets, house.BestHouse,
+		house.CityID, house.CountryID, house.GuestsWithPets, house.GuestsWithBabies, house.BestHouse,
 		house.Promotion, house.DistrictEN, house.DistrictKZ, house.DistrictRU,
-		house.PhoneNumber, house.UpdatedAt, house.ID,
+		house.PhoneNumber,
+		house.IsVerified, house.IsSale, house.IsNewest, house.IsHot, house.IsFeatured, house.IsDiscount,
+		house.UpdatedAt, house.ID,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError

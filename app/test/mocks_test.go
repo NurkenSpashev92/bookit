@@ -207,11 +207,11 @@ func (m *mockHouseLikeRepo) StatusWithCount(_ context.Context, userID int, slug 
 	return m.likes[k], m.counts[slug], nil
 }
 
-func (m *mockHouseLikeRepo) GetUserLikedHouses(_ context.Context, _ int) ([]propertyschema.HouseListItem, error) {
+func (m *mockHouseLikeRepo) GetUserLikedHouses(_ context.Context, _ int, _ string) ([]propertyschema.HouseListItem, error) {
 	return []propertyschema.HouseListItem{}, nil
 }
 
-func (m *mockHouseLikeRepo) GetUserLikedHousesPaginated(_ context.Context, _ int, _, _ int) ([]propertyschema.HouseListItem, int, error) {
+func (m *mockHouseLikeRepo) GetUserLikedHousesPaginated(_ context.Context, _ int, _ string, _, _ int) ([]propertyschema.HouseListItem, int, error) {
 	return []propertyschema.HouseListItem{}, 0, nil
 }
 
@@ -237,7 +237,7 @@ func newMockFAQRepo() *mockFAQRepo {
 	return &mockFAQRepo{faqs: make(map[int]contentschema.FAQ), nextID: 1}
 }
 
-func (m *mockFAQRepo) GetAll(_ context.Context) ([]contentschema.FAQ, error) {
+func (m *mockFAQRepo) GetAll(_ context.Context, _ string) ([]contentschema.FAQ, error) {
 	var result []contentschema.FAQ
 	for _, f := range m.faqs {
 		result = append(result, f)
@@ -245,7 +245,7 @@ func (m *mockFAQRepo) GetAll(_ context.Context) ([]contentschema.FAQ, error) {
 	return result, nil
 }
 
-func (m *mockFAQRepo) GetAllPaginated(_ context.Context, limit, offset int) ([]contentschema.FAQ, int, error) {
+func (m *mockFAQRepo) GetAllPaginated(_ context.Context, _ string, limit, offset int) ([]contentschema.FAQ, int, error) {
 	var all []contentschema.FAQ
 	for _, f := range m.faqs {
 		all = append(all, f)
@@ -324,7 +324,7 @@ func newMockCountryRepo() *mockCountryRepo {
 	return &mockCountryRepo{countries: make(map[int]locationmodel.Country), nextID: 1}
 }
 
-func (m *mockCountryRepo) GetAll(_ context.Context) ([]locationmodel.Country, error) {
+func (m *mockCountryRepo) GetAll(_ context.Context, _ string) ([]locationmodel.Country, error) {
 	var result []locationmodel.Country
 	for _, c := range m.countries {
 		result = append(result, c)
@@ -332,7 +332,7 @@ func (m *mockCountryRepo) GetAll(_ context.Context) ([]locationmodel.Country, er
 	return result, nil
 }
 
-func (m *mockCountryRepo) GetAllPaginated(_ context.Context, limit, offset int) ([]locationmodel.Country, int, error) {
+func (m *mockCountryRepo) GetAllPaginated(_ context.Context, _ string, limit, offset int) ([]locationmodel.Country, int, error) {
 	var all []locationmodel.Country
 	for _, c := range m.countries {
 		all = append(all, c)

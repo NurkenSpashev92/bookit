@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -16,8 +17,8 @@ type SubscriptionService interface {
 	Cancel(ctx context.Context, userID int) error
 	GetByID(ctx context.Context, id int) (schema.SubscriptionResponse, error)
 	GetByUserID(ctx context.Context, userID int) ([]schema.SubscriptionResponse, error)
-	GetAll(ctx context.Context) ([]schema.SubscriptionResponse, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.SubscriptionResponse, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.SubscriptionResponse, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.SubscriptionResponse, int, error)
 	Create(ctx context.Context, req schema.SubscriptionCreateRequest) (schema.SubscriptionResponse, error)
 	Update(ctx context.Context, id int, req schema.SubscriptionUpdateRequest) (schema.SubscriptionResponse, error)
 	Delete(ctx context.Context, id int) error
@@ -94,6 +95,7 @@ func (h *SubscriptionHandler) Cancel(c fiber.Ctx) error {
 // @Description  Admin only. Without a `page` query param the response is a plain array. With `page` it is the paginated envelope.
 // @Tags         Subscriptions
 // @Produce      json
+// @Param        search     query string false "Search by user/type/status"
 // @Param        page       query int false "Page number (enables the paginated envelope)"
 // @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success      200  {array}   schema.SubscriptionResponse
@@ -102,7 +104,16 @@ func (h *SubscriptionHandler) Cancel(c fiber.Ctx) error {
 // @Security     ApiKeyAuth
 // @Router       /subscriptions [get]
 func (h *SubscriptionHandler) List(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.service.GetAll, h.service.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.SubscriptionResponse, error) {
+			return h.service.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.SubscriptionResponse, int, error) {
+			return h.service.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // ByUser godoc

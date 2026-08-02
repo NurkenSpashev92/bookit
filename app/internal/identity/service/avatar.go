@@ -28,8 +28,6 @@ func NewAvatarService(repo UserRepository, s3 *aws.AwsS3Client, awsCfg *configs.
 	}
 }
 
-// Upload replaces the user avatar and returns the updated profile,
-// so the client can refresh its state without an extra /auth/me call.
 func (s *AvatarService) Upload(ctx context.Context, userID int, file *multipart.FileHeader) (schema.AuthUser, error) {
 	user, err := s.repository.GetByID(ctx, userID)
 	if err != nil {
@@ -60,7 +58,6 @@ func (s *AvatarService) Upload(ctx context.Context, userID int, file *multipart.
 	return s.mapper.ToAuthUser(user, s.awsCfg), nil
 }
 
-// Delete removes the user avatar and returns the updated profile.
 func (s *AvatarService) Delete(ctx context.Context, userID int) (schema.AuthUser, error) {
 	user, err := s.repository.GetByID(ctx, userID)
 	if err != nil {
@@ -78,6 +75,54 @@ func (s *AvatarService) Delete(ctx context.Context, userID int) (schema.AuthUser
 	_ = s.s3.Delete(ctx, user.Avatar)
 
 	user.Avatar = ""
+	return s.mapper.ToAuthUser(user, s.awsCfg), nil
+}
+
+func (s *AvatarService) UploadQR(ctx context.Context, userID int, file *multipart.FileHeader) (schema.AuthUser, error) {
+	user, err := s.repository.GetByID(ctx, userID)
+	if err != nil {
+		return schema.AuthUser{}, ErrUserNotFound
+	}
+
+	result, err := imageproc.Process(file)
+	if err != nil {
+		return schema.AuthUser{}, fmt.Errorf("failed to process image: %w", err)
+	}
+
+	key := fmt.Sprintf("payment/%d_%d.jpg", userID, time.Now().UnixNano())
+	if _, err := s.s3.UploadCompressed(ctx, key, result.Original, "image/jpeg"); err != nil {
+		return schema.AuthUser{}, fmt.Errorf("failed to upload payment qr: %w", err)
+	}
+
+	previous := user.PaymentQR
+	if err := s.repository.UpdatePaymentQR(ctx, userID, key); err != nil {
+		_ = s.s3.Delete(ctx, key)
+		return schema.AuthUser{}, fmt.Errorf("failed to save payment qr: %w", err)
+	}
+
+	if previous != "" {
+		_ = s.s3.Delete(ctx, previous)
+	}
+
+	user.PaymentQR = key
+	return s.mapper.ToAuthUser(user, s.awsCfg), nil
+}
+
+func (s *AvatarService) DeleteQR(ctx context.Context, userID int) (schema.AuthUser, error) {
+	user, err := s.repository.GetByID(ctx, userID)
+	if err != nil {
+		return schema.AuthUser{}, ErrUserNotFound
+	}
+
+	if err := s.repository.UpdatePaymentQR(ctx, userID, ""); err != nil {
+		return schema.AuthUser{}, fmt.Errorf("failed to remove payment qr: %w", err)
+	}
+
+	if user.PaymentQR != "" {
+		_ = s.s3.Delete(ctx, user.PaymentQR)
+	}
+
+	user.PaymentQR = ""
 	return s.mapper.ToAuthUser(user, s.awsCfg), nil
 }
 

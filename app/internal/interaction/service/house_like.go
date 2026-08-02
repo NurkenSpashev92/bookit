@@ -11,8 +11,8 @@ type HouseLikeRepository interface {
 	LikeReturningCount(ctx context.Context, userID int, slug string) (int, error)
 	UnlikeReturningCount(ctx context.Context, userID int, slug string) (int, error)
 	StatusWithCount(ctx context.Context, userID int, slug string) (bool, int, error)
-	GetUserLikedHouses(ctx context.Context, userID int) ([]propertyschema.HouseListItem, error)
-	GetUserLikedHousesPaginated(ctx context.Context, userID, limit, offset int) ([]propertyschema.HouseListItem, int, error)
+	GetUserLikedHouses(ctx context.Context, userID int, search string) ([]propertyschema.HouseListItem, error)
+	GetUserLikedHousesPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]propertyschema.HouseListItem, int, error)
 	GetUserLikedHouseIDs(ctx context.Context, userID int) ([]int, error)
 }
 
@@ -48,10 +48,10 @@ func (s *HouseLikeService) Status(ctx context.Context, userID int, slug string) 
 	return &schema.HouseLikeResponse{Liked: liked, LikeCount: count}, nil
 }
 
-func (s *HouseLikeService) GetUserLikedHouses(ctx context.Context, userID int) ([]propertyschema.HouseListItem, error) {
-	return s.repository.GetUserLikedHouses(ctx, userID)
+func (s *HouseLikeService) GetUserLikedHouses(ctx context.Context, userID int, search string) ([]propertyschema.HouseListItem, error) {
+	return s.repository.GetUserLikedHouses(ctx, userID, search)
 }
 
-func (s *HouseLikeService) GetFavoriteHouses(ctx context.Context, userID, limit, offset int) ([]propertyschema.HouseListItem, int, error) {
-	return s.repository.GetUserLikedHousesPaginated(ctx, userID, limit, offset)
+func (s *HouseLikeService) GetUserLikedHousesPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]propertyschema.HouseListItem, int, error) {
+	return s.repository.GetUserLikedHousesPaginated(ctx, userID, search, limit, offset)
 }

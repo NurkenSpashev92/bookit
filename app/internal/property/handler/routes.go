@@ -35,7 +35,9 @@ func RegisterRoutes(api fiber.Router, deps Deps, guards shared.Guards) {
 	houses.Post("/", guards.Required, houseHandler.Create)
 
 	houses.Get("/check-slug", houseHandler.CheckSlug)
+	houses.Get("/moderation", guards.Admin, houseHandler.Moderation)
 	houses.Delete("/images/:image_id", guards.Required, imageHandler.Delete)
+	houses.Patch("/images/:image_id/label", guards.Required, imageHandler.SetLabel)
 
 	houses.Get("/:slug", guards.Optional, houseHandler.GetBySlug)
 	houses.Patch("/:slug", guards.Required, houseHandler.Update)

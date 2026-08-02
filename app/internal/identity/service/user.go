@@ -20,6 +20,7 @@ type UserRepository interface {
 	Update(ctx context.Context, userID int, req schema.UserUpdateRequest) (model.User, error)
 	UpdatePassword(ctx context.Context, userID int, hashedPassword string) error
 	UpdateAvatar(ctx context.Context, userID int, avatar string) error
+	UpdatePaymentQR(ctx context.Context, userID int, key string) error
 	ListAll(ctx context.Context, search string) ([]model.User, error)
 	ListPaginated(ctx context.Context, search string, limit, offset int) ([]model.User, int, error)
 	UpdateUser(ctx context.Context, id int, req schema.UserAdminUpdateRequest) (model.User, error)
@@ -230,6 +231,11 @@ func (m *UserMapper) ToAuthUser(user model.User, awsCfg *configs.AwsConfig) sche
 		dateOfBirth = user.DateOfBirth.Format("2006-01-02")
 	}
 
+	var paymentPhone string
+	if user.PaymentPhone != nil {
+		paymentPhone = *user.PaymentPhone
+	}
+
 	return schema.AuthUser{
 		ID:               user.ID,
 		Email:            user.Email,
@@ -239,6 +245,8 @@ func (m *UserMapper) ToAuthUser(user model.User, awsCfg *configs.AwsConfig) sche
 		PhoneNumber:      phoneNumber,
 		DateOfBirth:      dateOfBirth,
 		Avatar:           awsCfg.AwsS3URL(user.Avatar),
+		PaymentQR:        awsCfg.AwsS3URL(user.PaymentQR),
+		PaymentPhone:     paymentPhone,
 		IsSuperuser:      user.IsSuperuser,
 		IsActive:         user.IsActive,
 		SubscriptionType: user.SubscriptionType,

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -18,8 +19,17 @@ func NewInquiryRepository(db *pgxpool.Pool) *InquiryRepository {
 	return &InquiryRepository{db: db}
 }
 
-func (r *InquiryRepository) GetAll(ctx context.Context) ([]schema.Inquiry, error) {
-	rows, err := r.db.Query(ctx, `SELECT id, email, phone_number, text, is_approved FROM inquiries`)
+const inquirySearchWhere = " WHERE (email ILIKE $1 OR phone_number ILIKE $1 OR text ILIKE $1)"
+
+func (r *InquiryRepository) GetAll(ctx context.Context, search string) ([]schema.Inquiry, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = inquirySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
+	rows, err := r.db.Query(ctx, `SELECT id, email, phone_number, text, is_approved FROM inquiries`+where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -36,15 +46,23 @@ func (r *InquiryRepository) GetAll(ctx context.Context) ([]schema.Inquiry, error
 	return list, nil
 }
 
-func (r *InquiryRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error) {
+func (r *InquiryRepository) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.Inquiry, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = inquirySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM inquiries`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM inquiries`+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
+	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx,
-		`SELECT id, email, phone_number, text, is_approved FROM inquiries ORDER BY id LIMIT $1 OFFSET $2`,
-		limit, offset,
+		fmt.Sprintf(`SELECT id, email, phone_number, text, is_approved FROM inquiries%s ORDER BY id LIMIT $%d OFFSET $%d`, where, len(args)-1, len(args)),
+		args...,
 	)
 	if err != nil {
 		return nil, 0, err

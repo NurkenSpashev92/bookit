@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -11,8 +12,8 @@ import (
 )
 
 type CategoryService interface {
-	GetAll(ctx context.Context) ([]schema.CategoryPaginate, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.CategoryPaginate, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.CategoryPaginate, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.CategoryPaginate, int, error)
 	GetByID(ctx context.Context, id int) (model.Category, error)
 	Create(ctx context.Context, req schema.CategoryCreateRequest) (model.Category, error)
 	Update(ctx context.Context, id int, req schema.CategoryUpdateRequest) (model.Category, error)
@@ -32,13 +33,23 @@ func NewCategoryHandler(categoryService CategoryService) *CategoryHandler {
 // @Description  Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags         Categories
 // @Produce      json
+// @Param        search     query string false "Search by name/slug"
 // @Param        page       query int false "Page number (enables the paginated envelope)"
 // @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success      200  {array}   schema.CategoryPaginate
 // @Failure      500  {object}  shared.ErrorResponse
 // @Router       /categories [get]
 func (h *CategoryHandler) GetAll(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.categoryService.GetAll, h.categoryService.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.CategoryPaginate, error) {
+			return h.categoryService.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.CategoryPaginate, int, error) {
+			return h.categoryService.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // GetByID godoc

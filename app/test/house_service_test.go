@@ -56,6 +56,14 @@ func (m *mockHouseRepo) GetBySlug(_ context.Context, slug string) (propertyschem
 
 func (m *mockHouseRepo) RecordView(_ context.Context, _ string, _ *int, _ string) {}
 
+func (m *mockHouseRepo) OwnerIDBySlug(_ context.Context, slug string) (int, error) {
+	h, ok := m.houses[slug]
+	if !ok {
+		return 0, propertymodel.ErrHouseNotFound
+	}
+	return h.OwnerID, nil
+}
+
 func (m *mockHouseRepo) Create(_ context.Context, req propertyschema.HouseCreateRequest) (propertymodel.House, error) {
 	slug := "test-slug"
 	if req.Slug != "" {
@@ -123,7 +131,7 @@ func TestHouseService_Create_SetsOwnerID(t *testing.T) {
 
 	house, err := svc.Create(context.Background(), propertyschema.HouseCreateRequest{
 		NameEN: "Test", Slug: "test-house",
-	}, 42)
+	}, 42, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +148,7 @@ func TestHouseService_Create_DefaultsInactive(t *testing.T) {
 	// is_active=false so the listing starts pending approval.
 	house, err := svc.Create(context.Background(), propertyschema.HouseCreateRequest{
 		NameEN: "Test", Slug: "pending-house", IsActive: true,
-	}, 1)
+	}, 1, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,9 +162,9 @@ func TestHouseService_Create_SlugExists(t *testing.T) {
 	svc := propertysvc.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 	ctx := context.Background()
 
-	svc.Create(ctx, propertyschema.HouseCreateRequest{NameEN: "A", Slug: "dup"}, 1)
+	svc.Create(ctx, propertyschema.HouseCreateRequest{NameEN: "A", Slug: "dup"}, 1, false)
 
-	_, err := svc.Create(ctx, propertyschema.HouseCreateRequest{NameEN: "B", Slug: "dup"}, 2)
+	_, err := svc.Create(ctx, propertyschema.HouseCreateRequest{NameEN: "B", Slug: "dup"}, 2, false)
 	if err == nil {
 		t.Fatal("expected error for duplicate slug")
 	}
@@ -169,7 +177,7 @@ func TestHouseService_GetBySlug(t *testing.T) {
 	repo := newMockHouseRepo()
 	svc := propertysvc.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 
-	svc.Create(context.Background(), propertyschema.HouseCreateRequest{NameEN: "Beach", Slug: "beach"}, 1)
+	svc.Create(context.Background(), propertyschema.HouseCreateRequest{NameEN: "Beach", Slug: "beach"}, 1, false)
 
 	house, err := svc.GetBySlug(context.Background(), "beach", 0, "")
 	if err != nil {
@@ -192,9 +200,9 @@ func TestHouseService_Delete(t *testing.T) {
 	repo := newMockHouseRepo()
 	svc := propertysvc.NewHouseService(repo, newMockHouseLikeRepo(), nil, cache.New(redis.NewClient(&redis.Options{Addr: "localhost:6379"}), time.Minute))
 
-	svc.Create(context.Background(), propertyschema.HouseCreateRequest{NameEN: "Del", Slug: "del"}, 1)
+	svc.Create(context.Background(), propertyschema.HouseCreateRequest{NameEN: "Del", Slug: "del"}, 1, false)
 
-	err := svc.Delete(context.Background(), "del")
+	err := svc.Delete(context.Background(), "del", 1, false)
 	if err != nil {
 		t.Fatal(err)
 	}

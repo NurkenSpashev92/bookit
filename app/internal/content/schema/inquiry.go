@@ -10,8 +10,6 @@ type Inquiry struct {
 	IsApproved  bool   `json:"is_approved" example:"false"`
 }
 
-// InquiryCreateRequest create inquiry request
-// @Description Request body for creating an inquiry
 type InquiryCreateRequest struct {
 	Email       string `json:"email" format:"email" maxLength:"255" example:"guest@example.com" validate:"required"`
 	PhoneNumber string `json:"phone_number,omitempty" maxLength:"20" example:"+77001234567"`
@@ -29,8 +27,6 @@ func (r InquiryCreateRequest) Validate() error {
 	return v.Result()
 }
 
-// InquiryUpdateRequest partial update inquiry
-// @Description Request body for updating an inquiry (all fields optional)
 type InquiryUpdateRequest struct {
 	Email       *string `json:"email,omitempty" format:"email" maxLength:"255" example:"guest@example.com"`
 	PhoneNumber *string `json:"phone_number,omitempty" maxLength:"20"`

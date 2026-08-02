@@ -73,6 +73,13 @@ func applyHouseNumbers(h *model.House, req schema.HouseUpdateRequest) {
 func applyHouseFlags(h *model.House, req schema.HouseUpdateRequest) {
 	assign(&h.IsActive, req.IsActive)
 	assign(&h.GuestsWithPets, req.GuestsWithPets)
+	assign(&h.GuestsWithBabies, req.GuestsWithBabies)
 	assign(&h.BestHouse, req.BestHouse)
 	assign(&h.Promotion, req.Promotion)
+	assign(&h.IsVerified, req.IsVerified)
+	assign(&h.IsSale, req.IsSale)
+	assign(&h.IsNewest, req.IsNewest)
+	assign(&h.IsHot, req.IsHot)
+	assign(&h.IsFeatured, req.IsFeatured)
+	assign(&h.IsDiscount, req.IsDiscount)
 }

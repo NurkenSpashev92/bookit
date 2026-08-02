@@ -99,7 +99,7 @@ func (m *mockSubscriptionRepo) ListByUserID(_ context.Context, userID int) ([]su
 	return result, nil
 }
 
-func (m *mockSubscriptionRepo) ListAll(_ context.Context) ([]submodel.Subscription, error) {
+func (m *mockSubscriptionRepo) ListAll(_ context.Context, _ string) ([]submodel.Subscription, error) {
 	var result []submodel.Subscription
 	for _, s := range m.subs {
 		result = append(result, s)
@@ -107,8 +107,8 @@ func (m *mockSubscriptionRepo) ListAll(_ context.Context) ([]submodel.Subscripti
 	return result, nil
 }
 
-func (m *mockSubscriptionRepo) ListPaginated(_ context.Context, limit, offset int) ([]submodel.Subscription, int, error) {
-	all, _ := m.ListAll(context.Background())
+func (m *mockSubscriptionRepo) ListPaginated(_ context.Context, _ string, limit, offset int) ([]submodel.Subscription, int, error) {
+	all, _ := m.ListAll(context.Background(), "")
 	total := len(all)
 	if offset > total {
 		offset = total

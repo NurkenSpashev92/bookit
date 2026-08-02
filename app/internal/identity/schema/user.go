@@ -22,13 +22,13 @@ type AuthUser struct {
 	PhoneNumber      string `json:"phone_number,omitempty" example:"+77001234567"`
 	DateOfBirth      string `json:"date_of_birth,omitempty" example:"1992-09-12"`
 	Avatar           string `json:"avatar,omitempty"`
+	PaymentQR        string `json:"payment_qr"`
+	PaymentPhone     string `json:"payment_phone"`
 	IsSuperuser      bool   `json:"is_superuser" example:"false"`
 	IsActive         bool   `json:"is_active" example:"true"`
 	SubscriptionType string `json:"subscription_type" example:"basic"`
 }
 
-// AdminUser user record returned to superusers
-// @Description User record exposed through admin endpoints
 type AdminUser struct {
 	ID               int    `json:"id" example:"1"`
 	Email            string `json:"email" example:"user@example.com"`
@@ -42,8 +42,6 @@ type AdminUser struct {
 	SubscriptionType string `json:"subscription_type" example:"basic"`
 }
 
-// UserAdminUpdateRequest partial admin update of a user (profile fields + flags)
-// @Description Request body for updating a user by an admin. All fields optional; only provided fields are changed.
 type UserAdminUpdateRequest struct {
 	FirstName   *string `json:"first_name,omitempty" example:"John" maxLength:"255"`
 	LastName    *string `json:"last_name,omitempty" example:"Doe" maxLength:"255"`
@@ -67,8 +65,6 @@ func (r UserAdminUpdateRequest) Validate() error {
 	return v.Result()
 }
 
-// UserCreateRequest registration request
-// @Description Request body for user registration
 type UserCreateRequest struct {
 	Email       string `json:"email" example:"user@example.com" format:"email" maxLength:"255" validate:"required"`
 	Password    string `json:"password" example:"secret123" minLength:"6" maxLength:"255" validate:"required"`
@@ -102,11 +98,12 @@ func (r UserCreateRequest) Validate() error {
 // UserUpdateRequest profile update request
 // @Description Request body for updating user profile
 type UserUpdateRequest struct {
-	FirstName   *string `json:"first_name,omitempty" maxLength:"255"`
-	LastName    *string `json:"last_name,omitempty" maxLength:"255"`
-	MiddleName  *string `json:"middle_name,omitempty" maxLength:"255"`
-	PhoneNumber *string `json:"phone_number,omitempty" maxLength:"128"`
-	DateOfBirth *string `json:"date_of_birth,omitempty" format:"date"`
+	FirstName    *string `json:"first_name,omitempty" maxLength:"255"`
+	LastName     *string `json:"last_name,omitempty" maxLength:"255"`
+	MiddleName   *string `json:"middle_name,omitempty" maxLength:"255"`
+	PhoneNumber  *string `json:"phone_number,omitempty" maxLength:"128"`
+	DateOfBirth  *string `json:"date_of_birth,omitempty" format:"date"`
+	PaymentPhone *string `json:"payment_phone,omitempty" maxLength:"20"`
 }
 
 func (r UserUpdateRequest) Validate() error {
@@ -115,14 +112,13 @@ func (r UserUpdateRequest) Validate() error {
 	v.MaxLenPtr("last_name", r.LastName, 255)
 	v.MaxLenPtr("middle_name", r.MiddleName, 255)
 	v.MaxLenPtr("phone_number", r.PhoneNumber, 128)
+	v.MaxLenPtr("payment_phone", r.PaymentPhone, 20)
 	if r.DateOfBirth != nil {
 		v.Date("date_of_birth", *r.DateOfBirth)
 	}
 	return v.Result()
 }
 
-// ChangePasswordRequest password change request
-// @Description Request body for changing user password
 type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password" example:"secret123" validate:"required"`
 	NewPassword string `json:"new_password" example:"newsecret456" minLength:"6" maxLength:"255" validate:"required"`
@@ -137,8 +133,6 @@ func (r ChangePasswordRequest) Validate() error {
 	return v.Result()
 }
 
-// UserLoginRequest login request
-// @Description Request body for user login
 type UserLoginRequest struct {
 	Email       string `json:"email,omitempty" example:"user@example.com" format:"email"`
 	PhoneNumber string `json:"phone_number,omitempty" example:"+77001234567"`

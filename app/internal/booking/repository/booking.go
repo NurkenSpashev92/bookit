@@ -99,35 +99,103 @@ func (r *BookingRepository) scanBooking(ctx context.Context, where string, arg i
 	return b, nil
 }
 
-func (r *BookingRepository) GetUserBookings(ctx context.Context, userID int) ([]schema.BookingResponse, error) {
-	return r.queryBookings(ctx, "b.user_id=$1", userID)
+func (r *BookingRepository) GetUserBookings(ctx context.Context, userID int, search string) ([]schema.BookingResponse, error) {
+	return r.queryBookings(ctx, "b.user_id=$1", userID, search)
 }
 
-func (r *BookingRepository) GetOwnerBookings(ctx context.Context, ownerID int) ([]schema.BookingResponse, error) {
-	return r.queryBookings(ctx, "h.owner_id=$1", ownerID)
+func (r *BookingRepository) GetOwnerBookings(ctx context.Context, ownerID int, search string) ([]schema.BookingResponse, error) {
+	return r.queryBookings(ctx, "h.owner_id=$1", ownerID, search)
 }
 
-func (r *BookingRepository) queryBookings(ctx context.Context, where string, arg interface{}) ([]schema.BookingResponse, error) {
-	query := fmt.Sprintf(`
-		SELECT b.id, b.house_id, h.slug, h.name_en, h.name_kz, h.name_ru,
-			   owner.id, CONCAT(owner.first_name, ' ', owner.last_name), owner.email, owner.phone_number,
-			   guest.id, CONCAT(guest.first_name, ' ', guest.last_name), guest.email, guest.phone_number,
-			   b.start_date, b.end_date, b.guest_count, b.status, b.total_price,
-			   COALESCE(b.message,''), b.created_at, b.updated_at
-		FROM bookings b
+func (r *BookingRepository) GetUserBookingsPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]schema.BookingResponse, int, error) {
+	return r.queryBookingsPaginated(ctx, "b.user_id=$1", userID, search, limit, offset)
+}
+
+func (r *BookingRepository) GetOwnerBookingsPaginated(ctx context.Context, ownerID int, search string, limit, offset int) ([]schema.BookingResponse, int, error) {
+	return r.queryBookingsPaginated(ctx, "h.owner_id=$1", ownerID, search, limit, offset)
+}
+
+const bookingSelectColumns = `b.id, b.house_id, h.slug, h.name_en, h.name_kz, h.name_ru,
+		   owner.id, CONCAT(owner.first_name, ' ', owner.last_name), owner.email, owner.phone_number,
+		   guest.id, CONCAT(guest.first_name, ' ', guest.last_name), guest.email, guest.phone_number,
+		   b.start_date, b.end_date, b.guest_count, b.status, b.total_price,
+		   COALESCE(b.message,''), b.created_at, b.updated_at`
+
+const bookingFromJoins = `FROM bookings b
 		INNER JOIN houses h ON h.id = b.house_id
 		INNER JOIN users owner ON owner.id = h.owner_id
-		INNER JOIN users guest ON guest.id = b.user_id
-		WHERE %s
-		ORDER BY b.created_at DESC
-	`, where)
+		INNER JOIN users guest ON guest.id = b.user_id`
 
-	rows, err := r.db.Query(ctx, query, arg)
+func bookingSearchClause(n int) string {
+	p := fmt.Sprintf("$%d", n)
+	return "(h.name_en ILIKE " + p + " OR h.name_kz ILIKE " + p + " OR h.name_ru ILIKE " + p +
+		" OR (owner.first_name || ' ' || owner.last_name) ILIKE " + p +
+		" OR (guest.first_name || ' ' || guest.last_name) ILIKE " + p +
+		" OR owner.email ILIKE " + p + " OR guest.email ILIKE " + p +
+		" OR b.status::text ILIKE " + p + ")"
+}
+
+func (r *BookingRepository) queryBookings(ctx context.Context, where string, arg interface{}, search string) ([]schema.BookingResponse, error) {
+	args := []any{arg}
+	searchSQL := ""
+	if search != "" {
+		args = append(args, "%"+search+"%")
+		searchSQL = " AND " + bookingSearchClause(len(args))
+	}
+
+	query := fmt.Sprintf(`
+		SELECT %s
+		%s
+		WHERE %s%s
+		ORDER BY b.created_at DESC
+	`, bookingSelectColumns, bookingFromJoins, where, searchSQL)
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	return scanBookingRows(rows)
+}
+
+func (r *BookingRepository) queryBookingsPaginated(ctx context.Context, where string, arg interface{}, search string, limit, offset int) ([]schema.BookingResponse, int, error) {
+	args := []any{arg}
+	searchSQL := ""
+	if search != "" {
+		args = append(args, "%"+search+"%")
+		searchSQL = " AND " + bookingSearchClause(len(args))
+	}
+
+	var total int
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) %s WHERE %s%s`, bookingFromJoins, where, searchSQL)
+	if err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, limit, offset)
+	query := fmt.Sprintf(`
+		SELECT %s
+		%s
+		WHERE %s%s
+		ORDER BY b.created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, bookingSelectColumns, bookingFromJoins, where, searchSQL, len(args)-1, len(args))
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	items, err := scanBookingRows(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
+}
+
+func scanBookingRows(rows pgx.Rows) ([]schema.BookingResponse, error) {
 	var items []schema.BookingResponse
 	for rows.Next() {
 		var b schema.BookingResponse
@@ -154,7 +222,7 @@ func (r *BookingRepository) queryBookings(ctx context.Context, where string, arg
 		b.UpdatedAt = updatedAt.Format(time.RFC3339)
 		items = append(items, b)
 	}
-	return items, nil
+	return items, rows.Err()
 }
 
 func (r *BookingRepository) UpdateStatus(ctx context.Context, bookingID int, status string) error {

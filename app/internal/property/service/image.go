@@ -17,15 +17,15 @@ import (
 
 const (
 	maxHouseImages = 15
-	// maxImageSize caps a single upload before compression; the whole request is
-	// additionally capped by the server body limit.
-	maxImageSize = 5 * 1024 * 1024
+	maxImageSize   = 5 * 1024 * 1024
 )
 
 type HouseImageRepository interface {
 	GetHouseIDBySlug(ctx context.Context, slug string) (int, error)
 	CountByHouse(ctx context.Context, houseID int) (int, error)
 	CreateBatch(ctx context.Context, images []model.Image) error
+	EnsureLabel(ctx context.Context, houseID int) error
+	SetLabel(ctx context.Context, imageID int) error
 	DeleteReturningKeys(ctx context.Context, imageID int) (*repository.ImageKeys, error)
 }
 
@@ -148,6 +148,19 @@ func (s *ImageService) UploadHouseImages(ctx context.Context, slug string, files
 			_ = s.s3.Delete(context.Background(), r.thumbKey)
 		}
 		return fmt.Errorf("db save failed: %w", err)
+	}
+
+	if err := s.repository.EnsureLabel(ctx, houseID); err != nil {
+		return err
+	}
+
+	s.cache.InvalidateNamespace("houses")
+	return nil
+}
+
+func (s *ImageService) SetHouseImageLabel(ctx context.Context, imageID int) error {
+	if err := s.repository.SetLabel(ctx, imageID); err != nil {
+		return ErrImageNotFound
 	}
 
 	s.cache.InvalidateNamespace("houses")

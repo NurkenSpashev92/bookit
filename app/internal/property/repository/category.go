@@ -19,14 +19,22 @@ func NewCategoryRepository(db *pgxpool.Pool) *CategoryRepository {
 	return &CategoryRepository{db: db}
 }
 
-func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.CategoryPaginate, error) {
+const categorySearchWhere = " AND (name_kz ILIKE $1 OR name_ru ILIKE $1 OR name_en ILIKE $1 OR slug ILIKE $1)"
+
+func (r *CategoryRepository) GetCategories(ctx context.Context, search string) ([]schema.CategoryPaginate, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = categorySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	query := `
 		SELECT id, name_kz, name_ru, name_en, slug, is_active
 		FROM categories
-		WHERE is_active = TRUE
-	`
+		WHERE is_active = TRUE` + where
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -46,21 +54,29 @@ func (r *CategoryRepository) GetCategories(ctx context.Context) ([]schema.Catego
 	return categories, rows.Err()
 }
 
-func (r *CategoryRepository) GetCategoriesPaginated(ctx context.Context, limit, offset int) ([]schema.CategoryPaginate, int, error) {
+func (r *CategoryRepository) GetCategoriesPaginated(ctx context.Context, search string, limit, offset int) ([]schema.CategoryPaginate, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = categorySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM categories WHERE is_active = TRUE`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM categories WHERE is_active = TRUE`+where, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count categories: %w", err)
 	}
 
-	query := `
+	args = append(args, limit, offset)
+	query := fmt.Sprintf(`
 		SELECT id, name_kz, name_ru, name_en, slug, is_active
 		FROM categories
-		WHERE is_active = TRUE
+		WHERE is_active = TRUE%s
 		ORDER BY id
-		LIMIT $1 OFFSET $2
-	`
+		LIMIT $%d OFFSET $%d`,
+		where, len(args)-1, len(args))
 
-	rows, err := r.db.Query(ctx, query, limit, offset)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to execute query: %w", err)
 	}

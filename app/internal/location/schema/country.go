@@ -10,8 +10,6 @@ type Country struct {
 	Code   string `json:"code" form:"code" example:"KZ"`
 }
 
-// CountryCreateRequest create country request
-// @Description Request body for creating a country
 type CountryCreateRequest struct {
 	NameKZ string `json:"name_kz" form:"name_kz" maxLength:"255" example:"Қазақстан" validate:"required"`
 	NameEN string `json:"name_en" form:"name_en" maxLength:"255" example:"Kazakhstan" validate:"required"`
@@ -31,8 +29,6 @@ func (r CountryCreateRequest) Validate() error {
 	return v.Result()
 }
 
-// CountryUpdateRequest partial update country request
-// @Description Request body for updating a country (all fields optional)
 type CountryUpdateRequest struct {
 	NameKZ *string `json:"name_kz,omitempty" form:"name_kz" maxLength:"255" example:"Қазақстан"`
 	NameEN *string `json:"name_en,omitempty" form:"name_en" maxLength:"255" example:"Kazakhstan"`

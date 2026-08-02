@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -12,8 +13,10 @@ import (
 
 type BookingService interface {
 	Create(ctx context.Context, userID int, req schema.BookingCreateRequest) (schema.BookingResponse, error)
-	GetMyBookings(ctx context.Context, userID int) ([]schema.BookingResponse, error)
-	GetOwnerBookings(ctx context.Context, ownerID int) ([]schema.BookingResponse, error)
+	GetMyBookings(ctx context.Context, userID int, search string) ([]schema.BookingResponse, error)
+	GetMyBookingsPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]schema.BookingResponse, int, error)
+	GetOwnerBookings(ctx context.Context, ownerID int, search string) ([]schema.BookingResponse, error)
+	GetOwnerBookingsPaginated(ctx context.Context, ownerID int, search string, limit, offset int) ([]schema.BookingResponse, int, error)
 	GetByID(ctx context.Context, id, userID int) (schema.BookingResponse, error)
 	UpdateStatus(ctx context.Context, bookingID, userID int, status string) error
 }
@@ -61,9 +64,12 @@ func (h *BookingHandler) Create(c fiber.Ctx) error {
 
 // GetMyBookings godoc
 // @Summary      Get my bookings
-// @Description  Returns bookings made by the authenticated user
+// @Description  Returns bookings made by the authenticated user. Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags         Bookings
 // @Produce      json
+// @Param        search     query string false "Search by house/owner/guest/status"
+// @Param        page       query int false "Page number (enables the paginated envelope)"
+// @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success      200 {array} schema.BookingResponse
 // @Failure      401 {object} shared.ErrorResponse
 // @Failure      500 {object} shared.ErrorResponse
@@ -75,19 +81,26 @@ func (h *BookingHandler) GetMyBookings(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 
-	bookings, err := h.bookingService.GetMyBookings(c.Context(), user.ID)
-	if err != nil {
-		return shared.Fail(c, err)
-	}
+	search := strings.TrimSpace(c.Query("search"))
 
-	return shared.List(c, bookings)
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.BookingResponse, error) {
+			return h.bookingService.GetMyBookings(ctx, user.ID, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.BookingResponse, int, error) {
+			return h.bookingService.GetMyBookingsPaginated(ctx, user.ID, search, limit, offset)
+		},
+	)
 }
 
 // GetOwnerBookings godoc
 // @Summary      Get bookings for my houses
-// @Description  Returns all bookings for houses owned by the authenticated user
+// @Description  Returns all bookings for houses owned by the authenticated user. Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags         Bookings
 // @Produce      json
+// @Param        search     query string false "Search by house/owner/guest/status"
+// @Param        page       query int false "Page number (enables the paginated envelope)"
+// @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success      200 {array} schema.BookingResponse
 // @Failure      401 {object} shared.ErrorResponse
 // @Failure      500 {object} shared.ErrorResponse
@@ -99,12 +112,16 @@ func (h *BookingHandler) GetOwnerBookings(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 
-	bookings, err := h.bookingService.GetOwnerBookings(c.Context(), user.ID)
-	if err != nil {
-		return shared.Fail(c, err)
-	}
+	search := strings.TrimSpace(c.Query("search"))
 
-	return shared.List(c, bookings)
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.BookingResponse, error) {
+			return h.bookingService.GetOwnerBookings(ctx, user.ID, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.BookingResponse, int, error) {
+			return h.bookingService.GetOwnerBookingsPaginated(ctx, user.ID, search, limit, offset)
+		},
+	)
 }
 
 // GetByID godoc

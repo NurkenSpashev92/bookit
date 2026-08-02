@@ -13,8 +13,10 @@ type BookingRepository interface {
 	HasOverlap(ctx context.Context, houseID int, startDate, endDate string) (bool, error)
 	Create(ctx context.Context, houseID, userID, guestCount, totalPrice int, startDate, endDate, message string) (int, error)
 	GetByID(ctx context.Context, id int) (schema.BookingResponse, error)
-	GetUserBookings(ctx context.Context, userID int) ([]schema.BookingResponse, error)
-	GetOwnerBookings(ctx context.Context, ownerID int) ([]schema.BookingResponse, error)
+	GetUserBookings(ctx context.Context, userID int, search string) ([]schema.BookingResponse, error)
+	GetOwnerBookings(ctx context.Context, ownerID int, search string) ([]schema.BookingResponse, error)
+	GetUserBookingsPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]schema.BookingResponse, int, error)
+	GetOwnerBookingsPaginated(ctx context.Context, ownerID int, search string, limit, offset int) ([]schema.BookingResponse, int, error)
 	UpdateStatus(ctx context.Context, bookingID int, status string) error
 	GetOwnerIDByBooking(ctx context.Context, bookingID int) (int, error)
 	GetBookingUserID(ctx context.Context, bookingID int) (int, error)
@@ -63,12 +65,20 @@ func (s *BookingService) Create(ctx context.Context, userID int, req schema.Book
 	return s.repository.GetByID(ctx, bookingID)
 }
 
-func (s *BookingService) GetMyBookings(ctx context.Context, userID int) ([]schema.BookingResponse, error) {
-	return s.repository.GetUserBookings(ctx, userID)
+func (s *BookingService) GetMyBookings(ctx context.Context, userID int, search string) ([]schema.BookingResponse, error) {
+	return s.repository.GetUserBookings(ctx, userID, search)
 }
 
-func (s *BookingService) GetOwnerBookings(ctx context.Context, ownerID int) ([]schema.BookingResponse, error) {
-	return s.repository.GetOwnerBookings(ctx, ownerID)
+func (s *BookingService) GetMyBookingsPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]schema.BookingResponse, int, error) {
+	return s.repository.GetUserBookingsPaginated(ctx, userID, search, limit, offset)
+}
+
+func (s *BookingService) GetOwnerBookings(ctx context.Context, ownerID int, search string) ([]schema.BookingResponse, error) {
+	return s.repository.GetOwnerBookings(ctx, ownerID, search)
+}
+
+func (s *BookingService) GetOwnerBookingsPaginated(ctx context.Context, ownerID int, search string, limit, offset int) ([]schema.BookingResponse, int, error) {
+	return s.repository.GetOwnerBookingsPaginated(ctx, ownerID, search, limit, offset)
 }
 
 func (s *BookingService) GetByID(ctx context.Context, id, userID int) (schema.BookingResponse, error) {

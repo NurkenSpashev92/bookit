@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -10,8 +11,8 @@ import (
 )
 
 type InquiryService interface {
-	GetAll(ctx context.Context) ([]schema.Inquiry, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.Inquiry, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.Inquiry, int, error)
 	GetByID(ctx context.Context, id int) (schema.Inquiry, error)
 	Create(ctx context.Context, req schema.InquiryCreateRequest) (schema.Inquiry, error)
 	Update(ctx context.Context, id int, req schema.InquiryUpdateRequest) (schema.Inquiry, error)
@@ -31,13 +32,23 @@ func NewInquiryHandler(inquiryService InquiryService) *InquiryHandler {
 // @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Inquiry
 // @Produce json
+// @Param search query string false "Search by email/phone/text"
 // @Param page query int false "Page number (enables the paginated envelope)"
 // @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.Inquiry
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /inquiries [get]
 func (h *InquiryHandler) GetAll(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.inquiryService.GetAll, h.inquiryService.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.Inquiry, error) {
+			return h.inquiryService.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.Inquiry, int, error) {
+			return h.inquiryService.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // GetInquiryByID godoc

@@ -37,7 +37,7 @@ func TestFAQService_CRUD(t *testing.T) {
 		t.Errorf("QuestionEn = %q", got.QuestionEn)
 	}
 
-	all, err := svc.GetAll(ctx)
+	all, err := svc.GetAll(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}

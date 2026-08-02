@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,8 +19,17 @@ func NewCountryRepository(db *pgxpool.Pool) *CountryRepository {
 	return &CountryRepository{db: db}
 }
 
-func (r *CountryRepository) GetAll(ctx context.Context) ([]model.Country, error) {
-	rows, err := r.db.Query(ctx, `SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries`)
+const countrySearchWhere = " WHERE (name_kz ILIKE $1 OR name_en ILIKE $1 OR name_ru ILIKE $1 OR code ILIKE $1)"
+
+func (r *CountryRepository) GetAll(ctx context.Context, search string) ([]model.Country, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = countrySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
+	rows, err := r.db.Query(ctx, `SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries`+where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -37,15 +47,23 @@ func (r *CountryRepository) GetAll(ctx context.Context) ([]model.Country, error)
 	return countries, nil
 }
 
-func (r *CountryRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Country, int, error) {
+func (r *CountryRepository) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]model.Country, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = countrySearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM countries`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM countries`+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
+	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx,
-		`SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries ORDER BY id LIMIT $1 OFFSET $2`,
-		limit, offset,
+		fmt.Sprintf(`SELECT id, name_kz, name_en, name_ru, code, created_at, updated_at FROM countries%s ORDER BY id LIMIT $%d OFFSET $%d`, where, len(args)-1, len(args)),
+		args...,
 	)
 	if err != nil {
 		return nil, 0, err

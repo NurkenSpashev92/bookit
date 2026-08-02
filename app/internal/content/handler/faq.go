@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -10,8 +11,8 @@ import (
 )
 
 type FAQService interface {
-	GetAll(ctx context.Context) ([]schema.FAQ, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.FAQ, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.FAQ, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.FAQ, int, error)
 	GetByID(ctx context.Context, id int) (schema.FAQ, error)
 	Create(ctx context.Context, req schema.FAQCreateRequest) (schema.FAQ, error)
 	Update(ctx context.Context, id int, req schema.FAQUpdateRequest) (schema.FAQ, error)
@@ -31,13 +32,23 @@ func NewFAQHandler(faqService FAQService) *FAQHandler {
 // @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags FAQ
 // @Produce json
+// @Param search query string false "Search by question/answer"
 // @Param page query int false "Page number (enables the paginated envelope)"
 // @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.FAQ
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /faqs [get]
 func (h *FAQHandler) GetAll(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.faqService.GetAll, h.faqService.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]schema.FAQ, error) {
+			return h.faqService.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]schema.FAQ, int, error) {
+			return h.faqService.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // GetFAQByID godoc

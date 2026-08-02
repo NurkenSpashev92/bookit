@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN payment_qr VARCHAR(255);
+ALTER TABLE users ADD COLUMN payment_phone VARCHAR(20);

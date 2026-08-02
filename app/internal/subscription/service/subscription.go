@@ -19,8 +19,8 @@ type SubscriptionRepository interface {
 	GetActiveByUserID(ctx context.Context, userID int) (model.Subscription, error)
 	Deactivate(ctx context.Context, id int) error
 	ListByUserID(ctx context.Context, userID int) ([]model.Subscription, error)
-	ListAll(ctx context.Context) ([]model.Subscription, error)
-	ListPaginated(ctx context.Context, limit, offset int) ([]model.Subscription, int, error)
+	ListAll(ctx context.Context, search string) ([]model.Subscription, error)
+	ListPaginated(ctx context.Context, search string, limit, offset int) ([]model.Subscription, int, error)
 	Update(ctx context.Context, id int, s model.Subscription) (model.Subscription, error)
 	Delete(ctx context.Context, id int) (int, error)
 }
@@ -58,16 +58,16 @@ func (s *SubscriptionService) GetByUserID(ctx context.Context, userID int) ([]sc
 	return toResponses(subs), nil
 }
 
-func (s *SubscriptionService) GetAll(ctx context.Context) ([]schema.SubscriptionResponse, error) {
-	subs, err := s.repository.ListAll(ctx)
+func (s *SubscriptionService) GetAll(ctx context.Context, search string) ([]schema.SubscriptionResponse, error) {
+	subs, err := s.repository.ListAll(ctx, search)
 	if err != nil {
 		return nil, err
 	}
 	return toResponses(subs), nil
 }
 
-func (s *SubscriptionService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.SubscriptionResponse, int, error) {
-	subs, total, err := s.repository.ListPaginated(ctx, limit, offset)
+func (s *SubscriptionService) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.SubscriptionResponse, int, error) {
+	subs, total, err := s.repository.ListPaginated(ctx, search, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}

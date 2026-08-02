@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nurkenspashev92/bookit/internal/property/model"
@@ -102,4 +103,29 @@ func (r *HouseImageRepository) Delete(ctx context.Context, imageID int) (*string
 
 	_, err = r.db.Exec(ctx, `DELETE FROM images WHERE id=$1`, imageID)
 	return key, err
+}
+
+func (r *HouseImageRepository) EnsureLabel(ctx context.Context, houseID int) error {
+	_, err := r.db.Exec(ctx, `
+		UPDATE images SET is_label = true
+		WHERE id = (SELECT id FROM images WHERE house_id=$1 ORDER BY id LIMIT 1)
+		  AND NOT EXISTS (SELECT 1 FROM images WHERE house_id=$1 AND is_label = true)`,
+		houseID,
+	)
+	return err
+}
+
+func (r *HouseImageRepository) SetLabel(ctx context.Context, imageID int) error {
+	tag, err := r.db.Exec(ctx, `
+		UPDATE images SET is_label = (id = $1)
+		WHERE house_id = (SELECT house_id FROM images WHERE id = $1)`,
+		imageID,
+	)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }

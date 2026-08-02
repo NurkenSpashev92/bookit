@@ -12,6 +12,7 @@ import (
 type ImageService interface {
 	UploadHouseImages(ctx context.Context, slug string, files []*multipart.FileHeader) error
 	DeleteHouseImage(ctx context.Context, imageID int) error
+	SetHouseImageLabel(ctx context.Context, imageID int) error
 }
 
 type ImageHandler struct {
@@ -75,6 +76,30 @@ func (h *ImageHandler) Delete(c fiber.Ctx) error {
 	}
 
 	return shared.OK(c, "image deleted")
+}
+
+// SetLabel godoc
+// @Summary Set house image as cover
+// @Tags Houses
+// @Produce json
+// @Param image_id path int true "Image ID"
+// @Success 200 {object} shared.MessageResponse
+// @Failure 400 {object} shared.ErrorResponse
+// @Failure 401 {object} shared.ErrorResponse
+// @Failure 404 {object} shared.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /houses/images/{image_id}/label [patch]
+func (h *ImageHandler) SetLabel(c fiber.Ctx) error {
+	imageID, err := shared.ParamInt(c, "image_id")
+	if err != nil {
+		return shared.Fail(c, err)
+	}
+
+	if err := h.imageService.SetHouseImageLabel(c.Context(), imageID); err != nil {
+		return shared.Fail(c, err)
+	}
+
+	return shared.OK(c, "cover updated")
 }
 
 func uploadedFiles(c fiber.Ctx) ([]*multipart.FileHeader, error) {

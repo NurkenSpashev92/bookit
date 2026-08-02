@@ -7,8 +7,8 @@ import (
 )
 
 type FAQRepository interface {
-	GetAll(ctx context.Context) ([]schema.FAQ, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.FAQ, int, error)
+	GetAll(ctx context.Context, search string) ([]schema.FAQ, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.FAQ, int, error)
 	GetByID(ctx context.Context, id int) (schema.FAQ, error)
 	Create(ctx context.Context, req schema.FAQCreateRequest) (schema.FAQ, error)
 	Update(ctx context.Context, id int, req schema.FAQUpdateRequest) (schema.FAQ, error)
@@ -23,12 +23,12 @@ func NewFAQService(repo FAQRepository) *FAQService {
 	return &FAQService{repository: repo}
 }
 
-func (s *FAQService) GetAll(ctx context.Context) ([]schema.FAQ, error) {
-	return s.repository.GetAll(ctx)
+func (s *FAQService) GetAll(ctx context.Context, search string) ([]schema.FAQ, error) {
+	return s.repository.GetAll(ctx, search)
 }
 
-func (s *FAQService) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.FAQ, int, error) {
-	return s.repository.GetAllPaginated(ctx, limit, offset)
+func (s *FAQService) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.FAQ, int, error) {
+	return s.repository.GetAllPaginated(ctx, search, limit, offset)
 }
 
 func (s *FAQService) GetByID(ctx context.Context, id int) (schema.FAQ, error) {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -11,8 +12,8 @@ import (
 )
 
 type CountryService interface {
-	GetAll(ctx context.Context) ([]model.Country, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Country, int, error)
+	GetAll(ctx context.Context, search string) ([]model.Country, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]model.Country, int, error)
 	GetByID(ctx context.Context, id int) (model.Country, error)
 	Create(ctx context.Context, req schema.CountryCreateRequest) (model.Country, error)
 	Update(ctx context.Context, id int, req schema.CountryUpdateRequest) (model.Country, error)
@@ -32,13 +33,23 @@ func NewCountryHandler(countryService CountryService) *CountryHandler {
 // @Description Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Countries
 // @Produce json
+// @Param search query string false "Search by name/code"
 // @Param page query int false "Page number (enables the paginated envelope)"
 // @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.Country
 // @Failure 500 {object} shared.ErrorResponse
 // @Router /countries [get]
 func (h *CountryHandler) GetAll(c fiber.Ctx) error {
-	return shared.ListMaybePaginated(c, h.countryService.GetAll, h.countryService.GetAllPaginated)
+	search := strings.TrimSpace(c.Query("search"))
+
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]model.Country, error) {
+			return h.countryService.GetAll(ctx, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]model.Country, int, error) {
+			return h.countryService.GetAllPaginated(ctx, search, limit, offset)
+		},
+	)
 }
 
 // GetCountry godoc

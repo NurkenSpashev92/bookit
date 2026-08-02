@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -15,7 +16,8 @@ type HouseLikeService interface {
 	Like(ctx context.Context, userID int, slug string) (*schema.HouseLikeResponse, error)
 	Unlike(ctx context.Context, userID int, slug string) (*schema.HouseLikeResponse, error)
 	Status(ctx context.Context, userID int, slug string) (*schema.HouseLikeResponse, error)
-	GetUserLikedHouses(ctx context.Context, userID int) ([]propertyschema.HouseListItem, error)
+	GetUserLikedHouses(ctx context.Context, userID int, search string) ([]propertyschema.HouseListItem, error)
+	GetUserLikedHousesPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]propertyschema.HouseListItem, int, error)
 }
 
 type HouseLikeHandler struct {
@@ -102,8 +104,12 @@ func (h *HouseLikeHandler) Status(c fiber.Ctx) error {
 
 // UserLikedHouses godoc
 // @Summary Get houses liked by current user
+// @Description  Without a `page` query param the response is a plain array. With `page` it is the paginated envelope (shared.PaginatedResponse).
 // @Tags Houses
 // @Produce json
+// @Param        search     query string false "Search by house name/address"
+// @Param        page       query int false "Page number (enables the paginated envelope)"
+// @Param        page_size  query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} propertyschema.HouseListItem
 // @Failure 401 {object} shared.ErrorResponse
 // @Failure 500 {object} shared.ErrorResponse
@@ -115,12 +121,16 @@ func (h *HouseLikeHandler) UserLikedHouses(c fiber.Ctx) error {
 		return shared.Fail(c, err)
 	}
 
-	houses, err := h.likeService.GetUserLikedHouses(c.Context(), user.ID)
-	if err != nil {
-		return shared.Fail(c, err)
-	}
+	search := strings.TrimSpace(c.Query("search"))
 
-	return shared.List(c, houses)
+	return shared.ListMaybePaginated(c,
+		func(ctx context.Context) ([]propertyschema.HouseListItem, error) {
+			return h.likeService.GetUserLikedHouses(ctx, user.ID, search)
+		},
+		func(ctx context.Context, limit, offset int) ([]propertyschema.HouseListItem, int, error) {
+			return h.likeService.GetUserLikedHousesPaginated(ctx, user.ID, search, limit, offset)
+		},
+	)
 }
 
 func likeRequest(c fiber.Ctx) (int, string, error) {

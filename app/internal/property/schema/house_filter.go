@@ -9,20 +9,23 @@ import (
 )
 
 type HouseFilter struct {
-	Name           *string
-	MinPrice       *int
-	MaxPrice       *int
-	GuestCount     *int
-	RoomsQty       *int
-	BedroomQty     *int
-	BedQty         *int
-	BathQty        *int
-	GuestsWithPets *bool
-	CategorySlug   *string
-	TypeSlug       *string
-	CountryID      *int
-	CityID         *int
-	OwnerID        *int
+	Name             *string
+	MinPrice         *int
+	MaxPrice         *int
+	GuestCount       *int
+	RoomsQty         *int
+	BedroomQty       *int
+	BedQty           *int
+	BathQty          *int
+	GuestsWithPets   *bool
+	GuestsWithBabies *bool
+	CategorySlug     *string
+	TypeSlug         *string
+	CountryID        *int
+	CityID           *int
+	OwnerID          *int
+	Moderation       bool
+	IsActive         *bool
 }
 
 func ParseHouseFilter(c fiber.Ctx) HouseFilter {
@@ -40,13 +43,15 @@ func ParseHouseFilter(c fiber.Ctx) HouseFilter {
 	f.CountryID = queryInt(c, "country")
 	f.CityID = queryInt(c, "city")
 	f.GuestsWithPets = queryBool(c, "guests_with_pets")
+	f.GuestsWithBabies = queryBool(c, "guests_with_babies")
+	f.IsActive = queryBool(c, "is_active")
 	return f
 }
 
 func (f HouseFilter) IsEmpty() bool {
 	return f.Name == nil && f.MinPrice == nil && f.MaxPrice == nil && f.GuestCount == nil &&
 		f.RoomsQty == nil && f.BedroomQty == nil && f.BedQty == nil && f.BathQty == nil &&
-		f.GuestsWithPets == nil && f.CategorySlug == nil && f.TypeSlug == nil &&
+		f.GuestsWithPets == nil && f.GuestsWithBabies == nil && f.CategorySlug == nil && f.TypeSlug == nil &&
 		f.CountryID == nil && f.CityID == nil
 }
 
@@ -78,6 +83,9 @@ func (f HouseFilter) CacheKey(limit, offset int) string {
 	}
 	if f.GuestsWithPets != nil && *f.GuestsWithPets {
 		parts = append(parts, "pets")
+	}
+	if f.GuestsWithBabies != nil && *f.GuestsWithBabies {
+		parts = append(parts, "babies")
 	}
 	if f.CategorySlug != nil {
 		parts = append(parts, fmt.Sprintf("cat%s", *f.CategorySlug))

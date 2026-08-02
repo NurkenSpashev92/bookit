@@ -11,8 +11,6 @@ type City struct {
 	Country     Country `json:"country"`
 }
 
-// CityCreateRequest create city request
-// @Description Request body for creating a city
 type CityCreateRequest struct {
 	NameKZ      string `json:"name_kz" form:"name_kz" maxLength:"255" example:"Астана" validate:"required"`
 	NameEN      string `json:"name_en" form:"name_en" maxLength:"255" example:"Astana" validate:"required"`
@@ -34,8 +32,6 @@ func (r CityCreateRequest) Validate() error {
 	return v.Result()
 }
 
-// CityUpdateRequest partial update city request
-// @Description Request body for updating a city (all fields optional)
 type CityUpdateRequest struct {
 	NameKZ      *string `json:"name_kz,omitempty" form:"name_kz" maxLength:"255" example:"Астана"`
 	NameEN      *string `json:"name_en,omitempty" form:"name_en" maxLength:"255" example:"Astana"`

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -18,8 +19,17 @@ func NewFAQRepository(db *pgxpool.Pool) *FAQRepository {
 	return &FAQRepository{db: db}
 }
 
-func (r *FAQRepository) GetAll(ctx context.Context) ([]schema.FAQ, error) {
-	rows, err := r.db.Query(ctx, `SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq`)
+const faqSearchWhere = " WHERE (question_kz ILIKE $1 OR question_ru ILIKE $1 OR question_en ILIKE $1 OR answer_kz ILIKE $1 OR answer_ru ILIKE $1 OR answer_en ILIKE $1)"
+
+func (r *FAQRepository) GetAll(ctx context.Context, search string) ([]schema.FAQ, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = faqSearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
+	rows, err := r.db.Query(ctx, `SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq`+where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -36,15 +46,23 @@ func (r *FAQRepository) GetAll(ctx context.Context) ([]schema.FAQ, error) {
 	return faqs, nil
 }
 
-func (r *FAQRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]schema.FAQ, int, error) {
+func (r *FAQRepository) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.FAQ, int, error) {
+	var args []interface{}
+	where := ""
+	if search != "" {
+		where = faqSearchWhere
+		args = append(args, "%"+search+"%")
+	}
+
 	var total int
-	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM faq`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM faq`+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
+	args = append(args, limit, offset)
 	rows, err := r.db.Query(ctx,
-		`SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq ORDER BY id LIMIT $1 OFFSET $2`,
-		limit, offset,
+		fmt.Sprintf(`SELECT id, question_kz, answer_kz, question_ru, answer_ru, question_en, answer_en FROM faq%s ORDER BY id LIMIT $%d OFFSET $%d`, where, len(args)-1, len(args)),
+		args...,
 	)
 	if err != nil {
 		return nil, 0, err

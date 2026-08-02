@@ -8,8 +8,8 @@ import (
 )
 
 type CountryRepository interface {
-	GetAll(ctx context.Context) ([]model.Country, error)
-	GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Country, int, error)
+	GetAll(ctx context.Context, search string) ([]model.Country, error)
+	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]model.Country, int, error)
 	GetByID(ctx context.Context, id int) (model.Country, error)
 	Create(ctx context.Context, req schema.CountryCreateRequest) (model.Country, error)
 	Update(ctx context.Context, id int, req schema.CountryUpdateRequest) (model.Country, error)
@@ -24,12 +24,12 @@ func NewCountryService(repo CountryRepository) *CountryService {
 	return &CountryService{repository: repo}
 }
 
-func (s *CountryService) GetAll(ctx context.Context) ([]model.Country, error) {
-	return s.repository.GetAll(ctx)
+func (s *CountryService) GetAll(ctx context.Context, search string) ([]model.Country, error) {
+	return s.repository.GetAll(ctx, search)
 }
 
-func (s *CountryService) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.Country, int, error) {
-	return s.repository.GetAllPaginated(ctx, limit, offset)
+func (s *CountryService) GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]model.Country, int, error) {
+	return s.repository.GetAllPaginated(ctx, search, limit, offset)
 }
 
 func (s *CountryService) GetByID(ctx context.Context, id int) (model.Country, error) {

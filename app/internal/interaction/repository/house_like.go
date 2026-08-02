@@ -117,30 +117,47 @@ func (r *HouseLikeRepository) GetUserLikedHouseIDs(ctx context.Context, userID i
 	return ids, nil
 }
 
-func (r *HouseLikeRepository) GetUserLikedHouses(ctx context.Context, userID int) ([]propertyschema.HouseListItem, error) {
-	result, _, err := r.GetUserLikedHousesPaginated(ctx, userID, 0, 0)
+func likedHouseSearchClause(n int) string {
+	p := fmt.Sprintf("$%d", n)
+	return "(h.name_en ILIKE " + p + " OR h.name_kz ILIKE " + p + " OR h.name_ru ILIKE " + p +
+		" OR h.address_en ILIKE " + p + " OR h.address_kz ILIKE " + p + " OR h.address_ru ILIKE " + p + ")"
+}
+
+func (r *HouseLikeRepository) GetUserLikedHouses(ctx context.Context, userID int, search string) ([]propertyschema.HouseListItem, error) {
+	result, _, err := r.GetUserLikedHousesPaginated(ctx, userID, search, 0, 0)
 	return result, err
 }
 
-func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, userID, limit, offset int) ([]propertyschema.HouseListItem, int, error) {
+func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, userID int, search string, limit, offset int) ([]propertyschema.HouseListItem, int, error) {
 	baseURL := r.awsCfg.BaseURL()
 
 	g, gctx := errgroup.WithContext(ctx)
 
 	var total int
 	g.Go(func() error {
-		return r.db.QueryRow(gctx,
-			`SELECT COUNT(*) FROM house_likes WHERE user_id=$1`, userID,
-		).Scan(&total)
+		countArgs := []interface{}{userID}
+		countQuery := `SELECT COUNT(*) FROM house_likes WHERE user_id=$1`
+		if search != "" {
+			countArgs = append(countArgs, "%"+search+"%")
+			countQuery = `SELECT COUNT(*) FROM house_likes hl JOIN houses h ON h.id = hl.house_id WHERE hl.user_id=$1 AND ` + likedHouseSearchClause(len(countArgs))
+		}
+		return r.db.QueryRow(gctx, countQuery, countArgs...).Scan(&total)
 	})
 
 	var houses []propertyschema.HouseListItem
 	g.Go(func() error {
-		pagination := ""
 		args := []interface{}{userID, baseURL}
+
+		searchSQL := ""
+		if search != "" {
+			args = append(args, "%"+search+"%")
+			searchSQL = " AND " + likedHouseSearchClause(len(args))
+		}
+
+		pagination := ""
 		if limit > 0 {
-			pagination = fmt.Sprintf("LIMIT $3 OFFSET $4")
 			args = append(args, limit, offset)
+			pagination = fmt.Sprintf("LIMIT $%d OFFSET $%d", len(args)-1, len(args))
 		}
 
 		query := fmt.Sprintf(`
@@ -175,9 +192,9 @@ func (r *HouseLikeRepository) GetUserLikedHousesPaginated(ctx context.Context, u
 					FROM images WHERE house_id = h.id ORDER BY id LIMIT 5
 				) i
 			) img ON true
-			WHERE hl.user_id = $1
+			WHERE hl.user_id = $1%s
 			ORDER BY hl.created_at DESC
-			%s`, pagination)
+			%s`, searchSQL, pagination)
 
 		rows, err := r.db.Query(gctx, query, args...)
 		if err != nil {

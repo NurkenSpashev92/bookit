@@ -12,8 +12,6 @@ type FAQ struct {
 	AnswerEn   string `json:"answer_en,omitempty" example:"Register on the website"`
 }
 
-// FAQCreateRequest create FAQ request
-// @Description Request body for creating a FAQ entry
 type FAQCreateRequest struct {
 	QuestionKz string `json:"question_kz" maxLength:"500" example:"Қалай брондау керек?" validate:"required"`
 	AnswerKz   string `json:"answer_kz" example:"Сайтта тіркеліңіз" validate:"required"`
@@ -37,8 +35,6 @@ func (r FAQCreateRequest) Validate() error {
 	return v.Result()
 }
 
-// FAQUpdateRequest partial update FAQ
-// @Description Request body for updating a FAQ entry (all fields optional)
 type FAQUpdateRequest struct {
 	QuestionKz *string `json:"question_kz,omitempty" maxLength:"500"`
 	AnswerKz   *string `json:"answer_kz,omitempty"`
