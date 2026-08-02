@@ -12,8 +12,8 @@ import (
 )
 
 type CityService interface {
-	GetAll(ctx context.Context, search string) ([]schema.City, error)
-	GetAllPaginated(ctx context.Context, search string, limit, offset int) ([]schema.City, int, error)
+	GetAll(ctx context.Context, search string, countryID int) ([]schema.City, error)
+	GetAllPaginated(ctx context.Context, search string, countryID, limit, offset int) ([]schema.City, int, error)
 	GetByID(ctx context.Context, id int) (schema.City, error)
 	Create(ctx context.Context, req schema.CityCreateRequest) (model.City, error)
 	Update(ctx context.Context, id int, req schema.CityUpdateRequest) (model.City, error)
@@ -34,6 +34,7 @@ func NewCityHandler(cityService CityService) *CityHandler {
 // @Tags Cities
 // @Produce json
 // @Param search query string false "Search by name/postal code"
+// @Param country_id query int false "Filter by country"
 // @Param page query int false "Page number (enables the paginated envelope)"
 // @Param page_size query int false "Items per page (default 20, max 100)"
 // @Success 200 {array} schema.City
@@ -41,13 +42,14 @@ func NewCityHandler(cityService CityService) *CityHandler {
 // @Router /cities [get]
 func (h *CityHandler) GetAll(c fiber.Ctx) error {
 	search := strings.TrimSpace(c.Query("search"))
+	countryID := shared.QueryIntInRange(c, "country_id", 0, 1, 1<<31-1)
 
 	return shared.ListMaybePaginated(c,
 		func(ctx context.Context) ([]schema.City, error) {
-			return h.cityService.GetAll(ctx, search)
+			return h.cityService.GetAll(ctx, search, countryID)
 		},
 		func(ctx context.Context, limit, offset int) ([]schema.City, int, error) {
-			return h.cityService.GetAllPaginated(ctx, search, limit, offset)
+			return h.cityService.GetAllPaginated(ctx, search, countryID, limit, offset)
 		},
 	)
 }

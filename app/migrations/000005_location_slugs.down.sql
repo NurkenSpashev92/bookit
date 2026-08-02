@@ -1,4 +1,0 @@
-DROP INDEX IF EXISTS cities_slug_key;
-DROP INDEX IF EXISTS countries_slug_key;
-ALTER TABLE cities DROP COLUMN IF EXISTS slug;
-ALTER TABLE countries DROP COLUMN IF EXISTS slug;

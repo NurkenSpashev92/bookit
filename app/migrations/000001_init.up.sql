@@ -13,6 +13,8 @@ CREATE TABLE users (
     date_of_birth     DATE,
     phone_number      VARCHAR(128),
     avatar            VARCHAR(255),
+    payment_qr        VARCHAR(255),
+    payment_phone     VARCHAR(20),
     is_superuser      BOOLEAN NOT NULL DEFAULT FALSE,
     is_active         BOOLEAN NOT NULL DEFAULT TRUE,
     subscription_type subscription_type NOT NULL DEFAULT 'basic',
@@ -29,9 +31,11 @@ CREATE TABLE countries (
     name_en    VARCHAR(255) NOT NULL,
     name_ru    VARCHAR(255) NOT NULL,
     code       VARCHAR(10),
+    slug       VARCHAR(255),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE UNIQUE INDEX countries_slug_key ON countries (slug);
 
 CREATE TABLE cities (
     id           SERIAL PRIMARY KEY,
@@ -39,11 +43,13 @@ CREATE TABLE cities (
     name_en      VARCHAR(255) NOT NULL,
     name_kz      VARCHAR(255) NOT NULL,
     postall_code VARCHAR(20),
+    slug         VARCHAR(255),
     country_id   INTEGER NOT NULL REFERENCES countries (id),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX ix_cities_country_id ON cities (country_id);
+CREATE UNIQUE INDEX cities_slug_key ON cities (slug);
 
 CREATE TABLE types (
     id         SERIAL PRIMARY KEY,
@@ -80,44 +86,51 @@ CREATE TABLE conveniences (
 CREATE UNIQUE INDEX uq_conveniences_slug ON conveniences (slug);
 
 CREATE TABLE houses (
-    id               SERIAL PRIMARY KEY,
-    name_en          VARCHAR(255) NOT NULL,
-    name_kz          VARCHAR(255) NOT NULL,
-    name_ru          VARCHAR(255) NOT NULL,
-    slug             VARCHAR(255) NOT NULL UNIQUE,
-    price            INTEGER NOT NULL DEFAULT 0,
-    rooms_qty        INTEGER NOT NULL DEFAULT 0,
-    guest_qty        INTEGER NOT NULL DEFAULT 0,
-    bedroom_qty      INTEGER NOT NULL DEFAULT 0,
-    bath_qty         INTEGER DEFAULT 0,
-    description_en   TEXT NOT NULL,
-    description_kz   TEXT NOT NULL,
-    description_ru   TEXT NOT NULL,
-    address_en       VARCHAR(255) NOT NULL,
-    address_kz       VARCHAR(255) NOT NULL,
-    address_ru       VARCHAR(255) NOT NULL,
-    lng              NUMERIC,
-    lat              NUMERIC,
-    is_active        BOOLEAN NOT NULL DEFAULT TRUE,
-    priority         INTEGER NOT NULL DEFAULT 0,
-    comments_ru      TEXT,
-    comments_en      TEXT,
-    comments_kz      TEXT,
-    owner_id         INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    type_id          INTEGER NOT NULL REFERENCES types (id) ON DELETE RESTRICT,
-    city_id          INTEGER REFERENCES cities (id) ON DELETE SET NULL,
-    country_id       INTEGER REFERENCES countries (id) ON DELETE SET NULL,
-    guests_with_pets BOOLEAN NOT NULL DEFAULT FALSE,
-    best_house       BOOLEAN NOT NULL DEFAULT FALSE,
-    promotion        BOOLEAN NOT NULL DEFAULT FALSE,
-    district_en      VARCHAR(255),
-    district_kz      VARCHAR(255),
-    district_ru      VARCHAR(255),
-    phone_number     VARCHAR(20),
-    like_count       INTEGER NOT NULL DEFAULT 0,
-    view_count       INTEGER NOT NULL DEFAULT 0,
-    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    id                 SERIAL PRIMARY KEY,
+    name_en            VARCHAR(255) NOT NULL,
+    name_kz            VARCHAR(255) NOT NULL,
+    name_ru            VARCHAR(255) NOT NULL,
+    slug               VARCHAR(255) NOT NULL UNIQUE,
+    price              INTEGER NOT NULL DEFAULT 0,
+    rooms_qty          INTEGER NOT NULL DEFAULT 0,
+    guest_qty          INTEGER NOT NULL DEFAULT 0,
+    bedroom_qty        INTEGER NOT NULL DEFAULT 0,
+    bath_qty           INTEGER DEFAULT 0,
+    description_en     TEXT NOT NULL,
+    description_kz     TEXT NOT NULL,
+    description_ru     TEXT NOT NULL,
+    address_en         VARCHAR(255) NOT NULL,
+    address_kz         VARCHAR(255) NOT NULL,
+    address_ru         VARCHAR(255) NOT NULL,
+    lng                NUMERIC,
+    lat                NUMERIC,
+    is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+    priority           INTEGER NOT NULL DEFAULT 0,
+    comments_ru        TEXT,
+    comments_en        TEXT,
+    comments_kz        TEXT,
+    owner_id           INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    type_id            INTEGER NOT NULL REFERENCES types (id) ON DELETE RESTRICT,
+    city_id            INTEGER REFERENCES cities (id) ON DELETE SET NULL,
+    country_id         INTEGER REFERENCES countries (id) ON DELETE SET NULL,
+    guests_with_pets   BOOLEAN NOT NULL DEFAULT FALSE,
+    guests_with_babies BOOLEAN NOT NULL DEFAULT FALSE,
+    best_house         BOOLEAN NOT NULL DEFAULT FALSE,
+    promotion          BOOLEAN NOT NULL DEFAULT FALSE,
+    is_verified        BOOLEAN NOT NULL DEFAULT FALSE,
+    is_sale            BOOLEAN NOT NULL DEFAULT FALSE,
+    is_newest          BOOLEAN NOT NULL DEFAULT TRUE,
+    is_hot             BOOLEAN NOT NULL DEFAULT FALSE,
+    is_featured        BOOLEAN NOT NULL DEFAULT FALSE,
+    is_discount        BOOLEAN NOT NULL DEFAULT FALSE,
+    district_en        VARCHAR(255),
+    district_kz        VARCHAR(255),
+    district_ru        VARCHAR(255),
+    phone_number       VARCHAR(20),
+    like_count         INTEGER NOT NULL DEFAULT 0,
+    view_count         INTEGER NOT NULL DEFAULT 0,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_price CHECK (price >= 0),
     CONSTRAINT chk_rooms_qty CHECK (rooms_qty >= 0),
     CONSTRAINT chk_guest_qty CHECK (guest_qty >= 0),
@@ -134,9 +147,13 @@ CREATE INDEX ix_houses_price ON houses (price);
 CREATE INDEX ix_houses_guest_qty ON houses (guest_qty);
 CREATE INDEX ix_houses_rooms_qty ON houses (rooms_qty);
 CREATE INDEX ix_houses_active ON houses (id DESC) WHERE is_active = TRUE;
+CREATE INDEX ix_houses_inactive ON houses (id DESC) WHERE is_active = FALSE;
 CREATE INDEX ix_houses_active_city ON houses (city_id, id DESC) WHERE is_active = TRUE;
 CREATE INDEX ix_houses_best ON houses (id DESC) WHERE best_house = TRUE;
 CREATE INDEX ix_houses_promo ON houses (id DESC) WHERE promotion = TRUE;
+CREATE INDEX ix_houses_is_verified ON houses (id DESC) WHERE is_verified;
+CREATE INDEX ix_houses_is_hot ON houses (id DESC) WHERE is_hot;
+CREATE INDEX ix_houses_is_featured ON houses (id DESC) WHERE is_featured;
 CREATE INDEX ix_houses_name_en_trgm ON houses USING gin (name_en gin_trgm_ops);
 CREATE INDEX ix_houses_name_kz_trgm ON houses USING gin (name_kz gin_trgm_ops);
 CREATE INDEX ix_houses_name_ru_trgm ON houses USING gin (name_ru gin_trgm_ops);
